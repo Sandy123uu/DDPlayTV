@@ -237,7 +237,44 @@ Sensitive tokens belong in `local.properties` or Gradle properties; never hard-c
 - 001-baidu-pan-storage: Added Kotlin 1.9.25（JVM target 1.8），Android Gradle Plugin 8.7.2 + AndroidX、Kotlin Coroutines、Retrofit+OkHttp、Moshi、Room、MMKV、Media3、NanoHTTPD（本地代理）、ARouter
 
 ## TV/Remote UX
-- When adjusting UI element logic (focus/order/visibility), always consider Android TV remote navigation: ensure DPAD can reach/give feedback for all controls and verify focus loops are reachable on TV.
+本仓库以 TV 端交互为先（Leanback + 遥控器 DPAD），移动端保持可用。涉及 UI 与交互时，请以“可达性/一致性/可维护性”为优先级，而不是最小侵入。
+
+### 1) 分流与判定
+- 统一使用 `Context.isTelevisionUiMode()` 判定 TV UI mode（定义在 `core_ui_component`），不要在业务模块重复实现判断逻辑。
+- 分流优先级（从大到小）：
+  1. **结构差异大**：使用独立入口或独立页面（例如 `MainActivity` vs `TvMainActivity`）。
+  2. **同屏小差异**：用运行时 `isTelevisionUiMode()` 做显隐/交互分流，避免大规模复制 layout。
+  3. **纯视觉差异**：优先用 `*-television` 资源覆盖（尤其是 `state_focused` 的 selector/描边/overlay），避免复制整套布局。
+- “TV 默认裁剪/关闭”的能力必须明确属于哪一种策略：
+  - **仅 TV 禁用**：必须基于 `isTelevisionUiMode()` 分流，避免误伤移动端。
+  - **全端禁用**：必须在代码/文档中明确为产品决策，不要以“TV 适配”为名做静默 stub。
+
+### 2) DPAD / 焦点规范（强约束）
+- TV 端必须保证“焦点可达、可见、可反馈、可返回”。任何控件的新增/显隐/顺序调整都需要验证 DPAD 导航路径无死角。
+- 列表/网格（RecyclerView）建议规范：
+  - Item 的默认焦点目标使用 `android:tag="@string/focusable_item"` 标注（必要时也可用 `FocusTarget` 指定子 View）。
+  - 列表页优先接入 `RecyclerViewFocusDelegate` 统一处理：DPAD 上下移动、焦点保存/恢复、MENU/SETTINGS 键动作。
+  - 进入页面时，在非触摸模式下必须有明确的默认焦点（避免“无焦点/焦点落在不可见 View”）。
+- 可点击控件建议规范：
+  - DPAD 模式下以 `state_focused` 作为主反馈（selector + `tv_focus_*` 颜色/描边），不要只依赖 `state_pressed`。
+  - 同一行左右导航尽量显式配置 `nextFocusLeftId/nextFocusRightId`，避免焦点跳转到不可预期区域。
+  - 需要动态启用/禁用焦点时，优先使用 `FocusPolicy.applyDpadFocusable(...)` / `View.applyDpadFocusable(...)`。
+
+### 3) 按键语义（建议）
+- `BACK`：优先关闭弹窗/设置面板/控制条；仅当栈空时才执行“二次返回退出”等全局逻辑。
+- `MENU/SETTINGS`：在 TV 列表场景可作为“刷新/设置入口”的快捷键（按页面语义决定，并保持同类页面一致）。
+
+### 4) 输入与确认策略（TV 友好）
+- TV 端避免依赖 `EditText + 软键盘 + IME_ACTION_DONE` 完成关键配置；对数字/枚举类设置优先使用 DPAD 左右步进/切换控件。
+- TV 端优先“修改即生效 + 自动持久化”，减少额外“确定/取消”的确认成本；若必须显式动作（扫码登录/测试连接/投屏连接等），动作成功后自动保存并返回一致的结果语义。
+
+### 5) 触摸/手势
+- 依赖触摸手势的交互在 TV UI mode 下应禁用或替换为纯 DPAD 逻辑；不要向 TV 用户暴露无法触发的入口。
+
+### 6) 提交前自检（TV 回归）
+- 全程仅用遥控器 DPAD 可完成核心路径（进入/选择/配置/返回/播放/退出）。
+- 不存在“焦点陷阱/焦点丢失/隐藏视图抢焦点”；列表滚动与页面返回后焦点可恢复。
+- 所有可操作控件均有清晰 focused 反馈（视觉高亮一致、可辨识）。
 
 ## Active Technologies
 - Kotlin 1.9.25（JVM target 1.8），Android Gradle Plugin 8.7.2 + AndroidX（Lifecycle/ViewModel/Room 等）、Kotlin Coroutines、Retrofit/OkHttp、Moshi、Media3、ARouter、MMKV (003-add-bilibili-history)
