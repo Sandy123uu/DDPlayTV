@@ -32,4 +32,3 @@ abstract class BasePreferenceFragmentCompat : PreferenceFragmentCompat() {
         private const val DIALOG_FRAGMENT_TAG = "androidx.preference.PreferenceFragment.DIALOG"
     }
 }
-
