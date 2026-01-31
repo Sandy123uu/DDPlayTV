@@ -50,6 +50,12 @@
             android:title="@string/developer_bugly_status_title"
             android:summary="@string/developer_bugly_status_summary"
             app:icon="@drawable/ic_app_setting_about_us" />
+
+        <Preference
+            android:key="bugly_test_report"
+            android:title="@string/developer_bugly_test_report_title"
+            android:summary="@string/developer_bugly_test_report_summary"
+            app:icon="@drawable/ic_feedback" />
     </PreferenceCategory>
 
 </PreferenceScreen>

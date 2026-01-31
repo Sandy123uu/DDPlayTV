@@ -11,12 +11,10 @@ import coil.decode.VideoFrameDecoder
 import com.alibaba.android.arouter.launcher.ARouter
 import com.tencent.mmkv.MMKV
 import com.xyoye.common_component.config.AppConfig
-import com.xyoye.common_component.log.BuglyReporter
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.notification.Notifications
 import com.xyoye.common_component.utils.ActivityHelper
-import com.xyoye.common_component.utils.SecurityHelperConfig
 import com.xyoye.core_system_component.BuildConfig
 
 /**
@@ -81,12 +79,6 @@ open class BaseApplication :
         // 提前初始化全局上下文与主线程Handler，避免在ContentProvider或静态初始化阶段访问导致空指针
         APPLICATION_CONTEXT = this
         mMainHandler = Handler(Looper.getMainLooper())
-        // 尽早初始化 Bugly，保证 Application onCreate 之前的崩溃也能被捕获
-        BuglyReporter.init(
-            context = this,
-            SecurityHelperConfig.BUGLY_APP_ID,
-            BuildConfig.DEBUG,
-        )
     }
 
     override fun onCreate() {
