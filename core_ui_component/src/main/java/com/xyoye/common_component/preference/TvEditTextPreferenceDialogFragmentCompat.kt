@@ -1,10 +1,9 @@
 package com.xyoye.common_component.preference
 
-import android.content.Context
 import android.view.View
-import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.preference.EditTextPreferenceDialogFragmentCompat
+import com.xyoye.common_component.utils.showKeyboard
 
 /**
  * TV 端部分输入法（尤其是自带/第三方 TV 软键盘）在 [InputMethodManager.showSoftInput] 时可能始终返回 false，
@@ -20,7 +19,7 @@ class TvEditTextPreferenceDialogFragmentCompat : EditTextPreferenceDialogFragmen
         super.onBindDialogView(view)
         boundEditText = view.findViewById(android.R.id.edit)
         boundEditText?.setOnClickListener {
-            showSoftInputOnce()
+            showKeyboard(it)
         }
     }
 
@@ -32,26 +31,13 @@ class TvEditTextPreferenceDialogFragmentCompat : EditTextPreferenceDialogFragmen
         super.onStart()
         if (!pendingShowSoftInput) return
         pendingShowSoftInput = false
-        showSoftInputOnce()
+        boundEditText?.let { showKeyboard(it) }
     }
 
     override fun onDestroyView() {
         boundEditText = null
         pendingShowSoftInput = false
         super.onDestroyView()
-    }
-
-    private fun showSoftInputOnce() {
-        val editText = boundEditText ?: return
-        val imm =
-            editText.context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-                ?: return
-
-        editText.post {
-            if (editText.isFocused) {
-                imm.showSoftInput(editText, 0)
-            }
-        }
     }
 
     companion object {
