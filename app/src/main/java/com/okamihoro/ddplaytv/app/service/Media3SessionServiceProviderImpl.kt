@@ -7,7 +7,7 @@ import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.service.Media3SessionServiceProvider
 
 @Route(
-    path = RouteTable.Player.Media3SessionServiceProvider,
+    path = RouteTable.App.Media3SessionServiceProvider,
     name = "Media3SessionService Intent Provider",
 )
 class Media3SessionServiceProviderImpl : Media3SessionServiceProvider {
@@ -16,4 +16,3 @@ class Media3SessionServiceProviderImpl : Media3SessionServiceProvider {
 
     override fun createBindIntent(context: Context): Intent = Intent(context, Media3SessionService::class.java)
 }
-
