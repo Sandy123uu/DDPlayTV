@@ -37,6 +37,10 @@
                     android:id="@+id/user_account_cl"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/background_item_press"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:tag="@string/focusable_item"
                     app:layout_constraintTop_toTopOf="parent">
 
                     <com.xyoye.common_component.weight.CircleImageView
@@ -82,9 +86,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
+                    android:background="@drawable/background_item_press"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_horizontal"
                     android:orientation="vertical"
                     android:padding="15dp"
+                    android:tag="@string/focusable_item"
                     app:layout_constraintEnd_toStartOf="@+id/cloud_history_ll"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/user_account_cl">
@@ -111,9 +119,13 @@
                     android:id="@+id/cloud_history_ll"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/background_item_press"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_horizontal"
                     android:orientation="vertical"
                     android:padding="15dp"
+                    android:tag="@string/focusable_item"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@id/follow_anime_ll"
                     app:layout_constraintTop_toTopOf="@id/follow_anime_ll">
@@ -152,9 +164,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="64dp"
                     android:background="@drawable/background_item_press_corner"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="12dp">
+                    android:padding="12dp"
+                    android:tag="@string/focusable_item">
 
 	                    <ImageView
 	                        android:layout_width="40dp"
@@ -179,9 +194,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="64dp"
                     android:background="@drawable/background_item_press_corner"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="12dp">
+                    android:padding="12dp"
+                    android:tag="@string/focusable_item">
 
 	                    <ImageView
 	                        android:layout_width="40dp"
@@ -206,9 +224,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="64dp"
                     android:background="@drawable/background_item_press_corner"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="12dp">
+                    android:padding="12dp"
+                    android:tag="@string/focusable_item">
 
 	                    <ImageView
 	                        android:layout_width="40dp"
@@ -233,9 +254,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="64dp"
                     android:background="@drawable/background_item_press_corner"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="12dp">
+                    android:padding="12dp"
+                    android:tag="@string/focusable_item">
 
 	                    <ImageView
 	                        android:layout_width="40dp"
@@ -271,9 +295,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="64dp"
                     android:background="@drawable/background_item_press_corner"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="12dp">
+                    android:padding="12dp"
+                    android:tag="@string/focusable_item">
 
 	                    <ImageView
 	                        android:layout_width="40dp"
@@ -298,9 +325,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="64dp"
                     android:background="@drawable/background_item_press_corner"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="12dp">
+                    android:padding="12dp"
+                    android:tag="@string/focusable_item">
 
 	                    <ImageView
 	                        android:layout_width="40dp"
@@ -325,9 +355,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="64dp"
                     android:background="@drawable/background_item_press_corner"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="12dp">
+                    android:padding="12dp"
+                    android:tag="@string/focusable_item">
 
 	                    <ImageView
 	                        android:layout_width="40dp"
@@ -381,9 +414,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="64dp"
                     android:background="@drawable/background_item_press_corner"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="12dp">
+                    android:padding="12dp"
+                    android:tag="@string/focusable_item">
 
 	                    <ImageView
 	                        android:layout_width="40dp"
@@ -408,9 +444,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="64dp"
                     android:background="@drawable/background_item_press_corner"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="12dp">
+                    android:padding="12dp"
+                    android:tag="@string/focusable_item">
 
 	                    <ImageView
 	                        android:layout_width="40dp"

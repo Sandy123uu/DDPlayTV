@@ -11,27 +11,27 @@ object OpenCC {
         System.loadLibrary("open_cc")
     }
 
+    private val nativeConvertLock = Any()
+
     private external fun convert(
         text: String,
         configJsonPath: String
     ): String
 
     fun convertSC(text: String): String {
-        val config = OpenCCFile.t2s
-        if (config.exists().not()) {
+        if (OpenCCFile.isT2sReady().not()) {
             return text
         }
 
-        return convertWithConfigFile(text, config)
+        return convertWithConfigFile(text, OpenCCFile.t2s)
     }
 
     fun convertTC(text: String): String {
-        val config = OpenCCFile.s2t
-        if (config.exists().not()) {
+        if (OpenCCFile.isS2tReady().not()) {
             return text
         }
 
-        return convertWithConfigFile(text, config)
+        return convertWithConfigFile(text, OpenCCFile.s2t)
     }
 
     private fun convertWithConfigFile(
@@ -68,7 +68,7 @@ object OpenCC {
         }
 
         if (containsJniModifiedUtf8IncompatibleChars(text).not()) {
-            return convert(text, configJsonPath)
+            return convertLocked(text, configJsonPath)
         }
 
         val output = StringBuilder(text.length)
@@ -132,12 +132,20 @@ object OpenCC {
         return false
     }
 
+    private fun convertLocked(
+        text: String,
+        configJsonPath: String
+    ): String =
+        synchronized(nativeConvertLock) {
+            convert(text, configJsonPath)
+        }
+
     private fun convertSegmentOrFallback(
         text: String,
         configJsonPath: String
     ): String =
         try {
-            convert(text, configJsonPath)
+            convertLocked(text, configJsonPath)
         } catch (t: Throwable) {
             com.xyoye.common_component.utils.ErrorReportHelper.postCatchedException(
                 t,

@@ -48,7 +48,9 @@
             <meta-data
                 android:name="com.xyoye.common_component.base.app.BaseInitializer"
                 android:value="androidx.startup" />
+            <meta-data
+                android:name="com.xyoye.common_component.base.app.BuglyInitializer"
+                android:value="androidx.startup" />
         </provider>
     </application>
 </manifest>
-

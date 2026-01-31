@@ -19,6 +19,7 @@ import com.xyoye.anime_component.ui.fragment.search_anime.SearchAnimeFragment
 import com.xyoye.anime_component.ui.fragment.search_magnet.SearchMagnetFragment
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
+import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.utils.hideKeyboard
 import com.xyoye.common_component.utils.showKeyboard
 
@@ -63,10 +64,15 @@ class SearchActivity : BaseActivity<SearchViewModel, ActivitySearchBinding>() {
 
         updateSearchHint(dataBinding.viewpager.currentItem)
 
-        if (!isSearchMagnet) {
+        if (!isSearchMagnet && dataBinding.root.isInTouchMode) {
             dataBinding.searchEt.postDelayed({
                 showKeyboard(dataBinding.searchEt)
             }, 200)
+        }
+
+        if (isTelevisionUiMode() && !dataBinding.root.isInTouchMode) {
+            applyDpadSearchEditPolicy()
+            dataBinding.searchCl.requestFocus()
         }
         initListener()
     }
@@ -74,13 +80,19 @@ class SearchActivity : BaseActivity<SearchViewModel, ActivitySearchBinding>() {
     private fun initListener() {
         dataBinding.backIv.setOnClickListener {
             hideKeyboard(dataBinding.searchEt)
+            applyDpadSearchEditPolicy()
             dataBinding.searchCl.requestFocus()
             finish()
+        }
+
+        dataBinding.searchCl.setOnClickListener {
+            showKeyboard(dataBinding.searchEt)
         }
 
         dataBinding.searchEt.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 hideKeyboard(dataBinding.searchEt)
+                applyDpadSearchEditPolicy()
                 dataBinding.searchCl.requestFocus()
                 search(dataBinding.searchEt.text.toString())
                 return@setOnEditorActionListener true
@@ -127,6 +139,7 @@ class SearchActivity : BaseActivity<SearchViewModel, ActivitySearchBinding>() {
 
         dataBinding.searchTv.setOnClickListener {
             hideKeyboard(dataBinding.searchEt)
+            applyDpadSearchEditPolicy()
             dataBinding.searchCl.requestFocus()
             search(dataBinding.searchEt.text.toString())
         }
@@ -171,13 +184,26 @@ class SearchActivity : BaseActivity<SearchViewModel, ActivitySearchBinding>() {
 
     fun onSearch(searchText: String) {
         hideKeyboard(dataBinding.searchEt)
+        applyDpadSearchEditPolicy()
         dataBinding.searchCl.requestFocus()
         viewModel.searchText.set(searchText)
     }
 
     fun hideSearchKeyboard() {
         hideKeyboard(dataBinding.searchEt)
+        applyDpadSearchEditPolicy()
         dataBinding.searchCl.requestFocus()
+    }
+
+    private fun applyDpadSearchEditPolicy() {
+        if (!isTelevisionUiMode() || dataBinding.root.isInTouchMode) {
+            return
+        }
+        dataBinding.searchEt.apply {
+            clearFocus()
+            isFocusable = false
+            isFocusableInTouchMode = false
+        }
     }
 
     inner class SearchPageAdapter(

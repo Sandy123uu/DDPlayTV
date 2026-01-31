@@ -12,6 +12,7 @@ import master.flame.danmaku.danmaku.model.android.DanmakuContext
  */
 
 class LanguageConverter : DanmakuFilters.BaseDanmakuFilter<DanmakuLanguage>() {
+    @Volatile
     private var language: DanmakuLanguage = DanmakuLanguage.ORIGINAL
 
     override fun filter(
@@ -22,14 +23,19 @@ class LanguageConverter : DanmakuFilters.BaseDanmakuFilter<DanmakuLanguage>() {
         fromCachingTask: Boolean,
         config: DanmakuContext?
     ): Boolean {
+        val currentLanguage = language
+        if (currentLanguage == DanmakuLanguage.ORIGINAL) {
+            return false
+        }
+
         val origin = danmaku.text?.toString().orEmpty()
         if (origin.isEmpty()) {
             return false
         }
 
-        if (language == DanmakuLanguage.SC) {
+        if (currentLanguage == DanmakuLanguage.SC) {
             danmaku.text = OpenCC.convertSC(origin)
-        } else if (language == DanmakuLanguage.TC) {
+        } else if (currentLanguage == DanmakuLanguage.TC) {
             danmaku.text = OpenCC.convertTC(origin)
         }
         return false
