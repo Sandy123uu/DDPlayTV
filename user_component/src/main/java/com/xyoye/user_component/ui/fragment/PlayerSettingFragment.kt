@@ -5,8 +5,8 @@ import android.view.View
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceDataStore
-import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SeekBarPreference
+import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.xyoye.common_component.config.PlayerConfig
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.data_component.enums.LocalProxyMode
@@ -19,7 +19,7 @@ import com.xyoye.user_component.R
  * Created by xyoye on 2021/2/5.
  */
 
-class PlayerSettingFragment : PreferenceFragmentCompat() {
+class PlayerSettingFragment : BasePreferenceFragmentCompat() {
     private var isNormalizingRangeInterval = false
 
     companion object {

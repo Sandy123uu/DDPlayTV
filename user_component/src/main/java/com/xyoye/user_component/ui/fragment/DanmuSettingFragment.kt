@@ -4,8 +4,8 @@ import android.os.Bundle
 import android.view.View
 import androidx.preference.ListPreference
 import androidx.preference.PreferenceDataStore
-import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
+import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.xyoye.common_component.config.DanmuConfig
 import com.xyoye.data_component.enums.DanmakuLanguage
 import com.xyoye.user_component.R
@@ -14,7 +14,7 @@ import com.xyoye.user_component.R
  * Created by xyoye on 2021/2/6.
  */
 
-class DanmuSettingFragment : PreferenceFragmentCompat() {
+class DanmuSettingFragment : BasePreferenceFragmentCompat() {
     companion object {
         fun newInstance() = DanmuSettingFragment()
 
