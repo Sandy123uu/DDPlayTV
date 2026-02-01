@@ -19,7 +19,9 @@ class LogWriter(
     private val sampler: LogSampler = LogSampler(),
     private val onFileError: (Throwable) -> Unit = { error ->
         Log.e(LOG_TAG, "write log file failed", error)
-    }
+    },
+    private val tcpLogEnabledProvider: () -> Boolean = { false },
+    private val tcpLogSink: (String) -> Unit = {}
 ) {
     private val stateRef =
         AtomicReference(
@@ -50,11 +52,22 @@ class LogWriter(
         if (!sampler.shouldAllow(event, policy)) {
             return
         }
+        val shouldWriteTcp = tcpLogEnabledProvider()
+        val shouldWriteFile = shouldWriteFile(runtime)
+        val formattedLine =
+            if (shouldWriteTcp || shouldWriteFile) {
+                formatter.format(event)
+            } else {
+                null
+            }
         writeToLogcat(event)
-        if (shouldWriteFile(runtime)) {
+        if (shouldWriteTcp && formattedLine != null) {
+            runCatching { tcpLogSink(formattedLine) }
+        }
+        if (shouldWriteFile && formattedLine != null) {
             runCatching {
                 fileManager.prepare()
-                fileManager.appendLine(formatter.format(event))
+                fileManager.appendLine(formattedLine)
                 consecutiveFileErrors = 0
             }.onFailure { error -> handleFileError(error) }
         }

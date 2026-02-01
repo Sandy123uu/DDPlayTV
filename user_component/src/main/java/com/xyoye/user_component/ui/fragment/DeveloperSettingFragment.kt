@@ -14,11 +14,17 @@ import com.xyoye.common_component.log.LogSystem
 import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.log.model.PolicySource
+import com.xyoye.common_component.log.tcp.TcpLogServerState
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.SecurityHelperConfig
+import com.xyoye.common_component.utils.SupervisorScope
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.user_component.R
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.net.Inet4Address
+import java.net.NetworkInterface
+import java.net.SocketException
 import java.util.Date
 import java.util.Locale
 
@@ -32,6 +38,7 @@ class DeveloperSettingFragment : PreferenceFragmentCompat() {
         private const val TAG = "DeveloperSetting"
         private const val SUBTITLE_TAG = "DeveloperSubtitle"
         private const val KEY_APP_LOG_ENABLE = "app_log_enable"
+        private const val KEY_TCP_LOG_SERVER_ENABLE = "tcp_log_server_enable"
         private const val KEY_LOG_LEVEL = "developer_log_level"
         private const val KEY_BUGLY_STATUS = "bugly_status"
         private const val KEY_BUGLY_TEST_REPORT = "bugly_test_report"
@@ -41,6 +48,7 @@ class DeveloperSettingFragment : PreferenceFragmentCompat() {
     }
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
+    private var tcpLogServerIpText: String = "-"
 
     override fun onCreatePreferences(
         savedInstanceState: Bundle?,
@@ -117,6 +125,32 @@ class DeveloperSettingFragment : PreferenceFragmentCompat() {
                     "toggle debug session enable=$enable state=${updatedState.debugToggleState}",
                 )
                 true
+            }
+        }
+
+        initTcpLogServerPreference()
+    }
+
+    private fun initTcpLogServerPreference() {
+        findPreference<SwitchPreference>(KEY_TCP_LOG_SERVER_ENABLE)?.apply {
+            refreshTcpLogServerPreferenceState(this, LogSystem.getTcpLogServerState())
+            setOnPreferenceChangeListener { _, newValue ->
+                val enable = newValue as? Boolean ?: return@setOnPreferenceChangeListener false
+                val updated = LogSystem.setTcpLogServerEnabled(enable)
+                isChecked = updated.enabled
+                refreshTcpLogServerPreferenceState(this, updated)
+
+                if (enable) {
+                    if (updated.running) {
+                        ToastCenter.showSuccess(getString(R.string.developer_tcp_log_server_toast_on))
+                    } else {
+                        val reason = updated.lastError ?: "-"
+                        ToastCenter.showError(getString(R.string.developer_tcp_log_server_toast_on_failed, reason))
+                    }
+                } else {
+                    ToastCenter.showSuccess(getString(R.string.developer_tcp_log_server_toast_off))
+                }
+                false
             }
         }
     }
@@ -361,6 +395,90 @@ class DeveloperSettingFragment : PreferenceFragmentCompat() {
             val level = LogSystem.getRuntimeState().activePolicy.defaultLevel
             updateLogLevelPreference(it, level)
         }
+        findPreference<SwitchPreference>(KEY_TCP_LOG_SERVER_ENABLE)?.let {
+            refreshTcpLogServerPreferenceState(it, LogSystem.getTcpLogServerState())
+        }
+    }
+
+    private fun refreshTcpLogServerPreferenceState(
+        preference: SwitchPreference,
+        state: TcpLogServerState
+    ) {
+        preference.isChecked = state.enabled
+        updateTcpLogServerSummary(preference, state)
+        if (state.enabled && state.running) {
+            refreshTcpLogServerIpTextAsync()
+        }
+    }
+
+    private fun updateTcpLogServerSummary(
+        preference: SwitchPreference,
+        state: TcpLogServerState
+    ) {
+        preference.summary =
+            when {
+                !state.enabled -> getString(R.string.developer_tcp_log_server_summary_off)
+                !state.running -> getString(R.string.developer_tcp_log_server_summary_error, state.lastError ?: "-")
+                else -> {
+                    val port = if (state.boundPort > 0) state.boundPort else state.requestedPort
+                    getString(
+                        R.string.developer_tcp_log_server_summary_on,
+                        port,
+                        tcpLogServerIpText.ifBlank { "-" },
+                    )
+                }
+            }
+    }
+
+    private fun refreshTcpLogServerIpTextAsync() {
+        SupervisorScope.IO.launch {
+            val ipText = resolveLocalIpText()
+            SupervisorScope.Main.launch {
+                if (!isAdded) return@launch
+                tcpLogServerIpText = ipText
+                val state = LogSystem.getTcpLogServerState()
+                findPreference<SwitchPreference>(KEY_TCP_LOG_SERVER_ENABLE)?.let { pref ->
+                    updateTcpLogServerSummary(pref, state)
+                }
+            }
+        }
+    }
+
+    private fun resolveLocalIpText(): String {
+        val ipv4 = mutableListOf<String>()
+        val ipv6 = mutableListOf<String>()
+        try {
+            val element = NetworkInterface.getNetworkInterfaces()
+            while (element.hasMoreElements()) {
+                val networkInterface = element.nextElement()
+                val addresses = networkInterface.inetAddresses
+                while (addresses.hasMoreElements()) {
+                    val address = addresses.nextElement()
+                    if (address.isLoopbackAddress || address.isLinkLocalAddress) {
+                        continue
+                    }
+
+                    val ip = address.hostAddress?.toString().orEmpty()
+                    if (ip.isEmpty()) continue
+
+                    if (address is Inet4Address) {
+                        ipv4.add(ip)
+                    } else {
+                        ipv6.add(ip)
+                    }
+                }
+            }
+        } catch (e: SocketException) {
+            ErrorReportHelper.postCatchedExceptionWithContext(
+                e,
+                "DeveloperSettingFragment",
+                "resolveLocalIpText",
+                "Failed to resolve local IP addresses",
+            )
+        }
+
+        val all = ipv4 + ipv6
+        return if (all.isEmpty()) "-" else all.joinToString(separator = "\n")
     }
 
     private class DeveloperSettingDataStore : PreferenceDataStore() {
@@ -370,6 +488,7 @@ class DeveloperSettingFragment : PreferenceFragmentCompat() {
         ): Boolean =
             when (key) {
                 KEY_APP_LOG_ENABLE -> LogSystem.getRuntimeState().debugSessionEnabled
+                KEY_TCP_LOG_SERVER_ENABLE -> LogSystem.getTcpLogServerState().enabled
                 else -> defValue
             }
 
