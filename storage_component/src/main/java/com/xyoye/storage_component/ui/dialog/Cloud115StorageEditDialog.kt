@@ -88,8 +88,24 @@ class Cloud115StorageEditDialog(
     }
 
     private fun showLoginDialog() {
+        val initialLoginApp =
+            runCatching {
+                val url = editLibrary.url.trim().removeSuffix("/")
+                val isValid = Regex("^115cloud://uid/\\d+$").matches(url)
+                if (!isValid) {
+                    return@runCatching DEFAULT_LOGIN_APP
+                }
+
+                val storageKey = Cloud115AuthStore.storageKey(editLibrary)
+                Cloud115AuthStore.read(storageKey).loginApp
+                    ?.trim()
+                    ?.takeIf { it.isNotBlank() }
+                    ?: DEFAULT_LOGIN_APP
+            }.getOrDefault(DEFAULT_LOGIN_APP)
+
         Cloud115LoginDialog(
             activity = activity,
+            initialLoginApp = initialLoginApp,
             onLoginSuccess = { result ->
                 val safeCookie = Cloud115Headers.redactCookie(result.cookieHeader)
                 runCatching {
@@ -111,6 +127,7 @@ class Cloud115StorageEditDialog(
                         storageKey = newStorageKey,
                         cookie = result.cookieHeader,
                         userId = result.userId,
+                        loginApp = result.loginApp,
                         userName = result.userName,
                         avatarUrl = result.avatarUrl,
                         updatedAtMs = nowMs,
@@ -130,6 +147,7 @@ class Cloud115StorageEditDialog(
                             "oldStorageKey" to oldStorageKey.orEmpty(),
                             "newStorageKey" to newStorageKey,
                             "userId" to result.userId,
+                            "loginApp" to result.loginApp,
                             "cookie" to safeCookie,
                         ),
                     )
@@ -370,5 +388,6 @@ class Cloud115StorageEditDialog(
 
     companion object {
         private const val LOG_TAG = "cloud115_storage_edit"
+        private const val DEFAULT_LOGIN_APP: String = "tv"
     }
 }

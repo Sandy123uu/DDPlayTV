@@ -111,6 +111,7 @@ class Cloud115Repository(
                 storageKey = storageKey,
                 cookie = cookieHeader,
                 userId = userId,
+                loginApp = app,
                 userName = response.data?.userName,
                 avatarUrl = avatarUrl,
                 updatedAtMs = System.currentTimeMillis(),
@@ -125,6 +126,7 @@ class Cloud115Repository(
                 mapOf(
                     "storageKey" to storageKey,
                     "userId" to userId,
+                    "loginApp" to app,
                     "cookie" to Cloud115Headers.redactCookie(cookieHeader),
                 ),
             )
