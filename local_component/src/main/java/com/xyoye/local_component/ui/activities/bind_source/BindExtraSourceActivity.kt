@@ -1,6 +1,7 @@
 package com.xyoye.local_component.ui.activities.bind_source
 
 import android.view.inputmethod.EditorInfo
+import android.view.KeyEvent
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
@@ -13,6 +14,8 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.extension.collectAtStarted
+import com.xyoye.common_component.extension.isTelevisionUiMode
+import com.xyoye.common_component.focus.TabLayoutViewPager2DpadFocusCoordinator
 import com.xyoye.common_component.services.StorageFileProvider
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.utils.hideKeyboard
@@ -40,6 +43,7 @@ class BindExtraSourceActivity : BaseActivity<BindExtraSourceViewModel, ActivityB
     lateinit var storageFile: StorageFile
 
     private val pageAdapter by lazy { BindSourcePageAdapter() }
+    private var tvFocusCoordinator: TabLayoutViewPager2DpadFocusCoordinator? = null
 
     override fun initViewModel() =
         ViewModelInit(
@@ -61,26 +65,63 @@ class BindExtraSourceActivity : BaseActivity<BindExtraSourceViewModel, ActivityB
         this.storageFile = storageFile
         viewModel.setStorageFile(storageFile)
 
-        dataBinding.viewpager.adapter = pageAdapter
+        dataBinding.viewpager.apply {
+            adapter = pageAdapter
+            offscreenPageLimit = 2
+        }
         TabLayoutMediator(dataBinding.tabLayout, dataBinding.viewpager) { tab, position ->
             tab.text = pageAdapter.getItemTitle(position)
         }.attach()
+
+        if (isTelevisionUiMode()) {
+            tvFocusCoordinator =
+                TabLayoutViewPager2DpadFocusCoordinator(
+                    tabLayout = dataBinding.tabLayout,
+                    viewPager = dataBinding.viewpager,
+                    isEnabled = { isTelevisionUiMode() && !dataBinding.tabLayout.isInTouchMode },
+                ).also { it.attach() }
+
+            dataBinding.searchCl.setOnKeyListener { _, keyCode, event ->
+                if (event.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+                if (dataBinding.tabLayout.isInTouchMode) return@setOnKeyListener false
+                when (keyCode) {
+                    KeyEvent.KEYCODE_DPAD_DOWN -> tvFocusCoordinator?.requestTabFocus() == true
+                    else -> false
+                }
+            }
+        }
+
+        if (isTelevisionUiMode() && !dataBinding.root.isInTouchMode) {
+            applyDpadSearchEditPolicy()
+        }
 
         initListener()
 
         initChildFragment()
     }
 
+    override fun onDestroy() {
+        tvFocusCoordinator?.detach()
+        tvFocusCoordinator = null
+        super.onDestroy()
+    }
+
     private fun initListener() {
         dataBinding.backIv.setOnClickListener {
             hideKeyboard(dataBinding.searchEt)
+            applyDpadSearchEditPolicy()
             dataBinding.searchCl.requestFocus()
             finish()
+        }
+
+        dataBinding.searchCl.setOnClickListener {
+            showKeyboard(dataBinding.searchEt)
         }
 
         dataBinding.searchEt.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 hideKeyboard(dataBinding.searchEt)
+                applyDpadSearchEditPolicy()
                 dataBinding.searchCl.requestFocus()
                 viewModel.setSearchText(
                     dataBinding.searchEt.text
@@ -94,11 +135,17 @@ class BindExtraSourceActivity : BaseActivity<BindExtraSourceViewModel, ActivityB
 
         dataBinding.searchEt.addTextChangedListener(afterTextChanged = {
             val textLength = it?.length ?: 0
-            dataBinding.clearTextIv.isVisible = textLength > 0
+            dataBinding.clearTextIv.isVisible = textLength > 0 && dataBinding.searchEt.isFocused
         })
+
+        dataBinding.searchEt.setOnFocusChangeListener { _, isFocus ->
+            val searchText = dataBinding.searchEt.text?.toString() ?: ""
+            dataBinding.clearTextIv.isVisible = isFocus && searchText.isNotEmpty()
+        }
 
         dataBinding.searchTv.setOnClickListener {
             hideKeyboard(dataBinding.searchEt)
+            applyDpadSearchEditPolicy()
             dataBinding.searchCl.requestFocus()
             viewModel.setSearchText(
                 dataBinding.searchEt.text
@@ -149,10 +196,22 @@ class BindExtraSourceActivity : BaseActivity<BindExtraSourceViewModel, ActivityB
                 dataBinding.searchEt.setSelection(searchText.length)
 
                 hideKeyboard(dataBinding.searchEt)
+                applyDpadSearchEditPolicy()
                 dataBinding.searchCl.requestFocus()
 
                 viewModel.setSearchText(searchText)
             }.show()
+        }
+    }
+
+    private fun applyDpadSearchEditPolicy() {
+        if (!isTelevisionUiMode() || dataBinding.root.isInTouchMode) {
+            return
+        }
+        dataBinding.searchEt.apply {
+            clearFocus()
+            isFocusable = false
+            isFocusableInTouchMode = false
         }
     }
 

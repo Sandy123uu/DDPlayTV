@@ -12,6 +12,8 @@ import com.xyoye.anime_component.ui.adapter.HomeBannerAdapter
 import com.xyoye.anime_component.ui.fragment.home_page.HomePageFragment
 import com.xyoye.common_component.base.BaseFragment
 import com.xyoye.common_component.config.RouteTable
+import com.xyoye.common_component.extension.isTelevisionUiMode
+import com.xyoye.common_component.focus.TabLayoutViewPager2DpadFocusCoordinator
 import com.xyoye.common_component.utils.dp2px
 import com.xyoye.data_component.data.BangumiAnimeData
 import com.youth.banner.config.BannerConfig
@@ -26,6 +28,7 @@ import java.util.*
 @Route(path = RouteTable.Anime.HomeFragment)
 class HomeFragment : BaseFragment<HomeFragmentViewModel, FragmentHomeBinding>() {
     private var tabLayoutMediator: TabLayoutMediator? = null
+    private var tvFocusCoordinator: TabLayoutViewPager2DpadFocusCoordinator? = null
 
     override fun initViewModel() =
         ViewModelInit(
@@ -57,6 +60,8 @@ class HomeFragment : BaseFragment<HomeFragmentViewModel, FragmentHomeBinding>() 
     override fun onDestroyView() {
         tabLayoutMediator?.detach()
         tabLayoutMediator = null
+        tvFocusCoordinator?.detach()
+        tvFocusCoordinator = null
         super.onDestroyView()
     }
 
@@ -92,6 +97,17 @@ class HomeFragment : BaseFragment<HomeFragmentViewModel, FragmentHomeBinding>() 
                 }.also { mediator ->
                     mediator.attach()
                 }
+
+            tvFocusCoordinator?.detach()
+            tvFocusCoordinator = null
+            if (mAttachActivity.isTelevisionUiMode()) {
+                tvFocusCoordinator =
+                    TabLayoutViewPager2DpadFocusCoordinator(
+                        tabLayout = dataBinding.tabLayout,
+                        viewPager = dataBinding.viewpager,
+                        isEnabled = { mAttachActivity.isTelevisionUiMode() && !dataBinding.tabLayout.isInTouchMode },
+                    ).also { it.attach() }
+            }
 
             dataBinding.viewpager.post {
                 dataBinding.viewpager.currentItem = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1

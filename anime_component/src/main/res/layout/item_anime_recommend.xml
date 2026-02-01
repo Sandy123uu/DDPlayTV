@@ -8,7 +8,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@drawable/background_c3_stoke_gray">
+        android:background="@drawable/background_c3_stoke_gray"
+        android:clickable="true"
+        android:focusable="true"
+        android:tag="@string/focusable_item">
 
         <ImageView
             android:id="@+id/anime_cover_iv"

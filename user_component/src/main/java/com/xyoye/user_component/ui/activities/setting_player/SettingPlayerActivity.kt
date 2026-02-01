@@ -7,7 +7,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.extension.isTelevisionUiMode
-import com.xyoye.common_component.focus.ViewPager2DpadPageFocusSync
+import com.xyoye.common_component.focus.TabLayoutViewPager2DpadFocusCoordinator
 import com.xyoye.user_component.BR
 import com.xyoye.user_component.R
 import com.xyoye.user_component.databinding.ActivitySettingPlayerBinding
@@ -18,7 +18,7 @@ import com.xyoye.user_component.ui.fragment.SubtitleSettingFragment
 @Route(path = RouteTable.User.SettingPlayer)
 class SettingPlayerActivity : BaseActivity<SettingPlayerViewModel, ActivitySettingPlayerBinding>() {
     private val pageAdapter by lazy { SettingFragmentAdapter() }
-    private var dpadPageFocusSync: ViewPager2DpadPageFocusSync? = null
+    private var tvFocusCoordinator: TabLayoutViewPager2DpadFocusCoordinator? = null
 
     override fun initViewModel() =
         ViewModelInit(
@@ -42,13 +42,18 @@ class SettingPlayerActivity : BaseActivity<SettingPlayerViewModel, ActivitySetti
         }.attach()
 
         if (isTelevisionUiMode()) {
-            dpadPageFocusSync = ViewPager2DpadPageFocusSync(dataBinding.viewpager).also { it.attach() }
+            tvFocusCoordinator =
+                TabLayoutViewPager2DpadFocusCoordinator(
+                    tabLayout = dataBinding.tabLayout,
+                    viewPager = dataBinding.viewpager,
+                    isEnabled = { isTelevisionUiMode() && !dataBinding.tabLayout.isInTouchMode },
+                ).also { it.attach() }
         }
     }
 
     override fun onDestroy() {
-        dpadPageFocusSync?.detach()
-        dpadPageFocusSync = null
+        tvFocusCoordinator?.detach()
+        tvFocusCoordinator = null
         super.onDestroy()
     }
 

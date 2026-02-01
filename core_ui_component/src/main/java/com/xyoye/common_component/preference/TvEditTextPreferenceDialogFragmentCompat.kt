@@ -1,5 +1,6 @@
 package com.xyoye.common_component.preference
 
+import android.annotation.SuppressLint
 import android.view.View
 import android.widget.EditText
 import androidx.preference.EditTextPreferenceDialogFragmentCompat
@@ -23,6 +24,7 @@ class TvEditTextPreferenceDialogFragmentCompat : EditTextPreferenceDialogFragmen
         }
     }
 
+    @SuppressLint("RestrictedApi")
     override fun scheduleShowSoftInput() {
         pendingShowSoftInput = true
     }

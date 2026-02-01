@@ -130,6 +130,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
                 android:background="@color/item_bg_color"
+                app:tabBackground="@drawable/background_tab_press"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:tabGravity="center"
                 app:tabIndicatorColor="@color/indicator_checked_color"

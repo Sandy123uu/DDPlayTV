@@ -190,6 +190,7 @@
                     android:id="@+id/tab_layout"
                     android:layout_width="match_parent"
                     android:layout_height="46dp"
+                    app:tabBackground="@drawable/background_tab_press"
                     app:tabGravity="center"
                     app:tabIndicatorColor="@color/indicator_checked_color"
                     app:tabIndicatorFullWidth="false"
