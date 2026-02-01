@@ -1,8 +1,14 @@
 package com.xyoye.subtitle
 
+import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.media3.common.util.UnstableApi
+import com.xyoye.common_component.base.app.BaseApplication
 import com.xyoye.common_component.enums.SubtitleRendererBackend
+import com.xyoye.common_component.extension.formatFileName
+import com.xyoye.common_component.extension.toMd5String
 import com.xyoye.common_component.utils.ErrorReportHelper
+import com.xyoye.common_component.utils.PathHelper
 import com.xyoye.common_component.utils.getFileExtension
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.player.subtitle.backend.SubtitleRendererRegistry
@@ -10,6 +16,7 @@ import com.xyoye.subtitle.exception.FatalParsingException
 import com.xyoye.subtitle.format.FormatFactory
 import com.xyoye.subtitle.info.TimedTextObject
 import java.io.File
+import java.io.FileOutputStream
 import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
@@ -28,19 +35,20 @@ class ExternalSubtitleManager(
     private var handledByBackend = false
 
     fun loadSubtitle(subtitlePath: String): Boolean {
+        val resolvedPath = resolveToLocalPath(subtitlePath) ?: return false
         handledByBackend = false
         val renderer = SubtitleRendererRegistry.current()
         if (renderer != null) {
-            val extension = getFileExtension(subtitlePath).lowercase(Locale.ROOT)
-            if (renderer.supportsExternalTrack(extension) && renderer.loadExternalSubtitle(subtitlePath)) {
+            val extension = getFileExtension(resolvedPath).lowercase(Locale.ROOT)
+            if (renderer.supportsExternalTrack(extension) && renderer.loadExternalSubtitle(resolvedPath)) {
                 handledByBackend = true
                 mTimedTextObject = null
                 return true
             } else if (!renderer.supportsExternalTrack(extension)) {
-                notifyUnsupportedFormat(subtitlePath, extension, renderer.backend)
+                notifyUnsupportedFormat(extension, renderer.backend)
             }
         }
-        mTimedTextObject = parserSource(subtitlePath)
+        mTimedTextObject = parserSource(resolvedPath)
         return mTimedTextObject != null
     }
 
@@ -60,7 +68,6 @@ class ExternalSubtitleManager(
     }
 
     private fun notifyUnsupportedFormat(
-        subtitlePath: String,
         extension: String,
         backend: SubtitleRendererBackend
     ) {
@@ -155,5 +162,86 @@ class ExternalSubtitleManager(
             ToastCenter.showOriginalToast("解析外挂字幕文件失败")
         }
         return null
+    }
+
+    private fun resolveToLocalPath(rawPath: String): String? {
+        val trimmed = rawPath.trim()
+        if (trimmed.isEmpty()) {
+            return null
+        }
+        if (trimmed.startsWith("file://")) {
+            return Uri.parse(trimmed).path ?: trimmed
+        }
+        if (trimmed.startsWith("content://")) {
+            return cacheContentUriSubtitle(trimmed)
+        }
+        return trimmed
+    }
+
+    private fun cacheContentUriSubtitle(uriString: String): String? {
+        val context = BaseApplication.getAppContext()
+        val uri = Uri.parse(uriString)
+        val resolver = context.contentResolver
+
+        val displayName =
+            try {
+                resolver
+                    .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                    ?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                            if (index >= 0) cursor.getString(index) else null
+                        } else {
+                            null
+                        }
+                    }
+            } catch (e: Exception) {
+                ErrorReportHelper.postCatchedExceptionWithContext(
+                    e,
+                    "ExternalSubtitleManager",
+                    "cacheContentUriSubtitle",
+                    "query display name failed: $uriString",
+                )
+                null
+            }
+
+        val safeName =
+            (displayName ?: uri.lastPathSegment ?: "subtitle")
+                .formatFileName()
+                .ifBlank { "subtitle" }
+        val cacheKey = uriString.toMd5String()
+
+        val dir =
+            File(PathHelper.getSubtitleDirectory(), "uri_cache").apply {
+                if (!exists()) {
+                    mkdirs()
+                }
+            }
+        val target = File(dir, "${cacheKey}_$safeName")
+        if (target.exists() && target.length() > 0L) {
+            return target.absolutePath
+        }
+
+        return runCatching {
+            resolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(target, false).use { output ->
+                    input.copyTo(output)
+                }
+            } ?: return null
+
+            if (!target.exists() || target.length() <= 0L) {
+                target.delete()
+                return null
+            }
+            target.absolutePath
+        }.onFailure {
+            ErrorReportHelper.postCatchedExceptionWithContext(
+                it,
+                "ExternalSubtitleManager",
+                "cacheContentUriSubtitle",
+                "copy failed: $uriString -> ${target.absolutePath}",
+            )
+            runCatching { target.delete() }
+        }.getOrNull()
     }
 }
