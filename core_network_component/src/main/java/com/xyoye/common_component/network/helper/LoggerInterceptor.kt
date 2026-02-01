@@ -45,7 +45,7 @@ class LoggerInterceptor(
                     ErrorReportHelper.postCatchedException(
                         e,
                         "LoggerInterceptor.intercept",
-                        "HTTP请求失败: ${request.url}",
+                        "HTTP请求失败: ${sanitizeUrl(request.url)}",
                     )
                     log("<-- HTTP FAILED: $e")
                     throw e
@@ -86,7 +86,7 @@ class LoggerInterceptor(
         val requestBody = request.body
         val protocol = connection?.protocol() ?: Protocol.HTTP_1_1
         try {
-            log("--> " + request.method + ' ' + request.url + ' ' + protocol)
+            log("--> " + request.method + ' ' + sanitizeUrl(request.url) + ' ' + protocol)
             if (logHeaders) {
                 requestBody?.apply {
                     log("\tContent-Type: " + contentType())
@@ -125,7 +125,7 @@ class LoggerInterceptor(
             ErrorReportHelper.postCatchedException(
                 e,
                 "LoggerInterceptor.logForRequest",
-                "记录请求日志失败: ${request.url}",
+                "记录请求日志失败: ${sanitizeUrl(request.url)}",
             )
             e.printStackTrace()
         } finally {
@@ -145,7 +145,7 @@ class LoggerInterceptor(
         val logHeaders =
             printLevel == Level.BODY || printLevel == Level.HEADERS
         try {
-            log("<-- " + clone.code + ' ' + clone.message + ' ' + clone.request.url + " (" + tookMs + "ms）")
+            log("<-- " + clone.code + ' ' + clone.message + ' ' + sanitizeUrl(clone.request.url) + " (" + tookMs + "ms）")
             if (logHeaders) {
                 val e = clone.headers
                 var bytes = 0
@@ -186,7 +186,7 @@ class LoggerInterceptor(
             ErrorReportHelper.postCatchedException(
                 e,
                 "LoggerInterceptor.logForResponse",
-                "记录响应日志失败: ${clone.request.url}",
+                "记录响应日志失败: ${sanitizeUrl(clone.request.url)}",
             )
             e.printStackTrace()
         } finally {
@@ -221,12 +221,26 @@ class LoggerInterceptor(
         value: String
     ): String =
         when {
-            name.equals("Cookie", ignoreCase = true) -> "<redacted>"
+            name.equals("Cookie", ignoreCase = true) -> sanitizeCookieHeader(value)
             name.equals("Set-Cookie", ignoreCase = true) -> "<redacted>"
             name.equals("Authorization", ignoreCase = true) -> "<redacted>"
             name.equals("Proxy-Authorization", ignoreCase = true) -> "<redacted>"
             else -> value
         }
+
+    private fun sanitizeUrl(url: HttpUrl): String = sanitizeBody(url.toString())
+
+    private fun sanitizeCookieHeader(value: String): String {
+        if (value.isBlank()) return value
+        return value
+            .split(';')
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .joinToString("; ") { cookie ->
+                val equalIndex = cookie.indexOf('=')
+                if (equalIndex <= 0) cookie else cookie.substring(0, equalIndex).trim() + "=<redacted>"
+            }
+    }
 
     private fun sanitizeBody(body: String): String {
         if (body.isEmpty()) return body
@@ -239,6 +253,14 @@ class LoggerInterceptor(
             sanitized.replace("(?i)(bili_jct=)[^;\\s\"]+".toRegex(), "$1<redacted>")
         sanitized =
             sanitized.replace("(?i)(DedeUserID=)[^;\\s\"]+".toRegex(), "$1<redacted>")
+        sanitized =
+            sanitized.replace("(?i)(UID=)[^;\\s\"]+".toRegex(), "$1<redacted>")
+        sanitized =
+            sanitized.replace("(?i)(CID=)[^;\\s\"]+".toRegex(), "$1<redacted>")
+        sanitized =
+            sanitized.replace("(?i)(SEID=)[^;\\s\"]+".toRegex(), "$1<redacted>")
+        sanitized =
+            sanitized.replace("(?i)(KID=)[^;\\s\"]+".toRegex(), "$1<redacted>")
 
         // JSON-style tokens
         sanitized =
@@ -251,6 +273,8 @@ class LoggerInterceptor(
             sanitized.replace("(?i)(refresh_token=)([^&\\s]+)".toRegex(), "$1<redacted>")
         sanitized =
             sanitized.replace("(?i)(access_token=)([^&\\s]+)".toRegex(), "$1<redacted>")
+        sanitized =
+            sanitized.replace("(?i)(data=)([^&\\s]+)".toRegex(), "$1<redacted>")
 
         return sanitized
     }

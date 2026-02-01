@@ -7,8 +7,9 @@ import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.bilibili.BilibiliPlaybackPreferencesStore
 import com.xyoye.common_component.bilibili.auth.BilibiliCookieJarStore
 import com.xyoye.common_component.database.DatabaseManager
-import com.xyoye.common_component.storage.StorageFactory
 import com.xyoye.common_component.network.config.Api
+import com.xyoye.common_component.storage.StorageFactory
+import com.xyoye.common_component.storage.cloud115.auth.Cloud115AuthStore
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.entity.MediaLibraryEntity
 import com.xyoye.data_component.enums.MediaType
@@ -71,6 +72,31 @@ class StoragePlusViewModel : BaseViewModel() {
                         ToastCenter.showWarning("保存失败，请先扫码登录")
                     }
                     return@launch
+                }
+            }
+
+            if (upsertLibrary.mediaType == MediaType.CLOUD_115_STORAGE) {
+                upsertLibrary.url = upsertLibrary.url.trim().removeSuffix("/")
+                val userId = upsertLibrary.url.substringAfter("115cloud://uid/", missingDelimiterValue = "").trim()
+                val isValid = Regex("^115cloud://uid/\\d+$").matches(upsertLibrary.url)
+                if (!isValid || userId.isBlank()) {
+                    if (showToast) {
+                        ToastCenter.showWarning("保存失败，请先扫码授权")
+                    }
+                    return@launch
+                }
+                upsertLibrary.url = "115cloud://uid/$userId"
+
+                val isEditMode = (oldLibraryId ?: upsertLibrary.id) > 0
+                if (!isEditMode) {
+                    val storageKey = Cloud115AuthStore.storageKey(upsertLibrary)
+                    val isAuthorized = Cloud115AuthStore.read(storageKey).isAuthorized()
+                    if (!isAuthorized) {
+                        if (showToast) {
+                            ToastCenter.showWarning("保存失败，请先扫码授权")
+                        }
+                        return@launch
+                    }
                 }
             }
 

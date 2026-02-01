@@ -13,6 +13,7 @@ import com.xyoye.common_component.storage.PagedStorage
 import com.xyoye.common_component.storage.Storage
 import com.xyoye.common_component.storage.StorageSortOption
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanReAuthRequiredException
+import com.xyoye.common_component.storage.cloud115.auth.Cloud115ReAuthRequiredException
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.file.payloadAs
 import com.xyoye.common_component.storage.open115.auth.Open115ReAuthRequiredException
@@ -351,7 +352,8 @@ class StorageFileFragmentViewModel : BaseViewModel() {
 
             val displayFiles =
                 if (storage.library.mediaType == MediaType.BAIDU_PAN_STORAGE ||
-                    storage.library.mediaType == MediaType.OPEN_115_STORAGE) {
+                    storage.library.mediaType == MediaType.OPEN_115_STORAGE ||
+                    storage.library.mediaType == MediaType.CLOUD_115_STORAGE) {
                     merged.sortedWith(StorageSortOption.comparator())
                 } else {
                     merged
@@ -534,6 +536,9 @@ class StorageFileFragmentViewModel : BaseViewModel() {
                         ?: "登录已失效，请重新${authStorage.loginActionText(storage.directory)}"
                 is Open115ReAuthRequiredException ->
                     "授权已失效，请更新 token"
+                is Cloud115ReAuthRequiredException ->
+                    throwable.message?.takeIf { it.isNotBlank() }
+                        ?: "授权失效需要重新扫码"
                 is BilibiliException -> {
                     if (throwable.code != -101) return false
                     "登录已失效，请重新${authStorage.loginActionText(storage.directory)}"
