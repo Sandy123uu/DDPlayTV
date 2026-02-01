@@ -51,7 +51,7 @@ class Cloud115Storage(
 
     override fun requiresLogin(directory: StorageFile?): Boolean = !isConnected()
 
-    override fun loginActionText(directory: StorageFile?): String = "扫码授权"
+    override fun loginActionText(directory: StorageFile?): String = "授权"
 
     override suspend fun getRootFile(): StorageFile? {
         if (!repository.isAuthorized()) {
@@ -64,7 +64,7 @@ class Cloud115Storage(
                     "storageKey" to storageKey,
                 ),
             )
-            throw Cloud115NotConfiguredException("请先扫码授权")
+            throw Cloud115NotConfiguredException("请先完成授权")
         }
 
         repository.cookieStatus(forceCheck = false).getOrThrow()

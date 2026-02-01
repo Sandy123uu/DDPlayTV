@@ -271,7 +271,7 @@ class Cloud115Repository(
         val nowMs = System.currentTimeMillis()
         if (!forceCheck && lastCookieCheckAtMs > 0L && nowMs - lastCookieCheckAtMs < COOKIE_CHECK_TTL_MS) {
             if (!lastCookieValid) {
-                throw Cloud115ReAuthRequiredException("115 Cloud 授权已失效，请重新扫码")
+                throw Cloud115ReAuthRequiredException("115 Cloud 授权已失效，请重新授权")
             }
             return Cloud115CookieStatusResp(state = true)
         }
@@ -290,7 +290,7 @@ class Cloud115Repository(
         lastCookieValid = response.state
 
         if (!response.state) {
-            throw Cloud115ReAuthRequiredException("115 Cloud 授权已失效，请重新扫码")
+            throw Cloud115ReAuthRequiredException("115 Cloud 授权已失效，请重新授权")
         }
 
         return response
@@ -299,11 +299,11 @@ class Cloud115Repository(
     private fun requireCookie(): String {
         val state = Cloud115AuthStore.read(storageKey)
         if (!state.isAuthorized()) {
-            throw Cloud115NotConfiguredException("请先扫码授权")
+            throw Cloud115NotConfiguredException("请先完成授权")
         }
         val cookie = state.cookie?.trim().orEmpty()
         if (cookie.isBlank()) {
-            throw Cloud115NotConfiguredException("请先扫码授权")
+            throw Cloud115NotConfiguredException("请先完成授权")
         }
         return cookie
     }
