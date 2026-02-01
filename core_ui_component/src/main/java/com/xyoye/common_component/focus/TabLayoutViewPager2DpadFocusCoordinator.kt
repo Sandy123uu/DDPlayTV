@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import androidx.annotation.MainThread
+import androidx.core.view.ViewCompat
 import androidx.core.view.children
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -14,6 +15,18 @@ import com.xyoye.common_component.extension.requestIndexChildFocus
 import com.xyoye.common_component.extension.toResString
 import com.xyoye.core_ui_component.R
 import java.lang.ref.WeakReference
+
+enum class TabDpadMode {
+    /**
+     * 默认模式：Tab 行可聚焦，并通过 DPAD_UP/DOWN 在 Tab 与内容之间切换。
+     */
+    Default,
+
+    /**
+     * 设置页模式：Tab 行仅作选中指示（TV/非触摸模式下不可聚焦），内容内通过 DPAD_LEFT/RIGHT 切页。
+     */
+    SettingsIndicatorOnly,
+}
 
 /**
  * TabLayout + ViewPager2 在 D-Pad/TV 场景下的焦点协调：
@@ -27,6 +40,7 @@ import java.lang.ref.WeakReference
 class TabLayoutViewPager2DpadFocusCoordinator(
     private val tabLayout: TabLayout,
     private val viewPager: ViewPager2,
+    private val mode: TabDpadMode = TabDpadMode.Default,
     private val isEnabled: () -> Boolean = { !tabLayout.isInTouchMode }
 ) {
     private val pageFocusSync =
@@ -61,7 +75,26 @@ class TabLayoutViewPager2DpadFocusCoordinator(
             if (!isEnabled()) return@OnKeyListener false
 
             when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> handleDpadUpFromContent()
+                KeyEvent.KEYCODE_DPAD_UP ->
+                    if (mode == TabDpadMode.Default) {
+                        handleDpadUpFromContent()
+                    } else {
+                        false
+                    }
+                else -> false
+            }
+        }
+
+    private val contentUnhandledKeyListener =
+        ViewCompat.OnUnhandledKeyEventListenerCompat { _, event ->
+            if (event.action != KeyEvent.ACTION_DOWN) return@OnUnhandledKeyEventListenerCompat false
+            if (!isEnabled()) return@OnUnhandledKeyEventListenerCompat false
+            if (mode != TabDpadMode.SettingsIndicatorOnly) return@OnUnhandledKeyEventListenerCompat false
+
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_DPAD_LEFT,
+                KeyEvent.KEYCODE_DPAD_RIGHT -> trySwitchPageByDpad(event.keyCode)
+
                 else -> false
             }
         }
@@ -69,6 +102,7 @@ class TabLayoutViewPager2DpadFocusCoordinator(
     @MainThread
     fun attach() {
         viewPager.setOnKeyListener(contentKeyListener)
+        ViewCompat.addOnUnhandledKeyEventListener(viewPager, contentUnhandledKeyListener)
         viewPager.viewTreeObserver.addOnGlobalFocusChangeListener(focusChangeListener)
         pageFocusSync.attach()
         updateTabViews()
@@ -80,6 +114,7 @@ class TabLayoutViewPager2DpadFocusCoordinator(
         pageFocusSync.detach()
         viewPager.viewTreeObserver.removeOnGlobalFocusChangeListener(focusChangeListener)
         viewPager.setOnKeyListener(null)
+        ViewCompat.removeOnUnhandledKeyEventListener(viewPager, contentUnhandledKeyListener)
         clearTabViewListeners()
     }
 
@@ -90,6 +125,12 @@ class TabLayoutViewPager2DpadFocusCoordinator(
         val index = viewPager.currentItem
         val tabView = tabStrip.getChildAt(index) ?: return false
         return tabView.requestFocus()
+    }
+
+    @MainThread
+    fun requestContentFocus(): Boolean {
+        if (!isEnabled()) return false
+        return requestFocusToPage(pageIndex = viewPager.currentItem)
     }
 
     private fun handleDpadUpFromContent(): Boolean {
@@ -110,16 +151,17 @@ class TabLayoutViewPager2DpadFocusCoordinator(
         return requestTabFocus()
     }
 
-    private fun requestFocusToCurrentPage(): Boolean {
-        val index = viewPager.currentItem
-        val lastFocused = lastFocusedViewByPage.get(index)?.get()
+    private fun requestFocusToCurrentPage(): Boolean = requestFocusToPage(pageIndex = viewPager.currentItem)
+
+    private fun requestFocusToPage(pageIndex: Int): Boolean {
+        val lastFocused = lastFocusedViewByPage.get(pageIndex)?.get()
         if (lastFocused != null && lastFocused.isShown && lastFocused.isFocusable && lastFocused.isAttachedToWindow) {
             return lastFocused.requestFocus()
         }
 
-        val pageRoot = currentPageItemView()
+        val pageRoot = pageItemView(pageIndex)
         if (pageRoot == null) {
-            viewPager.post { requestFocusToCurrentPage() }
+            viewPager.post { requestFocusToPage(pageIndex) }
             return true
         }
 
@@ -146,6 +188,28 @@ class TabLayoutViewPager2DpadFocusCoordinator(
         return firstFocusable.requestFocus()
     }
 
+    private fun trySwitchPageByDpad(keyCode: Int): Boolean {
+        val focus = viewPager.findFocus() ?: return false
+        val currentPageRoot = currentPageItemView() ?: return false
+        if (!isDescendantOf(focus, currentPageRoot)) return false
+
+        val itemCount = viewPager.adapter?.itemCount ?: return false
+        val current = viewPager.currentItem
+        val target =
+            when (keyCode) {
+                KeyEvent.KEYCODE_DPAD_LEFT -> current - 1
+                KeyEvent.KEYCODE_DPAD_RIGHT -> current + 1
+                else -> return false
+            }
+
+        if (target !in 0 until itemCount) {
+            return false
+        }
+
+        viewPager.setCurrentItem(target, true)
+        return requestFocusToPage(pageIndex = target)
+    }
+
     private fun recordLastFocus(focus: View) {
         val viewPagerRv = viewPagerRecyclerView() ?: return
         if (!isDescendantOf(focus, viewPagerRv)) return
@@ -158,9 +222,14 @@ class TabLayoutViewPager2DpadFocusCoordinator(
 
     private fun updateTabViews() {
         val tabStrip = tabStrip() ?: return
+        val isTabDpadFocusable = mode == TabDpadMode.Default || !isEnabled()
+
         tabStrip.children.forEach { tabView ->
-            tabView.applyDpadFocusable(enabled = true, inTouchMode = tabView.isInTouchMode)
-            tabView.setOnKeyListener(tabViewKeyListener)
+            tabView.applyDpadFocusable(
+                enabled = isTabDpadFocusable,
+                inTouchMode = tabView.isInTouchMode,
+            )
+            tabView.setOnKeyListener(if (isTabDpadFocusable) tabViewKeyListener else null)
         }
     }
 
@@ -176,10 +245,13 @@ class TabLayoutViewPager2DpadFocusCoordinator(
     private fun viewPagerRecyclerView(): RecyclerView? = viewPager.getChildAt(0) as? RecyclerView
 
     private fun currentPageItemView(): View? {
+        return pageItemView(pageIndex = viewPager.currentItem)
+    }
+
+    private fun pageItemView(pageIndex: Int): View? {
         val rv = viewPagerRecyclerView() ?: return null
-        val index = viewPager.currentItem
-        return rv.layoutManager?.findViewByPosition(index)
-            ?: rv.findViewHolderForAdapterPosition(index)?.itemView
+        return rv.layoutManager?.findViewByPosition(pageIndex)
+            ?: rv.findViewHolderForAdapterPosition(pageIndex)?.itemView
     }
 
     private fun findFirstRecyclerView(root: View): RecyclerView? {
