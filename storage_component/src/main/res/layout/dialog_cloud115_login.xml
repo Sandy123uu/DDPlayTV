@@ -10,14 +10,54 @@
         android:paddingEnd="16dp"
         android:paddingBottom="12dp">
 
+        <FrameLayout
+            android:id="@+id/login_app_container"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:background="@drawable/background_border_gray"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:layout_width="110dp"
+                android:layout_height="match_parent"
+                android:background="@drawable/background_border_gray"
+                android:gravity="center"
+                android:text="设备来源"
+                android:textColor="@color/text_gray"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/login_app_value_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textColor="@color/text_theme"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/login_app_select_tv"
+                android:layout_width="100dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:background="@drawable/background_button_corner_gray"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="选择"
+                android:textColor="@color/text_black"
+                android:textSize="14sp" />
+        </FrameLayout>
+
         <ImageView
             android:id="@+id/qr_code_iv"
             android:layout_width="220dp"
             android:layout_height="220dp"
+            android:layout_marginTop="10dp"
             android:contentDescription="@string/app_name"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/login_app_container" />
 
         <ProgressBar
             android:id="@+id/loading_pb"
@@ -58,4 +98,3 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
-

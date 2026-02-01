@@ -4,13 +4,19 @@ import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.core.view.isVisible
+import androidx.appcompat.app.AppCompatActivity
 import com.xyoye.common_component.extension.toResColor
 import com.xyoye.common_component.network.Retrofit
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.storage.cloud115.net.Cloud115Headers
 import com.xyoye.common_component.utils.QrCodeHelper
 import com.xyoye.common_component.utils.dp2px
+import com.xyoye.common_component.weight.BottomActionDialog
+import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.common_component.weight.dialog.BaseBottomDialog
+import com.xyoye.common_component.weight.dialog.CommonEditDialog
+import com.xyoye.data_component.bean.EditBean
+import com.xyoye.data_component.bean.SheetActionBean
 import com.xyoye.data_component.data.cloud115.Cloud115QRCodeLoginResp
 import com.xyoye.data_component.data.cloud115.Cloud115QRCodeSession
 import com.xyoye.data_component.data.cloud115.Cloud115QRCodeStatusResp
@@ -28,6 +34,7 @@ import kotlinx.coroutines.withContext
 
 class Cloud115LoginDialog(
     private val activity: Activity,
+    private val initialLoginApp: String = DEFAULT_LOGIN_APP,
     private val onLoginSuccess: (result: LoginResult) -> Unit,
     private val onDismiss: (() -> Unit)? = null
 ) : BaseBottomDialog<DialogCloud115LoginBinding>(activity) {
@@ -36,12 +43,14 @@ class Cloud115LoginDialog(
         val userId: String,
         val userName: String?,
         val avatarUrl: String?,
+        val loginApp: String,
     )
 
     private lateinit var binding: DialogCloud115LoginBinding
 
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var pollingJob: Job? = null
+    private var selectedApp: String = initialLoginApp.trim().ifEmpty { DEFAULT_LOGIN_APP }
 
     override fun getChildLayoutId(): Int = R.layout.dialog_cloud115_login
 
@@ -62,7 +71,97 @@ class Cloud115LoginDialog(
             onDismiss?.invoke()
         }
 
+        binding.loginAppValueTv.text = selectedApp
+        binding.loginAppSelectTv.setOnClickListener { showLoginAppDialog() }
+
         startLoginFlow()
+    }
+
+    private fun showLoginAppDialog() {
+        val actions =
+            listOf(
+                SheetActionBean(
+                    actionId = "tv",
+                    actionName = "tv",
+                    describe = "TV 端（默认）",
+                ),
+                SheetActionBean(
+                    actionId = "wechatmini",
+                    actionName = "wechatmini",
+                    describe = "微信小程序端",
+                ),
+                SheetActionBean(
+                    actionId = "alipaymini",
+                    actionName = "alipaymini",
+                    describe = "支付宝小程序端",
+                ),
+                SheetActionBean(
+                    actionId = "qandroid",
+                    actionName = "qandroid",
+                    describe = "安卓端（qandroid）",
+                ),
+                SheetActionBean(
+                    actionId = ACTION_CUSTOM,
+                    actionName = "自定义…",
+                    describe = "填写其他 app 值",
+                ),
+            )
+
+        BottomActionDialog(activity, actions, "设备来源（app）") { action ->
+            val selected = action.actionId as? String ?: return@BottomActionDialog false
+            if (selected == ACTION_CUSTOM) {
+                showCustomLoginAppDialog()
+                return@BottomActionDialog true
+            }
+
+            updateSelectedApp(selected)
+            true
+        }.show()
+    }
+
+    private fun showCustomLoginAppDialog() {
+        val host = activity as? AppCompatActivity
+        if (host == null) {
+            ToastCenter.showWarning("当前页面不支持自定义输入")
+            return
+        }
+
+        CommonEditDialog(
+            activity = host,
+            editBean =
+                EditBean(
+                    title = "自定义设备来源（app）",
+                    emptyWarningMsg = "请填写设备来源（app）",
+                    hint = "例如：tv",
+                    defaultText = selectedApp,
+                    inputTips = "建议使用字母/数字/下划线组合（例如 tv、wechatmini）",
+                    canInputEmpty = false,
+                ),
+            inputOnlyDigit = false,
+            checkBlock = { app ->
+                val trimmed = app.trim()
+                if (trimmed.isBlank()) {
+                    ToastCenter.showWarning("请填写设备来源（app）")
+                    return@CommonEditDialog false
+                }
+
+                if (!Regex("^[a-zA-Z0-9_]+$").matches(trimmed)) {
+                    ToastCenter.showWarning("仅支持字母/数字/下划线")
+                    return@CommonEditDialog false
+                }
+
+                true
+            },
+            callback = { app ->
+                updateSelectedApp(app.trim())
+            },
+        ).show()
+    }
+
+    private fun updateSelectedApp(app: String) {
+        val trimmed = app.trim().ifEmpty { DEFAULT_LOGIN_APP }
+        selectedApp = trimmed
+        binding.loginAppValueTv.text = trimmed
     }
 
     private fun startLoginFlow() {
@@ -121,7 +220,8 @@ class Cloud115LoginDialog(
                     binding.loadingPb.isVisible = true
                     binding.statusTv.text = "已确认，正在登录…"
 
-                    val login = fetchQrCodeLogin(uid = uid).getOrNull()
+                    val loginApp = selectedApp
+                    val login = fetchQrCodeLogin(uid = uid, app = loginApp).getOrNull()
                     if (login == null) {
                         binding.loadingPb.isVisible = false
                         binding.statusTv.text = "登录失败，请重试"
@@ -151,6 +251,7 @@ class Cloud115LoginDialog(
                             userId = userId,
                             userName = login.data?.userName,
                             avatarUrl = avatarUrl,
+                            loginApp = loginApp,
                         ),
                     )
                     return
@@ -249,15 +350,18 @@ class Cloud115LoginDialog(
             }
         }
 
-    private suspend fun fetchQrCodeLogin(uid: String): Result<Cloud115QRCodeLoginResp> =
+    private suspend fun fetchQrCodeLogin(
+        uid: String,
+        app: String
+    ): Result<Cloud115QRCodeLoginResp> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val response =
                     Retrofit.cloud115Service.qrcodeLogin(
                         baseUrl = Api.CLOUD_115_PASSPORT_API,
-                        app = DEFAULT_QRCODE_APP,
+                        app = app,
                         account = uid,
-                        appInForm = DEFAULT_QRCODE_APP,
+                        appInForm = app,
                     )
 
                 if (!isQrCodeSuccess(response.state, response.code)) {
@@ -279,7 +383,8 @@ class Cloud115LoginDialog(
     }
 
     private companion object {
-        private const val DEFAULT_QRCODE_APP: String = "tv"
+        private const val DEFAULT_LOGIN_APP: String = "tv"
+        private const val ACTION_CUSTOM: String = "__custom__"
         private const val POLL_INTERVAL_MS: Long = 2_000L
     }
 }
