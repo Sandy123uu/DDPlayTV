@@ -7,8 +7,6 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import androidx.annotation.MainThread
 import androidx.core.view.children
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
@@ -100,21 +98,16 @@ class TabLayoutViewPager2DpadFocusCoordinator(
         if (!isDescendantOf(focus, pageRoot)) return false
 
         val recyclerView = findNearestRecyclerView(focus, stopAt = pageRoot) ?: return false
-        val focusedItemView = findDirectChildUnderRecyclerView(focus, recyclerView) ?: return false
-        val focusedIndex = recyclerView.getChildAdapterPosition(focusedItemView)
-        if (focusedIndex == RecyclerView.NO_POSITION) return false
-
-        val layoutManager = recyclerView.layoutManager
-        val isTopRow =
-            when (layoutManager) {
-                is GridLayoutManager -> focusedIndex < layoutManager.spanCount
-                is LinearLayoutManager -> focusedIndex <= 0
-                else -> focusedIndex <= 0
-            }
-        if (isTopRow) {
-            return requestTabFocus()
+        if (recyclerView.canScrollVertically(-1)) {
+            return false
         }
-        return false
+
+        val next = focus.focusSearch(View.FOCUS_UP)
+        if (next != null && isDescendantOf(next, recyclerView)) {
+            return false
+        }
+
+        return requestTabFocus()
     }
 
     private fun requestFocusToCurrentPage(): Boolean {
@@ -138,6 +131,11 @@ class TabLayoutViewPager2DpadFocusCoordinator(
 
         val recyclerView = findFirstRecyclerView(pageRoot)
         if (recyclerView != null) {
+            val firstFocusable = findFirstFocusableChildInRecyclerView(recyclerView)
+            if (firstFocusable != null && firstFocusable.requestFocus()) {
+                return true
+            }
+
             if (recyclerView.requestIndexChildFocus(0)) {
                 return true
             }
@@ -234,6 +232,24 @@ class TabLayoutViewPager2DpadFocusCoordinator(
             current = current.parent as? View
         }
         return false
+    }
+
+    private fun findFirstFocusableChildInRecyclerView(recyclerView: RecyclerView): View? {
+        if (recyclerView.isInTouchMode) return null
+
+        val focusableTag = R.string.focusable_item.toResString()
+        recyclerView.children.forEach { child ->
+            val tagged = child.findViewWithTag<View>(focusableTag)
+            if (tagged != null && tagged.isShown && tagged.isFocusable) {
+                return tagged
+            }
+
+            val found = findFirstFocusableDescendant(child)
+            if (found != null) {
+                return found
+            }
+        }
+        return null
     }
 
     private fun findFirstFocusableDescendant(root: View): View? {
