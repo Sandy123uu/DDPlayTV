@@ -1,5 +1,7 @@
 package com.xyoye.user_component.ui.activities.setting_player
 
+import android.view.KeyEvent
+import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.alibaba.android.arouter.facade.annotation.Route
@@ -7,6 +9,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.extension.isTelevisionUiMode
+import com.xyoye.common_component.focus.TabDpadMode
 import com.xyoye.common_component.focus.TabLayoutViewPager2DpadFocusCoordinator
 import com.xyoye.user_component.BR
 import com.xyoye.user_component.R
@@ -46,15 +49,45 @@ class SettingPlayerActivity : BaseActivity<SettingPlayerViewModel, ActivitySetti
                 TabLayoutViewPager2DpadFocusCoordinator(
                     tabLayout = dataBinding.tabLayout,
                     viewPager = dataBinding.viewpager,
+                    mode = TabDpadMode.SettingsIndicatorOnly,
                     isEnabled = { isTelevisionUiMode() && !dataBinding.tabLayout.isInTouchMode },
                 ).also { it.attach() }
         }
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN &&
+            event.keyCode == KeyEvent.KEYCODE_DPAD_DOWN &&
+            isTelevisionUiMode() &&
+            !dataBinding.tabLayout.isInTouchMode
+        ) {
+            val toolbar = mToolbar
+            val focus = currentFocus
+            if (toolbar != null && focus != null && isDescendantOf(focus, toolbar)) {
+                if (tvFocusCoordinator?.requestContentFocus() == true) {
+                    return true
+                }
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onDestroy() {
         tvFocusCoordinator?.detach()
         tvFocusCoordinator = null
         super.onDestroy()
+    }
+
+    private fun isDescendantOf(
+        view: View,
+        ancestor: View
+    ): Boolean {
+        var current: View? = view
+        while (current != null) {
+            if (current === ancestor) return true
+            current = current.parent as? View
+        }
+        return false
     }
 
     inner class SettingFragmentAdapter : FragmentStateAdapter(this@SettingPlayerActivity) {
