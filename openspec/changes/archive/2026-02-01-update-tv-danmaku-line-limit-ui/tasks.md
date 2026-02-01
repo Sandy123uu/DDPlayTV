@@ -14,7 +14,7 @@
 - [x] 3.1 编译验证：`./gradlew :player_component:assembleDebug`（确认输出尾部为 `BUILD SUCCESSFUL`）
 - [x] 3.2 静态检查：`./gradlew lint`（或按仓库约定运行 `lintDebug`）
 - [x] 3.3 依赖治理校验：`./gradlew verifyModuleDependencies`（确认输出尾部为 `BUILD SUCCESSFUL`）
-- [ ] 3.4 手工验收（TV）：
+- [x] 3.4 手工验收（TV）：
   - 进入播放 → 弹幕设置 → 弹幕参数：DPAD 可聚焦到“行数限制”，左右切换立即生效（肉眼可见同屏弹幕密度变化）
   - 切换滚动/顶部/底部模式后，行数限制显示各自值且互不影响
   - 返回/关闭设置后再次进入，配置仍保持

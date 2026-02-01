@@ -34,4 +34,10 @@ object LogConfigTable {
 
     @MMKVFiled
     var lastPolicyUpdateTime: Long = 0L
+
+    @MMKVFiled
+    var tcpLogServerEnabled: Boolean = false
+
+    @MMKVFiled
+    var tcpLogServerPort: Int = 17010
 }

@@ -9,6 +9,8 @@ import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogPolicy
 import com.xyoye.common_component.log.model.LogRuntimeState
 import com.xyoye.common_component.log.model.PolicySource
+import com.xyoye.common_component.log.tcp.TcpLogServerManager
+import com.xyoye.common_component.log.tcp.TcpLogServerState
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
@@ -44,7 +46,13 @@ object LogSystem {
             policyRepository = LogPolicyRepository(defaultPolicy)
             val initialState = policyRepository.loadFromStorage()
             stateRef.set(initialState)
-            writer = LogWriter(context.applicationContext).also { it.updateRuntimeState(initialState) }
+            writer =
+                LogWriter(
+                    context.applicationContext,
+                    tcpLogEnabledProvider = { TcpLogServerManager.isRunning() },
+                    tcpLogSink = { line -> TcpLogServerManager.tryEmit(line) },
+                ).also { it.updateRuntimeState(initialState) }
+            TcpLogServerManager.applyFromStorage()
             initialized = true
         }
     }
@@ -86,6 +94,19 @@ object LogSystem {
     fun getRuntimeState(): LogRuntimeState = stateRef.get()
 
     fun isInitialized(): Boolean = initialized
+
+    fun getTcpLogServerState(): TcpLogServerState = TcpLogServerManager.snapshot()
+
+    fun setTcpLogServerEnabled(
+        enabled: Boolean,
+        port: Int = TcpLogServerManager.DEFAULT_PORT
+    ): TcpLogServerState {
+        if (!initialized) {
+            Log.w(LOG_TAG, "tcp log server state change before init, ignore")
+            return TcpLogServerManager.snapshot()
+        }
+        return TcpLogServerManager.setEnabled(enabled, port)
+    }
 
     fun log(event: LogEvent) {
         if (!initialized) {

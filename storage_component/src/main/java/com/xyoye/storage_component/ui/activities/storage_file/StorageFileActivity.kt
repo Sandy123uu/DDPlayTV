@@ -89,6 +89,7 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
         private const val TAG = "StorageFileActivity"
         private const val REQUEST_CODE_BILIBILI_RISK_VERIFY = 3301
         internal const val REQUEST_CODE_OPEN115_REAUTH = 3302
+        internal const val REQUEST_CODE_CLOUD115_REAUTH = 3303
     }
 
     var shareStorageFile: StorageFile? = null
@@ -262,6 +263,11 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
             }
         }
         if (requestCode == REQUEST_CODE_OPEN115_REAUTH) {
+            if (resultCode == RESULT_OK) {
+                routeStack.lastOrNull()?.fragment?.triggerTvRefresh()
+            }
+        }
+        if (requestCode == REQUEST_CODE_CLOUD115_REAUTH) {
             if (resultCode == RESULT_OK) {
                 routeStack.lastOrNull()?.fragment?.triggerTvRefresh()
             }

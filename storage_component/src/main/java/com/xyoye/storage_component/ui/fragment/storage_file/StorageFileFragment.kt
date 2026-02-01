@@ -292,6 +292,14 @@ class StorageFileFragment : BaseFragment<StorageFileFragmentViewModel, FragmentS
                     .withParcelable("editData", library)
                     .navigation(ownerActivity, StorageFileActivity.REQUEST_CODE_OPEN115_REAUTH)
             }
+            MediaType.CLOUD_115_STORAGE -> {
+                ARouter
+                    .getInstance()
+                    .build(RouteTable.Stream.StoragePlus)
+                    .withSerializable("mediaType", library.mediaType)
+                    .withParcelable("editData", library)
+                    .navigation(ownerActivity, StorageFileActivity.REQUEST_CODE_CLOUD115_REAUTH)
+            }
             else -> Unit
         }
     }

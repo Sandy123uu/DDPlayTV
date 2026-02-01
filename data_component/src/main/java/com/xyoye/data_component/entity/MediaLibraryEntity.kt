@@ -132,6 +132,20 @@ data class MediaLibraryEntity(
                     }
                 }
 
+                MediaType.CLOUD_115_STORAGE -> {
+                    val uid =
+                        url
+                            .substringAfter("115cloud://uid/", missingDelimiterValue = "")
+                            .trim()
+                            .trimStart('/')
+                            .trimEnd('/')
+                    if (uid.isNotEmpty()) {
+                        "115 Cloud（uid=${maskCloud115UserId(uid)}）"
+                    } else {
+                        "115 Cloud"
+                    }
+                }
+
                 MediaType.STREAM_LINK,
                 MediaType.MAGNET_LINK,
                 MediaType.REMOTE_STORAGE,
@@ -140,4 +154,11 @@ data class MediaLibraryEntity(
 
                 else -> url
             }
+}
+
+private fun maskCloud115UserId(userId: String): String {
+    val trimmed = userId.trim()
+    if (trimmed.isEmpty()) return ""
+    if (trimmed.length <= 4) return "****"
+    return trimmed.take(2) + "****" + trimmed.takeLast(2)
 }
