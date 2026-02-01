@@ -7,8 +7,8 @@ import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceDataStore
-import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
+import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.xyoye.common_component.config.SubtitleConfig
 import com.xyoye.common_component.enums.SubtitleRendererBackend
 import com.xyoye.user_component.R
@@ -17,7 +17,7 @@ import com.xyoye.user_component.R
  * Created by xyoye on 2021/2/6.
  */
 
-class SubtitleSettingFragment : PreferenceFragmentCompat() {
+class SubtitleSettingFragment : BasePreferenceFragmentCompat() {
     companion object {
         fun newInstance() = SubtitleSettingFragment()
     }

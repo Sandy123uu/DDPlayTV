@@ -4,8 +4,10 @@ import com.xyoye.common_component.adapter.addItem
 import com.xyoye.common_component.adapter.buildAdapter
 import com.xyoye.common_component.application.DanDanPlay
 import com.xyoye.common_component.base.BaseFragment
+import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.extension.setData
 import com.xyoye.common_component.extension.vertical
+import com.xyoye.common_component.focus.RecyclerViewFocusDelegate
 import com.xyoye.common_component.utils.FastClickFilter
 import com.xyoye.common_component.utils.getFolderName
 import com.xyoye.common_component.weight.ToastCenter
@@ -22,6 +24,10 @@ import com.xyoye.user_component.databinding.ItemExtendFolderBinding
 class ScanExtendFragment : BaseFragment<ScanExtendFragmentViewModel, FragmentScanExtendBinding>() {
     companion object {
         fun newInstance() = ScanExtendFragment()
+    }
+
+    private val focusDelegate by lazy(LazyThreadSafetyMode.NONE) {
+        RecyclerViewFocusDelegate(recyclerView = dataBinding.extendFolderRv)
     }
 
     private var fileManagerDialog: FileManagerDialog? = null
@@ -59,6 +65,17 @@ class ScanExtendFragment : BaseFragment<ScanExtendFragmentViewModel, FragmentSca
                                 folderTv.text = getFolderName(data.folderPath)
                                 fileCountTv.text = fileCountText
 
+                                if (mAttachActivity.isTelevisionUiMode() && !itemLayout.isInTouchMode) {
+                                    itemLayout.setOnClickListener {
+                                        if (FastClickFilter.isNeedFilter()) {
+                                            return@setOnClickListener
+                                        }
+                                        showConfirmRemoveDialog(data)
+                                    }
+                                } else {
+                                    itemLayout.setOnClickListener(null)
+                                }
+
                                 removeFolderIv.setOnClickListener {
                                     if (FastClickFilter.isNeedFilter()) {
                                         return@setOnClickListener
@@ -69,6 +86,8 @@ class ScanExtendFragment : BaseFragment<ScanExtendFragmentViewModel, FragmentSca
                         }
                     }
                 }
+
+            focusDelegate.installVerticalDpadKeyNavigation()
         }
 
         viewModel.extendFolderLiveData.observe(this) {
@@ -80,6 +99,19 @@ class ScanExtendFragment : BaseFragment<ScanExtendFragmentViewModel, FragmentSca
         }
 
         viewModel.getExtendFolder()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (bindingOrNull == null) return
+        focusDelegate.onResume()
+    }
+
+    override fun onPause() {
+        if (bindingOrNull != null) {
+            focusDelegate.onPause()
+        }
+        super.onPause()
     }
 
     private fun showExtendFolderDialog() {

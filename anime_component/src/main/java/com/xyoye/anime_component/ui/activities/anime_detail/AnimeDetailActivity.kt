@@ -16,11 +16,13 @@ import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.extension.clamp
 import com.xyoye.common_component.extension.dp
+import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.extension.isNightMode
 import com.xyoye.common_component.extension.loadImage
 import com.xyoye.common_component.extension.opacity
 import com.xyoye.common_component.extension.setTextColorRes
 import com.xyoye.common_component.extension.toResColor
+import com.xyoye.common_component.focus.TabLayoutViewPager2DpadFocusCoordinator
 import com.xyoye.data_component.bean.AnimeArgument
 import com.xyoye.data_component.bean.ColorRange
 import com.xyoye.data_component.enums.AnimeDetailTab
@@ -56,6 +58,8 @@ class AnimeDetailActivity : BaseActivity<AnimeDetailViewModel, ActivityAnimeDeta
 
     // 返回事件拦截器
     private var backPressInterceptor: (() -> Boolean)? = null
+    private var tabLayoutMediator: TabLayoutMediator? = null
+    private var tvFocusCoordinator: TabLayoutViewPager2DpadFocusCoordinator? = null
 
     override fun initViewModel() =
         ViewModelInit(
@@ -96,15 +100,36 @@ class AnimeDetailActivity : BaseActivity<AnimeDetailViewModel, ActivityAnimeDeta
             return
         }
 
+        tabLayoutMediator?.detach()
+        tabLayoutMediator = null
+
         dataBinding.viewpager.adapter = AnimeDetailPageAdapter(this, tabs)
-        val mediator =
+        tabLayoutMediator =
             TabLayoutMediator(
                 dataBinding.tabLayout,
                 dataBinding.viewpager,
             ) { tab, position ->
                 tab.text = tabs[position].title
-            }
-        mediator.attach()
+            }.also { it.attach() }
+
+        tvFocusCoordinator?.detach()
+        tvFocusCoordinator = null
+        if (isTelevisionUiMode()) {
+            tvFocusCoordinator =
+                TabLayoutViewPager2DpadFocusCoordinator(
+                    tabLayout = dataBinding.tabLayout,
+                    viewPager = dataBinding.viewpager,
+                    isEnabled = { isTelevisionUiMode() && !dataBinding.tabLayout.isInTouchMode },
+                ).also { it.attach() }
+        }
+    }
+
+    override fun onDestroy() {
+        tabLayoutMediator?.detach()
+        tabLayoutMediator = null
+        tvFocusCoordinator?.detach()
+        tvFocusCoordinator = null
+        super.onDestroy()
     }
 
     @Deprecated("Deprecated in Java", ReplaceWith("finish()"))

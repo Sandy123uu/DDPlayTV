@@ -5,8 +5,8 @@ import android.view.View
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceDataStore
-import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
+import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.xyoye.common_component.config.DevelopConfig
 import com.xyoye.common_component.log.BuglyReporter
 import com.xyoye.common_component.log.LogFacade
@@ -31,7 +31,7 @@ import java.util.Locale
 /**
  * 开发者设置页，配置日志与调试相关选项。
  */
-class DeveloperSettingFragment : PreferenceFragmentCompat() {
+class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
     companion object {
         fun newInstance() = DeveloperSettingFragment()
 

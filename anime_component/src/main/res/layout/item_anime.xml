@@ -6,7 +6,10 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/item_layout"
         android:layout_width="match_parent"
-        android:layout_height="170dp">
+        android:layout_height="170dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:tag="@string/focusable_item">
 
         <ImageView
             android:id="@+id/cover_iv"
@@ -50,5 +53,15 @@
             app:slantedText="已关注"
             app:slantedTextColor="@color/text_white"
             app:slantedTextSize="10sp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/background_focus_overlay"
+            android:duplicateParentState="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

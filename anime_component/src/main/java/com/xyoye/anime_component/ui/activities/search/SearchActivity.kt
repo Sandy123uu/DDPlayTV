@@ -2,6 +2,7 @@ package com.xyoye.anime_component.ui.activities.search
 
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -20,6 +21,7 @@ import com.xyoye.anime_component.ui.fragment.search_magnet.SearchMagnetFragment
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.extension.isTelevisionUiMode
+import com.xyoye.common_component.focus.TabLayoutViewPager2DpadFocusCoordinator
 import com.xyoye.common_component.utils.hideKeyboard
 import com.xyoye.common_component.utils.showKeyboard
 
@@ -38,6 +40,7 @@ class SearchActivity : BaseActivity<SearchViewModel, ActivitySearchBinding>() {
     var isSearchMagnet: Boolean = false
 
     private lateinit var searchAdapter: SearchPageAdapter
+    private var tvFocusCoordinator: TabLayoutViewPager2DpadFocusCoordinator? = null
 
     override fun initViewModel() =
         ViewModelInit(
@@ -64,6 +67,24 @@ class SearchActivity : BaseActivity<SearchViewModel, ActivitySearchBinding>() {
 
         updateSearchHint(dataBinding.viewpager.currentItem)
 
+        if (isTelevisionUiMode()) {
+            tvFocusCoordinator =
+                TabLayoutViewPager2DpadFocusCoordinator(
+                    tabLayout = dataBinding.tabLayout,
+                    viewPager = dataBinding.viewpager,
+                    isEnabled = { isTelevisionUiMode() && !dataBinding.tabLayout.isInTouchMode },
+                ).also { it.attach() }
+
+            dataBinding.searchCl.setOnKeyListener { _, keyCode, event ->
+                if (event.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+                if (dataBinding.tabLayout.isInTouchMode) return@setOnKeyListener false
+                when (keyCode) {
+                    KeyEvent.KEYCODE_DPAD_DOWN -> tvFocusCoordinator?.requestTabFocus() == true
+                    else -> false
+                }
+            }
+        }
+
         if (!isSearchMagnet && dataBinding.root.isInTouchMode) {
             dataBinding.searchEt.postDelayed({
                 showKeyboard(dataBinding.searchEt)
@@ -75,6 +96,12 @@ class SearchActivity : BaseActivity<SearchViewModel, ActivitySearchBinding>() {
             dataBinding.searchCl.requestFocus()
         }
         initListener()
+    }
+
+    override fun onDestroy() {
+        tvFocusCoordinator?.detach()
+        tvFocusCoordinator = null
+        super.onDestroy()
     }
 
     private fun initListener() {

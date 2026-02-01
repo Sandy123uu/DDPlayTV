@@ -6,6 +6,7 @@ import com.xyoye.common_component.base.BaseFragment
 import com.xyoye.common_component.extension.setData
 import com.xyoye.common_component.extension.setTextColorRes
 import com.xyoye.common_component.extension.vertical
+import com.xyoye.common_component.focus.RecyclerViewFocusDelegate
 import com.xyoye.common_component.utils.getFolderName
 import com.xyoye.data_component.bean.FolderBean
 import com.xyoye.user_component.BR
@@ -16,6 +17,10 @@ import com.xyoye.user_component.databinding.ItemFilterFolderBinding
 class ScanFilterFragment : BaseFragment<ScanFilterFragmentViewModel, FragmentScanFilterBinding>() {
     companion object {
         fun newInstance() = ScanFilterFragment()
+    }
+
+    private val focusDelegate by lazy(LazyThreadSafetyMode.NONE) {
+        RecyclerViewFocusDelegate(recyclerView = dataBinding.filterFolderRv)
     }
 
     override fun initViewModel() =
@@ -61,8 +66,23 @@ class ScanFilterFragment : BaseFragment<ScanFilterFragmentViewModel, FragmentSca
                 }
         }
 
+        focusDelegate.installVerticalDpadKeyNavigation()
+
         viewModel.folderLiveData.observe(this) {
             dataBinding.filterFolderRv.setData(it)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (bindingOrNull == null) return
+        focusDelegate.onResume()
+    }
+
+    override fun onPause() {
+        if (bindingOrNull != null) {
+            focusDelegate.onPause()
+        }
+        super.onPause()
     }
 }
