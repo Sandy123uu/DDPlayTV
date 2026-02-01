@@ -29,6 +29,13 @@ object Api {
     // 115 Open OAuth/刷新（passportapi）
     const val OPEN_115_PASSPORT_API = "https://passportapi.115.com/"
 
+    // 115 Cloud（扫码/状态校验/列表/播放直链等）
+    const val CLOUD_115_QRCODE_API = "https://qrcodeapi.115.com/"
+    const val CLOUD_115_MY = "https://my.115.com/"
+    const val CLOUD_115_WEB_API = "https://webapi.115.com/"
+    const val CLOUD_115_PRO_API = "https://proapi.115.com/"
+    const val CLOUD_115_PASSPORT_API = "https://passportapi.115.com/"
+
     // Thunder字幕
     const val THUNDER_SUB = "http://sub.xmp.sandai.net:8000/subxl/"
 

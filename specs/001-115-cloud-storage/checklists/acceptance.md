@@ -6,11 +6,11 @@
 
 - 日期：2026-02-01
 - 分支：`001-115-cloud-storage`
-- 提交：
-- 设备/系统：
+- 提交：未提交（当前 HEAD：`90094a31a`）
+- 设备/系统：Windows 11 + WSL2（仅构建门禁）
 - 构建类型：Debug / Release
 
-## 构建门禁（待执行）
+## 构建门禁（已执行）
 
 - `./gradlew verifyModuleDependencies`：`BUILD SUCCESSFUL`
 - `./gradlew lint`：`BUILD SUCCESSFUL`
@@ -29,4 +29,3 @@
   - 同一视频文件在不同播放内核（Media3/mpv/VLC）下的播放成功截图或关键日志（可选）
   - 刷新/排序/搜索（含清空搜索恢复上下文）截图（可选）
   - 授权失效时提示与重新授权入口截图（可选）
-
