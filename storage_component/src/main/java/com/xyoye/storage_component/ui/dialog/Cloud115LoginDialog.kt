@@ -81,6 +81,21 @@ class Cloud115LoginDialog(
         val actions =
             listOf(
                 SheetActionBean(
+                    actionId = "web",
+                    actionName = "web",
+                    describe = "Web 端",
+                ),
+                SheetActionBean(
+                    actionId = "android",
+                    actionName = "android",
+                    describe = "Android 端",
+                ),
+                SheetActionBean(
+                    actionId = "ios",
+                    actionName = "ios",
+                    describe = "iOS 端",
+                ),
+                SheetActionBean(
                     actionId = "tv",
                     actionName = "tv",
                     describe = "TV 端（默认）",

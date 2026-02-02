@@ -79,7 +79,7 @@ data class Cloud115QRCodeLoginData(
     val mobile: String? = null,
     val email: String? = null,
     @Json(name = "is_vip")
-    val isVip: Int? = null,
+    val isVip: Long? = null,
     val face: Cloud115Face? = null
 )
 
@@ -179,4 +179,3 @@ data class Cloud115DownloadResp(
     override val msg: String? = null,
     val data: String? = null
 ) : Cloud115ApiResponse
-

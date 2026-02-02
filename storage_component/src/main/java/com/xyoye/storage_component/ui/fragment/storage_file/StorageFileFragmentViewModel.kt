@@ -538,7 +538,7 @@ class StorageFileFragmentViewModel : BaseViewModel() {
                     "授权已失效，请更新 token"
                 is Cloud115ReAuthRequiredException ->
                     throwable.message?.takeIf { it.isNotBlank() }
-                        ?: "授权失效需要重新扫码"
+                        ?: "授权已失效，请重新${authStorage.loginActionText(storage.directory)}"
                 is BilibiliException -> {
                     if (throwable.code != -101) return false
                     "登录已失效，请重新${authStorage.loginActionText(storage.directory)}"

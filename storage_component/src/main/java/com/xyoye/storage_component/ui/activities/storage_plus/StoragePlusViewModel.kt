@@ -81,7 +81,7 @@ class StoragePlusViewModel : BaseViewModel() {
                 val isValid = Regex("^115cloud://uid/\\d+$").matches(upsertLibrary.url)
                 if (!isValid || userId.isBlank()) {
                     if (showToast) {
-                        ToastCenter.showWarning("保存失败，请先扫码授权")
+                        ToastCenter.showWarning("保存失败，请先完成授权")
                     }
                     return@launch
                 }
@@ -93,7 +93,7 @@ class StoragePlusViewModel : BaseViewModel() {
                     val isAuthorized = Cloud115AuthStore.read(storageKey).isAuthorized()
                     if (!isAuthorized) {
                         if (showToast) {
-                            ToastCenter.showWarning("保存失败，请先扫码授权")
+                            ToastCenter.showWarning("保存失败，请先完成授权")
                         }
                         return@launch
                     }
