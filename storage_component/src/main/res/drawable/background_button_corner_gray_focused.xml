@@ -11,7 +11,7 @@
             <corners android:radius="24dp" />
             <solid android:color="@color/tv_focus_overlay_color" />
             <stroke
-                android:width="3dp"
+                android:width="@dimen/tv_focus_stroke_width"
                 android:color="@color/tv_focus_stroke_color" />
         </shape>
     </item>
