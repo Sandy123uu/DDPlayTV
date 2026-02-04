@@ -82,30 +82,30 @@ description: "任务清单：代码质量排查与复用治理（分模块）"
 
 > 说明：以下任务原则上都可并行（不同模块不同文件），但每个模块报告必须引用统一口径（维度/优先级/证据标准）并同步状态表。
 
-- [ ] T019 [P] [US2] 完成模块排查报告 `:core_contract_component`：`document/code_quality_audit/modules/core_contract_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T020 [P] [US2] 完成模块排查报告 `:core_log_component`：`document/code_quality_audit/modules/core_log_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T021 [P] [US2] 完成模块排查报告 `:core_system_component`：`document/code_quality_audit/modules/core_system_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T022 [P] [US2] 完成模块排查报告 `:core_network_component`：`document/code_quality_audit/modules/core_network_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T023 [P] [US2] 完成模块排查报告 `:core_database_component`：`document/code_quality_audit/modules/core_database_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T024 [P] [US2] 完成模块排查报告 `:core_storage_component`：`document/code_quality_audit/modules/core_storage_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T025 [P] [US2] 完成模块排查报告 `:core_ui_component`：`document/code_quality_audit/modules/core_ui_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T026 [P] [US2] 完成模块排查报告 `:bilibili_component`：`document/code_quality_audit/modules/bilibili_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T027 [P] [US2] 完成模块排查报告 `:data_component`：`document/code_quality_audit/modules/data_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T019 [P] [US2] 完成模块排查报告 `:core_contract_component`：`document/code_quality_audit/modules/core_contract_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T020 [P] [US2] 完成模块排查报告 `:core_log_component`：`document/code_quality_audit/modules/core_log_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T021 [P] [US2] 完成模块排查报告 `:core_system_component`：`document/code_quality_audit/modules/core_system_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T022 [P] [US2] 完成模块排查报告 `:core_network_component`：`document/code_quality_audit/modules/core_network_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T023 [P] [US2] 完成模块排查报告 `:core_database_component`：`document/code_quality_audit/modules/core_database_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T024 [P] [US2] 完成模块排查报告 `:core_storage_component`：`document/code_quality_audit/modules/core_storage_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T025 [P] [US2] 完成模块排查报告 `:core_ui_component`：`document/code_quality_audit/modules/core_ui_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T026 [P] [US2] 完成模块排查报告 `:bilibili_component`：`document/code_quality_audit/modules/bilibili_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T027 [P] [US2] 完成模块排查报告 `:data_component`：`document/code_quality_audit/modules/data_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
 
-- [ ] T028 [P] [US2] 完成模块排查报告 `:anime_component`：`document/code_quality_audit/modules/anime_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T029 [P] [US2] 完成模块排查报告 `:local_component`：`document/code_quality_audit/modules/local_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T030 [P] [US2] 完成模块排查报告 `:user_component`：`document/code_quality_audit/modules/user_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T031 [P] [US2] 完成模块排查报告 `:storage_component`：`document/code_quality_audit/modules/storage_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T032 [P] [US2] 完成模块排查报告 `:player_component`：`document/code_quality_audit/modules/player_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T028 [P] [US2] 完成模块排查报告 `:anime_component`：`document/code_quality_audit/modules/anime_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T029 [P] [US2] 完成模块排查报告 `:local_component`：`document/code_quality_audit/modules/local_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T030 [P] [US2] 完成模块排查报告 `:user_component`：`document/code_quality_audit/modules/user_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T031 [P] [US2] 完成模块排查报告 `:storage_component`：`document/code_quality_audit/modules/storage_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T032 [P] [US2] 完成模块排查报告 `:player_component`：`document/code_quality_audit/modules/player_component.md`（同步 `document/code_quality_audit/global/module_status.md`）
 
-- [ ] T033 [P] [US2] 完成模块排查报告 `:app`：`document/code_quality_audit/modules/app.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T033 [P] [US2] 完成模块排查报告 `:app`：`document/code_quality_audit/modules/app.md`（同步 `document/code_quality_audit/global/module_status.md`）
 
-- [ ] T034 [P] [US2] 完成模块边界/使用方式审视报告 `:repository:danmaku`：`document/code_quality_audit/modules/repository__danmaku.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T035 [P] [US2] 完成模块边界/使用方式审视报告 `:repository:immersion_bar`：`document/code_quality_audit/modules/repository__immersion_bar.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T036 [P] [US2] 完成模块边界/使用方式审视报告 `:repository:panel_switch`：`document/code_quality_audit/modules/repository__panel_switch.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T037 [P] [US2] 完成模块边界/使用方式审视报告 `:repository:seven_zip`：`document/code_quality_audit/modules/repository__seven_zip.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T038 [P] [US2] 完成模块边界/使用方式审视报告 `:repository:thunder`：`document/code_quality_audit/modules/repository__thunder.md`（同步 `document/code_quality_audit/global/module_status.md`）
-- [ ] T039 [P] [US2] 完成模块边界/使用方式审视报告 `:repository:video_cache`：`document/code_quality_audit/modules/repository__video_cache.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T034 [P] [US2] 完成模块边界/使用方式审视报告 `:repository:danmaku`：`document/code_quality_audit/modules/repository__danmaku.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T035 [P] [US2] 完成模块边界/使用方式审视报告 `:repository:immersion_bar`：`document/code_quality_audit/modules/repository__immersion_bar.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T036 [P] [US2] 完成模块边界/使用方式审视报告 `:repository:panel_switch`：`document/code_quality_audit/modules/repository__panel_switch.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T037 [P] [US2] 完成模块边界/使用方式审视报告 `:repository:seven_zip`：`document/code_quality_audit/modules/repository__seven_zip.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T038 [P] [US2] 完成模块边界/使用方式审视报告 `:repository:thunder`：`document/code_quality_audit/modules/repository__thunder.md`（同步 `document/code_quality_audit/global/module_status.md`）
+- [X] T039 [P] [US2] 完成模块边界/使用方式审视报告 `:repository:video_cache`：`document/code_quality_audit/modules/repository__video_cache.md`（同步 `document/code_quality_audit/global/module_status.md`）
 
 **Checkpoint**：任意单模块报告可独立交付；多模块报告可直接进入 US3 增量汇总
 
@@ -117,11 +117,11 @@ description: "任务清单：代码质量排查与复用治理（分模块）"
 
 **独立验收**：当至少完成 2 份模块报告后，能产出可独立验收的全局汇总（含跨模块重复点、优先级、可执行任务）
 
-- [ ] T040 [US3] 创建全局汇总骨架（含 globalId 与来源映射段落）：`document/code_quality_audit/global/summary.md`
-- [ ] T041 [US3] 完成第一轮增量汇总（≥2 个模块报告），分配 `G-F####/G-T####` 并维护来源映射：更新 `document/code_quality_audit/global/summary.md`
-- [ ] T042 [US3] 完成全量汇总（覆盖所有模块报告），按维度分类与优先级排序，并持续维护来源映射：更新 `document/code_quality_audit/global/summary.md`
-- [ ] T043 [US3] 从全局汇总拆出可执行治理 Backlog（便于指派/跟踪）：`document/code_quality_audit/global/backlog.md`
-- [ ] T044 [US3] 输出治理路线图（批次/依赖/风险/门禁建议）：`document/code_quality_audit/global/roadmap.md`
+- [X] T040 [US3] 创建全局汇总骨架（含 globalId 与来源映射段落）：`document/code_quality_audit/global/summary.md`
+- [X] T041 [US3] 完成第一轮增量汇总（≥2 个模块报告），分配 `G-F####/G-T####` 并维护来源映射：更新 `document/code_quality_audit/global/summary.md`
+- [X] T042 [US3] 完成全量汇总（覆盖所有模块报告），按维度分类与优先级排序，并持续维护来源映射：更新 `document/code_quality_audit/global/summary.md`
+- [X] T043 [US3] 从全局汇总拆出可执行治理 Backlog（便于指派/跟踪）：`document/code_quality_audit/global/backlog.md`
+- [X] T044 [US3] 输出治理路线图（批次/依赖/风险/门禁建议）：`document/code_quality_audit/global/roadmap.md`
 
 **Checkpoint**：Global Summary Ready（可用于治理决策与后续重构落地）
 
