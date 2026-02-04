@@ -22,12 +22,12 @@
   - 二进制产物：`repository/thunder/thunder.aar`（含 `jni/arm64-v8a/*.so`、`jni/armeabi-v7a/*.so`、`classes.jar`）
   - 依赖声明（消费方）：`core_storage_component/build.gradle.kts` + `implementation(project(":repository:thunder"))`
   - 统一封装入口：`core_storage_component/src/main/java/com/xyoye/common_component/utils/thunder/ThunderManager.kt`
-    - `ThunderManager#initialize`（`XLTaskHelper.init(context)`）
+    - `ThunderManager#ensureInitialized`（按需初始化、幂等、可降级）
     - `ThunderManager#downloadTorrentFile`（`XLTaskHelper.addMagnetTask` → `getTaskInfo/stopTask`）
     - `ThunderManager#generatePlayUrl`（`startTask` → `XLDownloadManager.getLocalUrl`）
   - 存储/播放接入：`core_storage_component/src/main/java/com/xyoye/common_component/storage/impl/TorrentStorage.kt`
     - `TorrentStorage#listFiles/createPlayUrl`（`TorrentBean.formInfo` + `ThunderManager.generatePlayUrl`）
-  - 进程初始化：`storage_component/src/main/java/com/xyoye/storage_component/providers/ThunderInitializer.kt` + `ThunderInitializer#create`（AndroidX Startup，按 ABI 守卫）
+  - 按需初始化入口：首次使用“磁力链/BT”能力时由 `ThunderManager` 触发初始化（不再在进程启动期初始化）
 - 依赖边界
   - 对外（被依赖）：`repository:thunder` 仅被 `:core_storage_component` 依赖（见 `core_storage_component/build.gradle.kts`）。
   - 对内（依赖）：无（wrapper 模块仅提供 AAR 工件）。
@@ -53,7 +53,7 @@
 |---|---|---|---|---|---|---|---|---|---|---|
 | REPO_THUNDER-F001 | ArchitectureRisk | 预编译 AAR 缺少来源/版本/License 等元信息，升级与合规审计不可追溯 | `repository/thunder/thunder.aar`（二进制）；`repository/thunder/build.gradle.kts` + `artifacts.add("default", file("thunder.aar"))` | N/A | Unify | `repository/thunder/`（补齐元信息）+ 全仓统一规范（建议由 `buildSrc` 或文档约束） | Medium | Small | P1 | 需要确认 AAR 上游来源、版本号、授权协议；否则难以在安全事件/升级时快速定位影响 |
 | REPO_THUNDER-F002 | ArchitectureRisk | 第三方 SDK 类型在 `:core_storage_component` 中被继承/暴露，存在“第三方类型泄漏到上层模块”的边界风险 | `core_storage_component/src/main/java/com/xyoye/common_component/storage/file/helper/TorrentBean.kt` + `class TorrentBean : TorrentInfo`；`core_storage_component/src/main/java/com/xyoye/common_component/storage/file/impl/TorrentStorageFile.kt` + `TorrentStorageFile#getRealFile(): TorrentFileInfo` | N/A | Unify | 将 `com.xunlei.*` 类型收敛在 `utils/thunder` 与内部实现层：对外使用自定义 model/interface（例如 `TorrentMeta`/`TorrentEntry`），避免上层模块被迫感知第三方类型 | Medium | Medium | P2 | 需要评估现有调用方是否存在对 `TorrentBean/TorrentStorageFile` 的强依赖（目前全仓命中点仅在 `core_storage_component`） |
-| REPO_THUNDER-F003 | PerformanceRisk | 使用 AndroidX Startup 在进程启动期初始化迅雷 SDK，可能引入启动耗时与崩溃面（尽管已做 ABI 守卫与 try/catch） | `storage_component/src/main/java/com/xyoye/storage_component/providers/ThunderInitializer.kt` + `ThunderInitializer#create`；`core_storage_component/src/main/java/com/xyoye/common_component/utils/thunder/ThunderManager.kt` + `ThunderManager#initialize` | N/A | Unify | 优先改为“按需初始化”（首次使用磁力/BT 能力时初始化），并把初始化结果缓存；Startup 仅做轻量预检/开关（或移除） | Medium | Small | P1 | 需要确认 `XLTaskHelper.init` 的线程/时序要求；若必须早期 init，需要量化耗时并制定降级策略 |
+| REPO_THUNDER-F003 | PerformanceRisk | 进程启动期初始化迅雷 SDK 会引入启动期开销与崩溃面 | `core_storage_component/src/main/java/com/xyoye/common_component/utils/thunder/ThunderManager.kt` + `ThunderManager#ensureInitialized`（按需初始化、缓存结果、失败可降级）；（已移除）`storage_component` 内 AndroidX Startup 初始化入口 | N/A | Unify | 改为“按需初始化”（首次使用磁力/BT 能力时初始化），并把初始化结果缓存；移除 Startup 初始化入口（见 `REPO_THUNDER-T003`） | Medium | Small | P1 | 需关注 `XLTaskHelper.init` 的线程/时序要求；若必须早期 init，需要量化耗时并制定降级策略 |
 | REPO_THUNDER-F004 | SecurityPrivacy | 错误上报上下文包含原始磁力链/URL 与本地路径，可能导致敏感信息泄露（日志/崩溃平台/上报渠道） | `core_storage_component/src/main/java/com/xyoye/common_component/utils/thunder/ThunderManager.kt` + `downloadTorrentFile`（`"磁链: $magnet"`）；`core_storage_component/src/main/java/com/xyoye/common_component/storage/impl/TorrentStorage.kt` + `torrentPath/getRootFile`（`library.url`） | N/A | Unify | 统一脱敏策略：磁力链仅保留 hash；URL 默认去掉 query/fragment；本地路径仅保留文件名或 hash（与全仓日志策略对齐） | High | Small | P1 | 需与 `:core_log_component`/错误上报策略对齐，避免“部分链路脱敏、部分链路明文” |
 
 ## 4) Refactor Tasks（治理任务）
@@ -62,7 +62,7 @@
 |---|---|---|---|---|---|---|---|---|---|
 | REPO_THUNDER-T001 | REPO_THUNDER-F001 | 为 AAR 增加可追溯元信息（来源/版本/License/校验和/更新流程） | 新增 `repository/thunder/README.md`（中文）；可选新增 `repository/thunder/LICENSE` 或在 README 中明确 License 与引用位置 | 1) README 明确：上游项目/下载地址、版本号、License、AAR SHA256、更新步骤；2) 任意人可按文档复现升级；3) 不影响现有依赖解析 | Medium | Small | P1 | AI（Codex） | Done |
 | REPO_THUNDER-T002 | REPO_THUNDER-F002 | 封装/隔离迅雷 SDK 类型，避免第三方类型在上层模块显式出现 | `:core_storage_component` 内部新增自定义 model；将 `TorrentBean/TorrentStorageFile` 迁移为 `internal` 或改为仅暴露 `StorageFile` 抽象；封装 `TorrentInfo/TorrentFileInfo/XLTaskInfo` 的读取逻辑到 `utils/thunder` | 1) 上层模块无需 `import com.xunlei.*` 也无需依赖其类型；2) 相关能力仍可完成：列种子文件/生成播放 URL/任务状态查询；3) `./gradlew :core_storage_component:assembleDebug` 通过 | Medium | Medium | P2 | 待分配（Storage） | Draft |
-| REPO_THUNDER-T003 | REPO_THUNDER-F003 | 将迅雷 SDK 初始化策略改为按需 + 可降级，降低启动期开销与崩溃面 | 优先在 `ThunderManager` 内实现“只初始化一次”的幂等保护与按需初始化；评估是否移除或改造 `storage_component/.../ThunderInitializer.kt` | 1) 无迅雷 SDK 支持的设备不崩溃；2) 支持设备上磁力/BT 功能首次使用可正常工作；3) 若初始化失败可明确降级（提示/禁用入口），不影响其它功能 | Medium | Small | P1 | 待分配（Storage） | Draft |
+| REPO_THUNDER-T003 | REPO_THUNDER-F003 | 将迅雷 SDK 初始化策略改为按需 + 可降级，降低启动期开销与崩溃面 | 在 `ThunderManager` 内实现“只初始化一次”的幂等保护与按需初始化，并移除进程启动期的 AndroidX Startup 初始化 | 1) 无迅雷 SDK 支持的设备不崩溃；2) 支持设备上磁力/BT 功能首次使用可正常工作；3) 若初始化失败可明确降级（提示/禁用入口），不影响其它功能 | Medium | Small | P1 | AI（Codex） | Done |
 | REPO_THUNDER-T004 | REPO_THUNDER-F004 | 对磁力链/URL/本地路径的日志与异常上报进行脱敏，并统一口径 | 修改 `ThunderManager/TorrentStorage/PlayTaskManager` 的错误上下文字符串：磁力链 → 仅 hash；URL → 去 query；路径 → 仅文件名或 hash；必要时在 `:core_log_component` 提供统一脱敏工具供复用 | 1) 上报/日志中不出现原始 magnet/URL query/token/完整本地路径；2) 仍可定位问题（保留 hash/host/path）；3) 全仓日志策略一致 | High | Small | P1 | 待分配（Log/Storage） | Draft |
 
 ## 5) 风险与回归关注点

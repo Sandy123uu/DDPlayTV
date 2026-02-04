@@ -1,10 +1,14 @@
 package com.xyoye.common_component.utils.thunder
 
 import android.content.Context
+import android.os.Build
 import com.xunlei.downloadlib.XLDownloadManager
 import com.xunlei.downloadlib.XLTaskHelper
 import com.xunlei.downloadlib.parameter.*
+import com.xyoye.common_component.base.app.BaseApplication
 import com.xyoye.common_component.extension.toMd5String
+import com.xyoye.common_component.log.LogFacade
+import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.storage.file.helper.TorrentBean
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.MagnetUtils
@@ -31,8 +35,21 @@ class ThunderManager private constructor() {
     private val cacheDirectory = PathHelper.getPlayCacheDirectory()
 
     companion object {
-        // 支持的系统架构
-        val SUPPORTED_ABI: Array<String> = XLTaskHelper.getSupportABI()
+        private const val LOG_TAG = "ThunderManager"
+
+        // thunder.aar 内置的 jni ABI（见 repository/thunder/thunder.aar）
+        private val AAR_SUPPORTED_ABI = arrayOf("arm64-v8a", "armeabi-v7a")
+
+        private val initLock = Any()
+
+        @Volatile
+        private var initAttempted: Boolean = false
+
+        @Volatile
+        private var initSucceeded: Boolean = false
+
+        @Volatile
+        private var initFailure: Throwable? = null
 
         // 无效的任务ID
         private const val INVALID_ID = -1L
@@ -42,8 +59,106 @@ class ThunderManager private constructor() {
 
         fun getInstance() = Holder.instance
 
+        /**
+         * 判断当前设备是否可能支持迅雷 SDK（仅做 ABI 预检，不会触发 SDK 初始化）。
+         */
+        fun isPlatformSupported(): Boolean {
+            val supported = AAR_SUPPORTED_ABI.toHashSet()
+            return Build.SUPPORTED_ABIS.any { supported.contains(it) }
+        }
+
+        /**
+         * 按需初始化迅雷 SDK，幂等且可降级：
+         * - 不支持 ABI：返回 false（不会抛异常）
+         * - 初始化失败：返回 false（缓存失败原因，后续不再重复初始化）
+         */
+        fun ensureInitialized(): Boolean {
+            if (initSucceeded) {
+                return true
+            }
+            synchronized(initLock) {
+                if (initSucceeded) {
+                    return true
+                }
+                if (initAttempted) {
+                    return false
+                }
+                initAttempted = true
+
+                if (!isPlatformSupported()) {
+                    initFailure =
+                        IllegalStateException(
+                            "Unsupported ABI: device=${Build.SUPPORTED_ABIS.joinToString()} supported=${AAR_SUPPORTED_ABI.joinToString()}",
+                        )
+                    LogFacade.w(
+                        LogModule.STORAGE,
+                        LOG_TAG,
+                        "thunder init skipped: unsupported ABI",
+                        mapOf(
+                            "deviceAbis" to Build.SUPPORTED_ABIS.joinToString(),
+                            "supportedAbis" to AAR_SUPPORTED_ABI.joinToString(),
+                        ),
+                    )
+                    return false
+                }
+
+                return try {
+                    XLTaskHelper.init(BaseApplication.getAppContext().applicationContext)
+                    initSucceeded = true
+                    LogFacade.i(LogModule.STORAGE, LOG_TAG, "thunder init success")
+                    true
+                } catch (t: Throwable) {
+                    initFailure = t
+                    LogFacade.e(
+                        LogModule.STORAGE,
+                        LOG_TAG,
+                        "thunder init failed, feature will be disabled",
+                        throwable = t,
+                    )
+                    false
+                }
+            }
+        }
+
         fun initialize(context: Context) {
-            XLTaskHelper.init(context)
+            // 兼容旧调用：改为幂等的按需初始化
+            if (initSucceeded) return
+            synchronized(initLock) {
+                if (initSucceeded) return
+                if (initAttempted) return
+                initAttempted = true
+                try {
+                    XLTaskHelper.init(context.applicationContext)
+                    initSucceeded = true
+                } catch (t: Throwable) {
+                    initFailure = t
+                    LogFacade.e(
+                        LogModule.STORAGE,
+                        LOG_TAG,
+                        "thunder init failed via initialize(context), feature will be disabled",
+                        throwable = t,
+                    )
+                }
+            }
+        }
+
+        /**
+         * 用于 UI/调用方展示的可读降级原因（会触发按需初始化）。
+         * @return `null` 表示已就绪，否则返回可展示的错误提示文案
+         */
+        fun ensureInitializedOrErrorMessage(): String? {
+            if (ensureInitialized()) {
+                return null
+            }
+            if (!isPlatformSupported()) {
+                return "当前设备不支持迅雷磁链/BT（ABI 不匹配），已禁用该功能"
+            }
+            val t = initFailure
+            return if (t == null) {
+                "迅雷磁链/BT 初始化失败，已禁用该功能"
+            } else {
+                "迅雷磁链/BT 初始化失败（${t.javaClass.simpleName}），已禁用该功能"
+            }
         }
 
         fun media3DownloadId(
@@ -71,6 +186,9 @@ class ThunderManager private constructor() {
      * @return 种子文件路径
      */
     suspend fun downloadTorrentFile(magnet: String): String? {
+        if (!ensureInitialized()) {
+            return null
+        }
         return try {
             val hash = MagnetUtils.getMagnetHash(magnet)
             if (hash.isEmpty()) {
@@ -118,6 +236,9 @@ class ThunderManager private constructor() {
         torrent: TorrentBean,
         index: Int
     ): String? {
+        if (!ensureInitialized()) {
+            return null
+        }
         return try {
             // 停止其它任务
             stopAllTask()
@@ -156,6 +277,9 @@ class ThunderManager private constructor() {
      * 停止并移除任务
      */
     fun stopTask(taskId: Long) {
+        if (!ensureInitialized()) {
+            return
+        }
         try {
             mTaskList.entries.find { it.value == taskId }?.let {
                 mTaskList.remove(it.key)
@@ -175,6 +299,9 @@ class ThunderManager private constructor() {
      * 停止所有任务
      */
     private fun stopAllTask() {
+        if (!ensureInitialized()) {
+            return
+        }
         try {
             val iterator = mTaskList.iterator()
             while (iterator.hasNext()) {
@@ -384,6 +511,9 @@ class ThunderManager private constructor() {
      */
     fun getTaskInfo(torrentPath: String): TorrentInfo =
         try {
+            if (!ensureInitialized()) {
+                throw IllegalStateException(ensureInitializedOrErrorMessage() ?: "Thunder is not initialized")
+            }
             XLTaskHelper.getInstance().getTorrentInfo(torrentPath)
         } catch (e: Exception) {
             ErrorReportHelper.postCatchedExceptionWithContext(
@@ -401,6 +531,9 @@ class ThunderManager private constructor() {
      */
     fun getTaskInfo(taskId: Long): XLTaskInfo =
         try {
+            if (!ensureInitialized()) {
+                throw IllegalStateException(ensureInitializedOrErrorMessage() ?: "Thunder is not initialized")
+            }
             XLTaskHelper.getInstance().getTaskInfo(taskId)
         } catch (e: Exception) {
             ErrorReportHelper.postCatchedExceptionWithContext(

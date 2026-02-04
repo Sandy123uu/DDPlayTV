@@ -10,6 +10,7 @@ import com.xyoye.common_component.source.factory.StorageVideoSourceFactory
 import com.xyoye.common_component.storage.StorageFactory
 import com.xyoye.common_component.storage.impl.LinkStorage
 import com.xyoye.common_component.utils.ErrorReportHelper
+import com.xyoye.common_component.utils.thunder.ThunderManager
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.entity.MediaLibraryEntity
 import com.xyoye.data_component.entity.PlayHistoryEntity
@@ -183,10 +184,27 @@ class PlayHistoryViewModel : BaseViewModel() {
     private suspend fun setupHistorySource(history: PlayHistoryEntity): Boolean {
         return try {
             showLoading()
-            val mediaSource =
+            val library =
                 history.storageId
                     ?.run { DatabaseManager.instance.getMediaLibraryDao().getById(this) }
-                    ?.run { StorageFactory.createStorage(this) }
+            if (library == null) {
+                hideLoading()
+                ToastCenter.showError("播放失败，找不到播放资源")
+                return false
+            }
+
+            if (library.mediaType == MediaType.MAGNET_LINK) {
+                val errorMessage = ThunderManager.ensureInitializedOrErrorMessage()
+                if (errorMessage != null) {
+                    hideLoading()
+                    ToastCenter.showError(errorMessage)
+                    return false
+                }
+            }
+
+            val mediaSource =
+                StorageFactory
+                    .createStorage(library)
                     ?.run { historyFile(history) }
                     ?.run { StorageVideoSourceFactory.create(this) }
             hideLoading()

@@ -18,6 +18,7 @@ import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.file.payloadAs
 import com.xyoye.common_component.storage.open115.auth.Open115ReAuthRequiredException
 import com.xyoye.common_component.utils.ErrorReportHelper
+import com.xyoye.common_component.utils.thunder.ThunderManager
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.data.bilibili.BilibiliHistoryItem
 import com.xyoye.data_component.entity.MediaLibraryEntity
@@ -76,6 +77,17 @@ class StorageFileFragmentViewModel : BaseViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             lastListError = null
             try {
+                if (storage.library.mediaType == MediaType.MAGNET_LINK) {
+                    val errorMessage = ThunderManager.ensureInitializedOrErrorMessage()
+                    if (errorMessage != null) {
+                        ToastCenter.showError(errorMessage)
+                        emptyList<Any>()
+                            .apply { _fileLiveData.postValue(this) }
+                            .also { filesSnapshot = it }
+                        return@launch
+                    }
+                }
+
                 val authStorage = storage as? AuthStorage
                 if (authStorage != null && authStorage.requiresLogin(directory) && !authStorage.isConnected()) {
                     ToastCenter.showWarning("请先${authStorage.loginActionText(directory)}")
