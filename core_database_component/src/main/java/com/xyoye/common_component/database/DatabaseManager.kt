@@ -220,6 +220,15 @@ class DatabaseManager private constructor() {
                 }
             }
 
+        val MIGRATION_15_16 =
+            object : Migration(15, 16) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    database.execSQL(
+                        "ALTER TABLE media_library ADD COLUMN web_dav_allow_insecure_tls INTEGER NOT NULL DEFAULT 0",
+                    )
+                }
+            }
+
         val instance = DatabaseManager.holder.database
     }
 
@@ -248,5 +257,6 @@ class DatabaseManager private constructor() {
                 MIGRATION_12_13,
                 MIGRATION_13_14,
                 MIGRATION_14_15,
+                MIGRATION_15_16,
             ).build()
 }

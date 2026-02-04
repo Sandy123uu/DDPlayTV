@@ -4,13 +4,20 @@ import com.xyoye.common_component.config.PlayerConfig
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.config.Api
+import com.xyoye.common_component.network.helper.AgentInterceptor
+import com.xyoye.common_component.network.helper.RedirectAuthorizationInterceptor
+import com.xyoye.common_component.network.helper.UnsafeOkHttpClient
+import com.xyoye.common_component.network.service.ExtendedService
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.RangeUtils
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import okhttp3.OkHttpClient
 import java.io.InputStream
 import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 /**
@@ -27,6 +34,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
     private var upstreamHeaders: Map<String, String> = emptyMap()
     private var contentType: String = "application/octet-stream"
     private var contentLength: Long = -1L
+    private var upstreamTlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.LEGACY_INSECURE_HOSTNAME
 
     @Volatile
     private var prePlayRangeMinIntervalMs: Long = 1000L
@@ -64,12 +72,86 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         val instance: HttpPlayServer by lazy { HttpPlayServer() }
     }
 
+    enum class UpstreamTlsPolicy {
+        /**
+         * 严格 TLS：不忽略证书校验、不忽略主机名校验（推荐；WebDAV 默认）。
+         */
+        STRICT,
+
+        /**
+         * 兼容旧逻辑：仅忽略主机名校验（仍保留证书链校验）。
+         *
+         * 说明：历史上本地代理走 Retrofit.commonClient，默认 `hostnameVerifier { _, _ -> true }`。
+         * 该策略用于保持既有行为，避免本次治理扩大影响面。
+         */
+        LEGACY_INSECURE_HOSTNAME,
+
+        /**
+         * 不安全 TLS：信任所有证书 + 忽略主机名校验（必须由用户显式开启）。
+         */
+        UNSAFE_TRUST_ALL,
+    }
+
     data class UpstreamSource(
         val url: String,
         val headers: Map<String, String> = emptyMap(),
         val contentType: String = "application/octet-stream",
-        val contentLength: Long = -1L
+        val contentLength: Long = -1L,
+        val tlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.LEGACY_INSECURE_HOSTNAME,
     )
+
+    private val strictClient: OkHttpClient by lazy {
+        OkHttpClient
+            .Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS)
+            .addInterceptor(AgentInterceptor())
+            .addNetworkInterceptor(RedirectAuthorizationInterceptor())
+            .build()
+    }
+
+    private val legacyInsecureHostnameClient: OkHttpClient by lazy {
+        OkHttpClient
+            .Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS)
+            .hostnameVerifier { _, _ -> true }
+            .addInterceptor(AgentInterceptor())
+            .addNetworkInterceptor(RedirectAuthorizationInterceptor())
+            .build()
+    }
+
+    private val unsafeTrustAllClient: OkHttpClient by lazy {
+        UnsafeOkHttpClient
+            .client
+            .newBuilder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS)
+            .addInterceptor(AgentInterceptor())
+            .build()
+    }
+
+    private val strictService: ExtendedService by lazy {
+        Retrofit.createService(Api.PLACEHOLDER, strictClient, ExtendedService::class.java)
+    }
+
+    private val legacyInsecureHostnameService: ExtendedService by lazy {
+        Retrofit.createService(Api.PLACEHOLDER, legacyInsecureHostnameClient, ExtendedService::class.java)
+    }
+
+    private val unsafeTrustAllService: ExtendedService by lazy {
+        Retrofit.createService(Api.PLACEHOLDER, unsafeTrustAllClient, ExtendedService::class.java)
+    }
+
+    private fun selectExtendedService(tlsPolicy: UpstreamTlsPolicy): ExtendedService =
+        when (tlsPolicy) {
+            UpstreamTlsPolicy.STRICT -> strictService
+            UpstreamTlsPolicy.LEGACY_INSECURE_HOSTNAME -> legacyInsecureHostnameService
+            UpstreamTlsPolicy.UNSAFE_TRUST_ALL -> unsafeTrustAllService
+        }
 
     override fun serve(session: IHTTPSession): Response = serveInternal(session, allowRetry = true)
 
@@ -187,6 +269,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
                             upstreamHeaders = refreshed.headers
                             contentType = refreshed.contentType
                             contentLength = refreshed.contentLength
+                            upstreamTlsPolicy = refreshed.tlsPolicy
                             return serveInternal(session, allowRetry = false)
                         }
                     }
@@ -454,7 +537,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         headers: Map<String, String>
     ): retrofit2.Response<okhttp3.ResponseBody>? =
         runCatching {
-            Retrofit.extendedService.getResourceResponseCall(url, headers).execute()
+            selectExtendedService(upstreamTlsPolicy).getResourceResponseCall(url, headers).execute()
         }.getOrElse { throwable ->
             ErrorReportHelper.postCatchedException(
                 throwable,
@@ -512,6 +595,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         contentLength: Long = -1L,
         prePlayRangeMinIntervalMs: Long = runCatching { PlayerConfig.getMpvProxyRangeMinIntervalMs() }.getOrDefault(1000).toLong(),
         fileName: String = "video",
+        upstreamTlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.LEGACY_INSECURE_HOSTNAME,
         onRangeUnsupported: (() -> UpstreamSource?)? = null
     ): String {
         this.upstreamUrl = upstreamUrl
@@ -519,6 +603,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         this.contentType = contentType
         this.contentLength = contentLength
         this.prePlayRangeMinIntervalMs = prePlayRangeMinIntervalMs
+        this.upstreamTlsPolicy = upstreamTlsPolicy
         this.rangeRetryDone = false
         this.rangeRetrySupplier = onRangeUnsupported
         this.seekEnabled = false

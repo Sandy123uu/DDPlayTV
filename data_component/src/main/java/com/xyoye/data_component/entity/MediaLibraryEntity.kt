@@ -54,6 +54,8 @@ data class MediaLibraryEntity(
     var remoteSecret: String? = null,
     @ColumnInfo(name = "web_dav_strict")
     var webDavStrict: Boolean = true,
+    @ColumnInfo(name = "web_dav_allow_insecure_tls")
+    var webDavAllowInsecureTls: Boolean = false,
     @ColumnInfo(name = "screencast_address")
     var screencastAddress: String = "",
     @ColumnInfo(name = "remote_anime_grouping")

@@ -4,8 +4,10 @@ import android.net.Uri
 import com.xyoye.common_component.config.PlayerConfig
 import com.xyoye.common_component.network.config.HeaderKey
 import com.xyoye.common_component.network.helper.UnsafeOkHttpClient
+import com.xyoye.common_component.network.helper.WebDavOkHttpClient
 import com.xyoye.common_component.storage.AbstractStorage
 import com.xyoye.common_component.storage.file.StorageFile
+import com.xyoye.common_component.storage.file.helper.HttpPlayServer
 import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.common_component.storage.file.impl.WebDavStorageFile
 import com.xyoye.common_component.utils.ErrorReportHelper
@@ -29,7 +31,14 @@ import java.util.Date
 class WebDavStorage(
     library: MediaLibraryEntity
 ) : AbstractStorage(library) {
-    private val sardine = OkHttpSardine(UnsafeOkHttpClient.client)
+    private val sardine =
+        OkHttpSardine(
+            if (this.library.webDavAllowInsecureTls) {
+                UnsafeOkHttpClient.client
+            } else {
+                WebDavOkHttpClient.client
+            },
+        )
 
     init {
         SardineConfig.isXmlStrictMode = this.library.webDavStrict
@@ -124,6 +133,12 @@ class WebDavStorage(
             prePlayRangeMinIntervalMs = interval,
             fileName = fileName,
             autoEnabled = autoEnabled,
+            upstreamTlsPolicy =
+                if (this.library.webDavAllowInsecureTls) {
+                    HttpPlayServer.UpstreamTlsPolicy.UNSAFE_TRUST_ALL
+                } else {
+                    HttpPlayServer.UpstreamTlsPolicy.STRICT
+                },
         )
     }
 

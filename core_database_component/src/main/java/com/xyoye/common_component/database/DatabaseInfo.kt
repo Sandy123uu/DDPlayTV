@@ -40,7 +40,7 @@ import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
             RolloutToggleSnapshot::class,
             DownloadAssetCheck::class,
         ],
-    version = 15,
+    version = 16,
     exportSchema = false,
 )
 abstract class DatabaseInfo : RoomDatabase() {
