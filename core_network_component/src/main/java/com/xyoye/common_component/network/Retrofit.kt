@@ -12,6 +12,7 @@ import com.xyoye.common_component.network.helper.LoggerInterceptor
 import com.xyoye.common_component.network.helper.SignatureInterceptor
 import com.xyoye.common_component.network.service.AlistService
 import com.xyoye.common_component.network.service.BaiduPanService
+import com.xyoye.common_component.network.service.Cloud115Service
 import com.xyoye.common_component.network.service.DanDanService
 import com.xyoye.common_component.network.service.ExtendedService
 import com.xyoye.common_component.network.service.MagnetService
@@ -38,6 +39,7 @@ class Retrofit private constructor() {
         val alistService: AlistService by lazy { Holder.instance.alistService }
         val baiduPanService: BaiduPanService by lazy { Holder.instance.baiduPanService }
         val open115Service: Open115Service by lazy { Holder.instance.open115Service }
+        val cloud115Service: Cloud115Service by lazy { Holder.instance.cloud115Service }
 
         fun <T> createService(
             baseUrl: String,
@@ -169,5 +171,15 @@ class Retrofit private constructor() {
             .baseUrl(Api.PLACEHOLDER)
             .build()
             .create(Open115Service::class.java)
+    }
+
+    private val cloud115Service: Cloud115Service by lazy {
+        Retrofit
+            .Builder()
+            .addConverterFactory(moshiConverterFactory)
+            .client(commonClient)
+            .baseUrl(Api.PLACEHOLDER)
+            .build()
+            .create(Cloud115Service::class.java)
     }
 }

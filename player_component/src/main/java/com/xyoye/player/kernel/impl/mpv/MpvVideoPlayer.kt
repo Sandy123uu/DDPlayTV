@@ -18,6 +18,7 @@ import com.xyoye.data_component.enums.TrackType
 import com.xyoye.player.info.PlayerInitializer
 import com.xyoye.player.kernel.inter.AbstractVideoPlayer
 import com.xyoye.player.kernel.subtitle.SubtitleKernelBridge
+import com.xyoye.player.subtitle.backend.EmbeddedSubtitleSink
 import com.xyoye.player.utils.DecodeType
 import com.xyoye.player.utils.PlayerConstant
 import java.io.File
@@ -27,6 +28,11 @@ class MpvVideoPlayer(
     private val context: Context
 ) : AbstractVideoPlayer(),
     SubtitleKernelBridge {
+    private data class PendingExternalTrack(
+        val type: TrackType,
+        val path: String,
+    )
+
     private val appContext: Context = context.applicationContext
     private val nativeBridge = MpvNativeBridge()
     private var dataSource: String? = null
@@ -43,6 +49,8 @@ class MpvVideoPlayer(
     private var looping = PlayerInitializer.isLooping
     private var initializationError: Exception? = null
     private var anime4kMode: Int = Anime4kShaderManager.MODE_OFF
+    private val embeddedSubtitleBridge = MpvEmbeddedSubtitleBridge()
+    private val pendingExternalTracks = mutableListOf<PendingExternalTrack>()
 
     private fun failInitialization(
         message: String,
@@ -97,6 +105,7 @@ class MpvVideoPlayer(
     ) {
         setAnime4kMode(Anime4kShaderManager.MODE_OFF)
         dataSource = path
+        pendingExternalTracks.clear()
         runCatching {
             val playServer = HttpPlayServer.getInstance()
             if (playServer.isServingUrl(path)) {
@@ -323,6 +332,7 @@ class MpvVideoPlayer(
         nativeBridge.stop()
         dataSource = null
         headers = emptyMap()
+        pendingExternalTracks.clear()
         isPrepared = false
         isPreparing = false
         isPlaying = false
@@ -332,6 +342,8 @@ class MpvVideoPlayer(
     }
 
     override fun release() {
+        embeddedSubtitleBridge.release()
+        pendingExternalTracks.clear()
         clearPlayerEventListener()
         stop()
         nativeBridge.clearEventListener()
@@ -344,6 +356,9 @@ class MpvVideoPlayer(
 
     override fun seekTo(timeMs: Long) {
         if (!isPrepared) return
+        if (canStartGpuSubtitlePipeline()) {
+            embeddedSubtitleBridge.resetForTimelineChange()
+        }
         if (!proxySeekEnabled) {
             val path = dataSource
             if (!path.isNullOrEmpty()) {
@@ -380,7 +395,10 @@ class MpvVideoPlayer(
 
     override fun setSubtitleOffset(offsetMs: Long) {
         if (!isPrepared) return
-        nativeBridge.setSubtitleDelay(offsetMs)
+        nativeBridge.setSubtitleDelay(-offsetMs)
+        if (canStartGpuSubtitlePipeline()) {
+            embeddedSubtitleBridge.resetForTimelineChange()
+        }
     }
 
     override fun isPlaying(): Boolean = isPrepared && isPlaying
@@ -420,40 +438,60 @@ class MpvVideoPlayer(
 
     override fun addTrack(track: VideoTrackBean): Boolean {
         val path = track.trackResource as? String ?: return false
-        return nativeBridge.addExternalTrack(track.type, path)
+        if (path.isBlank()) return false
+        val added = nativeBridge.addExternalTrack(track.type, path)
+        if (added) {
+            pendingExternalTracks.removeAll { it.type == track.type }
+            return true
+        }
+        if (isPrepared) {
+            LogFacade.w(
+                LogModule.PLAYER,
+                "MpvVideoPlayer",
+                "addExternalTrack failed: type=${track.type} path=$path reason=${nativeBridge.lastError().orEmpty()}",
+            )
+            return false
+        }
+        pendingExternalTracks.removeAll { it.type == track.type }
+        pendingExternalTracks.add(PendingExternalTrack(track.type, path))
+        LogFacade.d(
+            LogModule.PLAYER,
+            "MpvVideoPlayer",
+            "addExternalTrack deferred until prepared: type=${track.type} path=$path",
+        )
+        return true
     }
 
     override fun getTracks(type: TrackType): List<VideoTrackBean> {
         if (!isPrepared) return emptyList()
-        val tracks =
-            nativeBridge
-                .listTracks()
-                .filter { it.type == type }
-                .map {
-                    VideoTrackBean.internal(
-                        id = "${it.nativeType}:${it.id}",
-                        name = it.title,
-                        type = type,
-                        selected = it.selected,
-                    )
-                }
-        if (type != TrackType.SUBTITLE) {
-            return tracks
-        }
-        val hasSelected = tracks.any { it.selected }
-        val disableTrack = VideoTrackBean.disable(type, selected = !hasSelected)
-        return listOf(disableTrack) + tracks
+        return nativeBridge
+            .listTracks()
+            .filter { it.type == type }
+            .map {
+                VideoTrackBean.internal(
+                    id = "${it.nativeType}:${it.id}",
+                    name = it.title,
+                    type = type,
+                    selected = it.selected
+                )
+            }
     }
 
     override fun selectTrack(track: VideoTrackBean) {
         if (!isPrepared) return
         if (track.disable) {
+            if (canStartGpuSubtitlePipeline()) {
+                embeddedSubtitleBridge.resetForTimelineChange()
+            }
             nativeBridge.deselectTrack(MpvNativeBridge.TRACK_TYPE_SUBTITLE)
             return
         }
         val ids = track.id?.split(":") ?: return
         val nativeType = ids.getOrNull(0)?.toIntOrNull() ?: return
         val trackId = ids.getOrNull(1)?.toIntOrNull() ?: return
+        if (track.type == TrackType.SUBTITLE && canStartGpuSubtitlePipeline()) {
+            embeddedSubtitleBridge.resetForTimelineChange()
+        }
         nativeBridge.selectTrack(nativeType, trackId)
     }
 
@@ -465,6 +503,9 @@ class MpvVideoPlayer(
                 TrackType.AUDIO -> MpvNativeBridge.TRACK_TYPE_AUDIO
                 else -> return
             }
+        if (type == TrackType.SUBTITLE && canStartGpuSubtitlePipeline()) {
+            embeddedSubtitleBridge.resetForTimelineChange()
+        }
         nativeBridge.deselectTrack(nativeType)
     }
 
@@ -535,11 +576,13 @@ class MpvVideoPlayer(
             is MpvNativeBridge.Event.Prepared -> {
                 isPrepared = true
                 isPreparing = false
+                flushPendingExternalTracks()
                 mPlayerEventListener.onPrepared()
             }
             is MpvNativeBridge.Event.RenderingStart -> {
                 isPlaying = true
                 refreshDecodeTypeFromNative()
+                flushPendingExternalTracks()
                 val path = dataSource
                 if (!path.isNullOrEmpty()) {
                     runCatching {
@@ -559,6 +602,40 @@ class MpvVideoPlayer(
             is MpvNativeBridge.Event.VideoSize -> {
                 videoSize = Point(event.width, event.height)
                 mPlayerEventListener.onVideoSizeChange(event.width, event.height)
+            }
+            is MpvNativeBridge.Event.SubtitleAssExtradata -> {
+                if (canStartGpuSubtitlePipeline()) {
+                    embeddedSubtitleBridge.onAssExtradata(event.value)
+                }
+            }
+            is MpvNativeBridge.Event.SubtitleAssFull -> {
+                if (canStartGpuSubtitlePipeline()) {
+                    embeddedSubtitleBridge.onAssFull(event.value)
+                }
+            }
+            is MpvNativeBridge.Event.SubtitleSid -> {
+                if (canStartGpuSubtitlePipeline()) {
+                    embeddedSubtitleBridge.onSid(event.value)
+                }
+            }
+        }
+    }
+
+    private fun flushPendingExternalTracks() {
+        if (!nativeBridge.isAvailable) return
+        if (!isPrepared) return
+        if (pendingExternalTracks.isEmpty()) return
+
+        val pending = pendingExternalTracks.toList()
+        pendingExternalTracks.clear()
+        pending.forEach { track ->
+            val added = nativeBridge.addExternalTrack(track.type, track.path)
+            if (!added) {
+                LogFacade.w(
+                    LogModule.PLAYER,
+                    "MpvVideoPlayer",
+                    "flushExternalTrack failed: type=${track.type} path=${track.path} reason=${nativeBridge.lastError().orEmpty()}",
+                )
             }
         }
     }
@@ -719,7 +796,12 @@ class MpvVideoPlayer(
         return details.joinToString(" | ").ifEmpty { "mpv playback error" }
     }
 
-    override fun canStartGpuSubtitlePipeline(): Boolean = false
+    override fun canStartGpuSubtitlePipeline(): Boolean =
+        MpvOptions.resolveVideoOutput(PlayerConfig.getMpvVideoOutput()) == MpvOptions.VO_MEDIACODEC_EMBED
+
+    override fun setEmbeddedSubtitleSink(sink: EmbeddedSubtitleSink?) {
+        embeddedSubtitleBridge.setSink(sink)
+    }
 }
 
 private class MpvPlaybackException(

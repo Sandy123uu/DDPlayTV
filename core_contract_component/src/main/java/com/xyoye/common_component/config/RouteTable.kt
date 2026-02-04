@@ -8,7 +8,7 @@ package com.xyoye.common_component.config
 
 object RouteTable {
     object App {
-        const val DeveloperMenuService = "/app/developer_menu_service"
+        const val Media3SessionServiceProvider = "/app/media3_session_service_provider"
     }
 
     object Anime {
@@ -31,6 +31,7 @@ object RouteTable {
 
     object User {
         const val PersonalFragment = "/user/personal_fragment"
+        const val DeveloperMenuService = "/user/developer_menu_service"
         const val UserSessionService = "/user/user_session_service"
         const val UserLogin = "/user/login"
         const val UserInfo = "/user/info"
@@ -61,7 +62,7 @@ object RouteTable {
         const val ScreencastReceive = "/stream/screencast_receive"
 
         const val StorageFile = "/stream/storage_file"
-        const val StorageFileProvider = "/stream/storage_file/provider"
+        const val StorageFileProvider = "/stream/storage_file_provider"
         const val StoragePlus = "/stream/storage_plus"
     }
 }

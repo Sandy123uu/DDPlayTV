@@ -106,6 +106,13 @@
     <string name="developer_app_log_enable_title">启用调试日志写入</string>
     <string name="developer_app_log_enable_summary_on">已开启：输出日志到 logcat，并写入 log.txt / log_old.txt</string>
     <string name="developer_app_log_enable_summary_off">关闭后仅保留默认策略（logcat INFO+），不写入本地调试日志</string>
+    <string name="developer_tcp_log_server_title">启用 TCP 日志服务</string>
+    <string name="developer_tcp_log_server_summary_off">关闭后不监听端口</string>
+    <string name="developer_tcp_log_server_summary_on">已开启：端口 %1$d\nIP：%2$s\n连接：nc &lt;ip&gt; %1$d</string>
+    <string name="developer_tcp_log_server_summary_error">开启失败：%1$s</string>
+    <string name="developer_tcp_log_server_toast_on">TCP 日志服务已开启</string>
+    <string name="developer_tcp_log_server_toast_off">TCP 日志服务已关闭</string>
+    <string name="developer_tcp_log_server_toast_on_failed">TCP 日志服务开启失败：%1$s</string>
     <string name="developer_subtitle_debug_category_title">字幕调试</string>
     <string name="developer_subtitle_session_status_title">字幕后端状态</string>
     <string name="developer_subtitle_session_status_summary_empty">暂无会话信息</string>
@@ -118,16 +125,24 @@
     <string name="developer_bugly_status_summary">检查 Bugly 初始化状态</string>
     <string name="developer_bugly_status_on_debug">✅ 已启用 | ID: 测试模式 | 来源: Debug Mode</string>
     <string name="developer_bugly_status_on">✅ 已启用 | ID: %1$s | 来源: %2$s</string>
+    <string name="developer_bugly_status_runtime_missing">⚠ 已配置 | 运行时未初始化（点击查看详情）</string>
     <string name="developer_bugly_status_off">❌ 未配置 Bugly</string>
     <string name="developer_bugly_status_detail_header">Bugly 错误上报状态详情:</string>
     <string name="developer_bugly_status_detail_state">状态: %1$s</string>
     <string name="developer_bugly_status_detail_app_id">App ID: %1$s</string>
+    <string name="developer_bugly_status_detail_runtime_app_id">运行时 App ID: %1$s</string>
+    <string name="developer_bugly_status_detail_runtime_version">SDK 版本: %1$s</string>
     <string name="developer_bugly_status_detail_source">配置来源: %1$s</string>
     <string name="developer_bugly_status_detail_debug">调试模式: %1$s</string>
     <string name="developer_bugly_status_detail_working">✓ 错误上报功能正常工作</string>
+    <string name="developer_bugly_status_detail_runtime_missing">⚠ 已配置但 Bugly 未完成初始化，可能导致无上报（建议重新安装/冷启动一次）</string>
     <string name="developer_bugly_status_detail_notice">注意: 测试模式下不会实际上报错误</string>
     <string name="developer_bugly_status_detail_missing">⚠ 请配置 Bugly App ID 以启用错误上报</string>
     <string name="developer_bugly_status_failed">获取错误上报状态失败</string>
+    <string name="developer_bugly_test_report_title">测试上报</string>
+    <string name="developer_bugly_test_report_summary">发送一条“自定义异常”到 Bugly（不会崩溃）</string>
+    <string name="developer_bugly_test_report_toast">已触发测试上报，请稍后到 Bugly 控制台查看</string>
+    <string name="developer_bugly_test_report_not_configured">Bugly 未配置，无法测试上报</string>
 
     <integer-array name="cover">
         <item>@drawable/ic_bailitusu</item>

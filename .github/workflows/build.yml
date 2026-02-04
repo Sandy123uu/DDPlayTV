@@ -1,0 +1,76 @@
+name: Build
+on:
+    workflow_dispatch:
+        inputs:
+            checkout_ref:
+                description: "要运行的分支 / tag / SHA（留空则使用触发分支）"
+                required: false
+                default: ""
+    push:
+        branches:
+            - develop
+    pull_request:
+        types: [opened, synchronize, reopened]
+permissions:
+    contents: read
+    pull-requests: read
+jobs:
+    sonarqube:
+        name: SonarQube
+        runs-on: ubuntu-latest
+        env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+                  ref: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.checkout_ref != '') && github.event.inputs.checkout_ref || github.ref }}
+            - name: Validate Gradle Wrapper
+              uses: gradle/wrapper-validation-action@v3
+
+            - name: Set up JDK 17
+              uses: actions/setup-java@v4
+              with:
+                  distribution: "temurin"
+                  java-version: "17"
+                  cache: "gradle"
+
+            - name: Set up Android SDK
+              uses: android-actions/setup-android@v3
+
+            - name: Cache Sonar
+              uses: actions/cache@v4
+              with:
+                  path: ~/.sonar/cache
+                  key: ${{ runner.os }}-sonar
+
+            - name: Build (debug)
+              run: ./gradlew --no-daemon assembleDebug
+
+            - name: Collect class directories
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  mapfile -t dirs < <( \
+                      find . -type d -print \
+                        | sed 's|^\\./||' \
+                        | grep -E '(^|/)build/intermediates/javac/[^/]+/[^/]+/classes$|(^|/)build/tmp/kotlin-classes/[^/]+$|(^|/)build/classes/java/[^/]+$' \
+                        | sort -u \
+                  )
+                  if [ "${#dirs[@]}" -eq 0 ]; then
+                      echo "No class directories found. Make sure the build step produced compiled classes." >&2
+                      exit 1
+                  fi
+
+                  sonar_java_binaries=$(printf "%s," "${dirs[@]}")
+                  sonar_java_binaries="${sonar_java_binaries%,}"
+                  echo "SONAR_JAVA_BINARIES=$sonar_java_binaries" >> "$GITHUB_ENV"
+                  echo "Collected ${#dirs[@]} class dirs for sonar.java.binaries"
+            - name: SonarQube Scan
+              uses: SonarSource/sonarqube-scan-action@v6
+              if: ${{ env.SONAR_TOKEN != '' }}
+              with:
+                  args: >
+                      -Dsonar.java.binaries=${{ env.SONAR_JAVA_BINARIES }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

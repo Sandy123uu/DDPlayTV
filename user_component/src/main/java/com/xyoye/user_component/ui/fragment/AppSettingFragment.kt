@@ -7,8 +7,8 @@ import android.view.View
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceDataStore
-import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
+import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.alibaba.android.arouter.launcher.ARouter
 import com.xyoye.common_component.config.AppConfig
 import com.xyoye.common_component.config.RouteTable
@@ -22,7 +22,7 @@ import com.xyoye.user_component.R
  * Created by xyoye on 2021/2/23.
  */
 
-class AppSettingFragment : PreferenceFragmentCompat() {
+class AppSettingFragment : BasePreferenceFragmentCompat() {
     companion object {
         fun newInstance() = AppSettingFragment()
     }

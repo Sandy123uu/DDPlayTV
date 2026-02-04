@@ -28,6 +28,11 @@ Thumbs.db
 .vscode/
 .gradle-cache/
 
+# Accidental AAR extraction artifacts at repo root
+/AndroidManifest.xml
+/res/
+/aidl/
+
 # Android Studio/NDK extras
 captures/
 cmake-build-*/

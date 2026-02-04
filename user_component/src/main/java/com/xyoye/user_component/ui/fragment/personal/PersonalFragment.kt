@@ -1,5 +1,6 @@
 package com.xyoye.user_component.ui.fragment.personal
 
+import android.view.View
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.isVisible
 import com.alibaba.android.arouter.facade.annotation.Route
@@ -10,6 +11,7 @@ import com.xyoye.common_component.bridge.ServiceLifecycleBridge
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.config.UserConfig
 import com.xyoye.common_component.extension.setTextColorRes
+import com.xyoye.common_component.focus.requestDefaultFocus
 import com.xyoye.common_component.utils.UserInfoHelper
 import com.xyoye.data_component.data.LoginData
 import com.xyoye.user_component.BR
@@ -24,6 +26,8 @@ import java.text.NumberFormat
 
 @Route(path = RouteTable.User.PersonalFragment)
 class PersonalFragment : BaseFragment<PersonalFragmentViewModel, FragmentPersonalBinding>() {
+    private var lastFocusedViewId: Int = View.NO_ID
+
     override fun initViewModel() =
         ViewModelInit(
             BR.viewModel,
@@ -58,6 +62,39 @@ class PersonalFragment : BaseFragment<PersonalFragmentViewModel, FragmentPersona
             (mAttachActivity as LoginObserver).getLoginLiveData().observe(this) {
                 applyLoginData(it)
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (bindingOrNull == null) return
+        dataBinding.root.post { requestDefaultFocusIfNeeded() }
+    }
+
+    override fun onPause() {
+        if (bindingOrNull != null) {
+            val focusedId = dataBinding.root.findFocus()?.id ?: View.NO_ID
+            if (focusedId != View.NO_ID) {
+                lastFocusedViewId = focusedId
+            }
+        }
+        super.onPause()
+    }
+
+    private fun requestDefaultFocusIfNeeded() {
+        val binding = bindingOrNull ?: return
+        if (binding.root.isInTouchMode) return
+        if (binding.root.findFocus() != null) return
+
+        val restored =
+            if (lastFocusedViewId != View.NO_ID) {
+                binding.root.findViewById<View>(lastFocusedViewId)?.requestDefaultFocus() == true
+            } else {
+                false
+            }
+
+        if (!restored) {
+            binding.userAccountCl.requestDefaultFocus()
         }
     }
 

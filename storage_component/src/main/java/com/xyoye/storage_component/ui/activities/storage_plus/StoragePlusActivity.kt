@@ -13,6 +13,7 @@ import com.xyoye.storage_component.databinding.ActivityStoragePlusBinding
 import com.xyoye.storage_component.ui.dialog.AlistStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.BaiduPanStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.BilibiliStorageEditDialog
+import com.xyoye.storage_component.ui.dialog.Cloud115StorageEditDialog
 import com.xyoye.storage_component.ui.dialog.ExternalStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.FTPStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.Open115StorageEditDialog
@@ -21,6 +22,7 @@ import com.xyoye.storage_component.ui.dialog.ScreencastStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.SmbStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.StorageEditDialog
 import com.xyoye.storage_component.ui.dialog.WebDavStorageEditDialog
+import kotlinx.coroutines.Job
 
 @Route(path = RouteTable.Stream.StoragePlus)
 class StoragePlusActivity : BaseActivity<StoragePlusViewModel, ActivityStoragePlusBinding>() {
@@ -66,9 +68,9 @@ class StoragePlusActivity : BaseActivity<StoragePlusViewModel, ActivityStoragePl
     }
 
     private fun initObserver() {
-        viewModel.exitLiveData.observe(this) {
+        viewModel.storageSavedLiveData.observe(this) {
+            editData = it
             setResult(RESULT_OK)
-            finish()
         }
 
         viewModel.testLiveData.observe(this) {
@@ -90,6 +92,7 @@ class StoragePlusActivity : BaseActivity<StoragePlusViewModel, ActivityStoragePl
                 MediaType.ALSIT_STORAGE -> AlistStorageEditDialog(this, editData)
                 MediaType.BAIDU_PAN_STORAGE -> BaiduPanStorageEditDialog(this, editData)
                 MediaType.OPEN_115_STORAGE -> Open115StorageEditDialog(this, editData)
+                MediaType.CLOUD_115_STORAGE -> Cloud115StorageEditDialog(this, editData)
                 MediaType.BILIBILI_STORAGE -> BilibiliStorageEditDialog(this, editData)
                 else -> {
                     finish()
@@ -101,8 +104,15 @@ class StoragePlusActivity : BaseActivity<StoragePlusViewModel, ActivityStoragePl
         storageEditDialog = dialog
     }
 
-    fun addStorage(library: MediaLibraryEntity) {
-        viewModel.addStorage(editData, library)
+    fun addStorage(library: MediaLibraryEntity): Job {
+        return viewModel.addStorage(editData, library)
+    }
+
+    fun addStorage(
+        library: MediaLibraryEntity,
+        showToast: Boolean,
+    ): Job {
+        return viewModel.addStorage(editData, library, showToast)
     }
 
     fun testStorage(library: MediaLibraryEntity) {

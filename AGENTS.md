@@ -17,56 +17,66 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 <!-- OPENSPEC:END -->
 
+# Agent Operating Rules
+- Do thinking/planning/coding in English; provide final user-facing replies in Chinese.
+- Use the GitHub CLI (`gh`) for GitHub workflows (issues/PRs/checks) whenever possible.
+- `adb logcat` can be noisy: do not dump full logs; filter to only what is needed, and note that logs may contain other apps/system output.
+- Prefer architectural and logical consistency over “minimal intrusion”; align with existing patterns even if it takes extra work to unify/abstract.
+- Write Markdown documents in Chinese unless the task explicitly requests otherwise.
+
+# Environment
+- Windows 11 + WSL2.
+
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-The app follows a modular MVVM layout: `app/` hosts the launcher shell, shared UI glue, and manifest; feature slices live in sibling directories (`anime_component/`, `player_component/`, `local_component/`, `storage_component/`, `stream_component/`, `user_component/`, `download_component/`). Foundation logic is centralized in `common_component/` (base classes, utilities) and `data_component/` (entities, repositories). Build tooling resides in `buildSrc/` and custom assets/scripts live under `document/`, `scripts/`, and `repository/`. Keep media or prompts within `Img/` or `prompts/` instead of polluting module folders.
+The app follows a modular MVVM layout. The composition root lives in `app/` (launcher shell + global wiring). Feature/business modules live in sibling directories (e.g. `anime_component/`, `local_component/`, `player_component/`, `storage_component/`, `user_component/`, `bilibili_component/`). Shared foundations are provided by `core_*` modules and `data_component/`. Build tooling resides in `buildSrc/`, and custom assets/scripts live under `document/`, `scripts/`, and `repository/`. Prefer keeping large media/prompts in dedicated folders rather than polluting module folders.
 
-## 组件大类与用途（以 `settings.gradle.kts` 为准）
-> 统计口径：仅包含 `settings.gradle.kts` 里 `include(...)` 的模块；仓库里可能还有同名目录但未被纳入当前主工程构建。
+## Module Overview (based on `settings.gradle.kts`)
+> Scope: only modules included via `include(...)` in `settings.gradle.kts`. The repo may contain similarly named folders that are not part of the main build.
 
-- 总模块数：`21`（主业务/核心/数据 `15` + `repository` 内置依赖 `6`）
-- 入口壳（1）
-  - `:app`：应用入口与壳层（启动/主界面含 TV），并负责把各组件组装成最终 APK；同时承载 Media3 会话/后台服务等全局能力。
-- 业务功能组件（6）
-  - `:anime_component`：番剧/资源搜索、筛选、详情、追番、历史等（含磁力搜索相关界面）。
-  - `:local_component`：本地媒体库与播放入口；播放历史；弹幕/字幕来源绑定与下载（如 B 站弹幕、Shooter 字幕等）。
-  - `:player_component`：播放器能力与 UI（Media3/VLC/mpv 内核适配、字幕/ASS 渲染、弹幕渲染与过滤、TV/手势控制、缓存等）。
-  - `:storage_component`：存储与“串流/投屏”业务 UI（文件浏览、远程存储配置、扫码/远程扫描、投屏提供与接收等）。
-  - `:user_component`：用户中心与设置（登录/用户信息、主题、播放器/应用/开发者设置、缓存与扫描管理、关于/许可等）。
-  - `:bilibili_component`：B 站能力适配（鉴权/Cookie、签名、播放链接/MPD、弹幕下载、直播弹幕 socket、播放心跳与风控态等），供多模块复用。
-- 核心基础组件（7）
-  - `:core_contract_component`：跨模块契约与路由（如 `RouteTable`）、Service 接口（存储文件共享/投屏等）、播放扩展/Media3 会话公共 API。
-  - `:core_system_component`：运行时（runtime）与系统能力整合（Application/启动编排、权限/通知/广播、全局配置表与工具、构建期注入密钥/开关等；允许依赖 `:core_log_component` 以完成“尽早初始化日志/崩溃上报链路”）。
-  - `:core_log_component`：日志与上报基础设施（日志采集/落盘、Bugly 上报、运行态日志策略/采样、字幕/播放遥测等；由 runtime 负责初始化与装配，`core_log_component` 本身不依赖 `core_system_component`）。
-  - `:core_network_component`：网络层基础（Retrofit+Moshi、请求封装与拦截器体系、各业务 Service/Repository）。
-  - `:core_database_component`：数据库层（Room 数据库管理、DAO、迁移、部分本地 Store）。
-  - `:core_storage_component`：存储抽象与实现（多协议/多来源 Storage、媒体解析/播放代理、弹幕/字幕查找、7zip 解压、thunder 下载管理等）。
-  - `:core_ui_component`：通用 UI 基建（BaseActivity/Fragment/ViewModel、Adapter/分页、主题/焦点策略、公共控件/对话框等）。
-- 数据模型组件（1）
-  - `:data_component`：共享数据层（Room Entity/Converter、网络模型 Moshi、业务枚举/参数对象）。
-- 内置仓库依赖模块（6）
-  - `:repository:danmaku`：`DanmakuFlameMaster.aar` 弹幕渲染库封装。
-  - `:repository:immersion_bar`：`immersionbar.aar` 沉浸式状态栏库封装。
-  - `:repository:panel_switch`：`panelSwitchHelper-androidx.aar` 面板/键盘切换库封装。
-  - `:repository:seven_zip`：`sevenzipjbinding4Android.aar` 7z 解压库封装。
-  - `:repository:thunder`：`thunder.aar` 下载相关库封装。
-  - `:repository:video_cache`：`library-release.aar` 视频缓存库封装。
+- Total modules: `21` (`15` app/core/data + `6` bundled `repository` dependencies)
+- App shell (1)
+  - `:app`: app entry + shell (startup/main UI including TV), composes all modules into the final APK; also hosts global capabilities like Media3 sessions/background services.
+- Feature/business modules (6)
+  - `:anime_component`: anime/resource search, filters, details, follow/history (including magnet-search UI).
+  - `:local_component`: local media library + playback entry; playback history; danmaku/subtitle source binding and downloads (e.g. Bilibili danmaku, Shooter subtitles).
+  - `:player_component`: player capabilities + UI (Media3/VLC/mpv adapters, subtitles/ASS rendering, danmaku rendering/filtering, TV/gesture controls, caching, etc.).
+  - `:storage_component`: storage + “streaming/casting” UI (file browsing, remote storage config, QR/remote scan, casting provider/receiver, etc.).
+  - `:user_component`: user center + settings (login/profile, theme, player/app/developer settings, cache/scan management, about/licenses, etc.).
+  - `:bilibili_component`: Bilibili integration (auth/cookies, signing, playback links/MPD, danmaku download, live danmaku socket, playback heartbeat + risk-control state), reused across modules.
+- Core foundation modules (7)
+  - `:core_contract_component`: cross-module contracts + routing (e.g. `RouteTable`), Service interfaces (file sharing/casting), playback extensions / shared Media3 session APIs.
+  - `:core_system_component`: runtime/system integration (Application/startup orchestration, permissions/notifications/broadcasts, global config tables/tools, build-time injected keys/flags); may depend on `:core_log_component` to initialize logging/crash reporting early.
+  - `:core_log_component`: logging + reporting infrastructure (collection/persistence, Bugly reporting, runtime log policy/sampling, subtitle/playback telemetry); initialized/wired by runtime; does not depend on `:core_system_component`.
+  - `:core_network_component`: network foundations (Retrofit + Moshi, request wrappers/interceptors, shared Service/Repository plumbing).
+  - `:core_database_component`: database layer (Room database management, DAO, migrations, selected local stores).
+  - `:core_storage_component`: storage abstraction + implementations (multi-protocol/multi-source storage, media parsing/play proxy, danmaku/subtitle lookup, 7zip extraction, thunder download management, etc.).
+  - `:core_ui_component`: shared UI foundations (BaseActivity/Fragment/ViewModel, adapters/paging, theme/focus policy, shared widgets/dialogs, etc.).
+- Data model module (1)
+  - `:data_component`: shared data layer (Room entities/converters, Moshi network models, business enums/parameter objects).
+- Bundled repository dependency modules (6)
+  - `:repository:danmaku`: wrapper for `DanmakuFlameMaster.aar` (danmaku rendering).
+  - `:repository:immersion_bar`: wrapper for `immersionbar.aar` (immersive status bar).
+  - `:repository:panel_switch`: wrapper for `panelSwitchHelper-androidx.aar` (panel/keyboard switch helper).
+  - `:repository:seven_zip`: wrapper for `sevenzipjbinding4Android.aar` (7z extraction).
+  - `:repository:thunder`: wrapper for `thunder.aar` (download-related).
+  - `:repository:video_cache`: wrapper for `library-release.aar` (video caching).
 
-## 模块依赖分层规则（基于当前 Gradle 依赖）
-> 说明：用于“分层语义对齐 + 依赖治理”参考；边关系以 `document/architecture/module_dependencies_snapshot.md`（Gradle `project(...)` 直接依赖快照）为准；分层语义与治理规则以 `document/architecture/module_dependency_governance.md` 为准（含 DR-0001：system 视为 runtime，允许 `system -> log`）。
+## Module Dependency Layering Rules (based on current Gradle dependencies)
+> Note: this is a reference for “layer semantics alignment + dependency governance”. The dependency snapshot is `document/architecture/module_dependencies_snapshot.md` (direct Gradle `project(...)` edges). Governance rules live in `document/architecture/module_dependency_governance.md` (includes DR-0001: treat `system` as runtime; allow `system -> log`).
 
-**设计原则**
-- 单向依赖、无环（依赖只允许从“上层业务”指向“下层基础设施/契约/数据”）。
-- `core_*` 只提供可复用能力，不反向依赖任何业务功能模块。
-- 业务功能模块之间禁止互相依赖（跨业务协作通过 `core_contract_component` 的契约/接口 + 路由完成）。
-- `repository:*` 仅作为二/三方封装，被需要的模块直接依赖，避免 `app` 无意义引入。
+**Design Principles**
+- One-way dependencies, no cycles (dependencies only flow from “higher-level features” to “lower-level infra/contracts/data”).
+- `core_*` provides reusable capabilities and must not depend on any feature module.
+- Feature modules must not depend on each other (cross-feature collaboration must go through `:core_contract_component` contracts/interfaces + routing).
+- `repository:*` is only for 2nd/3rd-party wrappers; depend on them directly where needed, avoid pulling them into `:app` without reason.
 
 ```mermaid
 graph TD
-  %% 约定：A --> B 表示 A 依赖 B
+  %% Convention: A --> B means A depends on B
 
-  subgraph Repo["repository/*（内置 AAR 依赖）"]
+  subgraph Repo["repository/* (bundled AAR dependencies)"]
     repo_danmaku[":repository:danmaku"]
     repo_immersion[":repository:immersion_bar"]
     repo_panel[":repository:panel_switch"]
@@ -75,28 +85,28 @@ graph TD
     repo_cache[":repository:video_cache"]
   end
 
-  subgraph Base["基础层（纯数据/契约）"]
+  subgraph Base["Base layer (data/contracts only)"]
     data[":data_component"]
     contract[":core_contract_component"]
   end
 
-  subgraph Runtime["运行时层（runtime）"]
+  subgraph Runtime["Runtime layer"]
     system[":core_system_component"]
     log[":core_log_component"]
   end
 
-  subgraph Infra["基础设施层（可替换实现）"]
+  subgraph Infra["Infrastructure layer (replaceable implementations)"]
     network[":core_network_component"]
     db[":core_database_component"]
     bilibili[":bilibili_component"]
     storageCore[":core_storage_component"]
   end
 
-  subgraph UI["UI 基建层"]
+  subgraph UI["UI foundation layer"]
     uiCore[":core_ui_component"]
   end
 
-  subgraph Feature["业务功能层"]
+  subgraph Feature["Feature layer"]
     anime[":anime_component"]
     local[":local_component"]
     user[":user_component"]
@@ -104,7 +114,7 @@ graph TD
     storageFeature[":storage_component"]
   end
 
-  app[":app（组合根/壳）"]
+  app[":app (composition root / shell)"]
 
   contract --> data
   system --> contract
@@ -214,14 +224,14 @@ Use Gradle from repo root:
 - `./gradlew assembleRelease` – optimized, signed release artifacts.
 - `./gradlew clean build` – full rebuild to validate cross-module wiring.
 - `./gradlew dependencyUpdates` – report outdated libraries defined in `build.gradle.kts`.
-- `./gradlew verifyModuleDependencies` – 模块依赖治理校验（v2），检查 `project(...)` 直接依赖是否符合允许矩阵/白名单。
+- `./gradlew verifyModuleDependencies` – module dependency governance check (v2), verifies direct `project(...)` dependencies against the allowed matrix/whitelist.
 - `./gradlew testDebugUnitTest` and `./gradlew connectedDebugAndroidTest` – run JVM unit tests and device/emulator instrumentation respectively.
 
 ### Build Verification Requirement
 - Always read the tail of Gradle output and confirm whether it ends with `BUILD SUCCESSFUL` or `BUILD FAILED` before reporting status to the user. Do **not** assume success just because tasks ran; explicitly mention failures when they occur.
 
 ## Coding Style & Naming Conventions
-Stick to Kotlin 1.7.x with 4-space indentation, explicit visibility, and trailing commas disabled. View models live under `.../presentation` or `.../viewmodel` packages, fragments/activities use DataBinding layouts named `fragment_<feature>.xml` or `activity_<feature>.xml`. ARouter paths follow `/module/Feature`. Prefer extension functions for shared logic (place them in `common_component`). Lint via `./gradlew lint` before sending patches and let ktlint/Detekt settings inside `buildSrc` drive formatting rather than ad-hoc style tweaks.
+Stick to the Kotlin version configured by the repo (currently 1.9.25), with 4-space indentation, explicit visibility, and trailing commas disabled. View models live under `.../presentation` or `.../viewmodel` packages; fragments/activities use DataBinding layouts named `fragment_<feature>.xml` or `activity_<feature>.xml`. ARouter paths follow `/module/Feature`. Prefer extension functions for shared logic and keep shared helpers in appropriate `core_*` modules (often under `com.xyoye.common_component.*` packages), instead of duplicating them in feature modules. Lint via `./gradlew lint` before sending patches and let ktlint/Detekt settings inside `buildSrc` drive formatting rather than ad-hoc style tweaks.
 
 ## Testing Guidelines
 Place JVM tests in `*/src/test/java` and instrumentation suites in `*/src/androidTest/java`; name files `<Class>Test.kt` or `<Feature>InstrumentedTest.kt` so Gradle discovers them. Cover parsing, player helpers, and data-layer conversions with unit tests, and reserve playback/integration flows for instrumentation backed by an emulator with media files in `storage_component`. Failing tests should block the PR, so run `testDebugUnitTest` locally and attach emulator logs when `connectedDebugAndroidTest` fails.
@@ -233,15 +243,52 @@ Recent history uses the `<type>: <summary>` pattern (`fix: ...`, `refactor: ...`
 Sensitive tokens belong in `local.properties` or Gradle properties; never hard-code keys. Toggle `IS_DEBUG_MODE` and `IS_APPLICATION_RUN` in `gradle.properties` when enabling verbose logs or single-module runs, then rebuild so the flags propagate. Follow `BUGLY_CONFIG.md` for crash reporting credentials, and remember the `user_component` ships with remote APIs disabled—avoid re-enabling interfaces without coordinator approval to keep builds distributable.
 
 ## Recent Changes
-- 001-115-open-storage: Added Kotlin 1.9.25（JVM target 1.8），Android Gradle Plugin 8.7.2 + AndroidX、Kotlin Coroutines、Retrofit+OkHttp、Moshi、Room、MMKV、Media3、NanoHTTPD（本地代理）、ARouter
-- 001-baidu-pan-storage: Added Kotlin 1.9.25（JVM target 1.8），Android Gradle Plugin 8.7.2 + AndroidX、Kotlin Coroutines、Retrofit+OkHttp、Moshi、Room、MMKV、Media3、NanoHTTPD（本地代理）、ARouter
+- 001-115-open-storage: Added Kotlin 1.9.25 (JVM target 1.8), Android Gradle Plugin 8.7.2 + AndroidX, Kotlin Coroutines, Retrofit + OkHttp, Moshi, Room, MMKV, Media3, NanoHTTPD (local proxy), ARouter.
+- 001-baidu-pan-storage: Added Kotlin 1.9.25 (JVM target 1.8), Android Gradle Plugin 8.7.2 + AndroidX, Kotlin Coroutines, Retrofit + OkHttp, Moshi, Room, MMKV, Media3, NanoHTTPD (local proxy), ARouter.
 
 ## TV/Remote UX
-- When adjusting UI element logic (focus/order/visibility), always consider Android TV remote navigation: ensure DPAD can reach/give feedback for all controls and verify focus loops are reachable on TV.
+本仓库以 TV 端交互为先（Leanback + 遥控器 DPAD），移动端保持可用。涉及 UI 与交互时，请以“可达性/一致性/可维护性”为优先级，而不是最小侵入。
+
+### 1) 分流与判定
+- 统一使用 `Context.isTelevisionUiMode()` 判定 TV UI mode（定义在 `core_ui_component`），不要在业务模块重复实现判断逻辑。
+- 分流优先级（从大到小）：
+  1. **结构差异大**：使用独立入口或独立页面（例如 `MainActivity` vs `TvMainActivity`）。
+  2. **同屏小差异**：用运行时 `isTelevisionUiMode()` 做显隐/交互分流，避免大规模复制 layout。
+  3. **纯视觉差异**：优先用 `*-television` 资源覆盖（尤其是 `state_focused` 的 selector/描边/overlay），避免复制整套布局。
+- “TV 默认裁剪/关闭”的能力必须明确属于哪一种策略：
+  - **仅 TV 禁用**：必须基于 `isTelevisionUiMode()` 分流，避免误伤移动端。
+  - **全端禁用**：必须在代码/文档中明确为产品决策，不要以“TV 适配”为名做静默 stub。
+
+### 2) DPAD / 焦点规范（强约束）
+- TV 端必须保证“焦点可达、可见、可反馈、可返回”。任何控件的新增/显隐/顺序调整都需要验证 DPAD 导航路径无死角。
+- 列表/网格（RecyclerView）建议规范：
+  - Item 的默认焦点目标使用 `android:tag="@string/focusable_item"` 标注（必要时也可用 `FocusTarget` 指定子 View）。
+  - 列表页优先接入 `RecyclerViewFocusDelegate` 统一处理：DPAD 上下移动、焦点保存/恢复、MENU/SETTINGS 键动作。
+  - 进入页面时，在非触摸模式下必须有明确的默认焦点（避免“无焦点/焦点落在不可见 View”）。
+- 可点击控件建议规范：
+  - DPAD 模式下以 `state_focused` 作为主反馈（selector + `tv_focus_*` 颜色/描边），不要只依赖 `state_pressed`。
+  - 同一行左右导航尽量显式配置 `nextFocusLeftId/nextFocusRightId`，避免焦点跳转到不可预期区域。
+  - 需要动态启用/禁用焦点时，优先使用 `FocusPolicy.applyDpadFocusable(...)` / `View.applyDpadFocusable(...)`。
+
+### 3) 按键语义（建议）
+- `BACK`：优先关闭弹窗/设置面板/控制条；仅当栈空时才执行“二次返回退出”等全局逻辑。
+- `MENU/SETTINGS`：在 TV 列表场景可作为“刷新/设置入口”的快捷键（按页面语义决定，并保持同类页面一致）。
+
+### 4) 输入与确认策略（TV 友好）
+- TV 端避免依赖 `EditText + 软键盘 + IME_ACTION_DONE` 完成关键配置；对数字/枚举类设置优先使用 DPAD 左右步进/切换控件。
+- TV 端优先“修改即生效 + 自动持久化”，减少额外“确定/取消”的确认成本；若必须显式动作（扫码登录/测试连接/投屏连接等），动作成功后自动保存并返回一致的结果语义。
+
+### 5) 触摸/手势
+- 依赖触摸手势的交互在 TV UI mode 下应禁用或替换为纯 DPAD 逻辑；不要向 TV 用户暴露无法触发的入口。
+
+### 6) 提交前自检（TV 回归）
+- 全程仅用遥控器 DPAD 可完成核心路径（进入/选择/配置/返回/播放/退出）。
+- 不存在“焦点陷阱/焦点丢失/隐藏视图抢焦点”；列表滚动与页面返回后焦点可恢复。
+- 所有可操作控件均有清晰 focused 反馈（视觉高亮一致、可辨识）。
 
 ## Active Technologies
-- Kotlin 1.9.25（JVM target 1.8），Android Gradle Plugin 8.7.2 + AndroidX（Lifecycle/ViewModel/Room 等）、Kotlin Coroutines、Retrofit/OkHttp、Moshi、Media3、ARouter、MMKV (003-add-bilibili-history)
-- Room（SQLite）+ MMKV（Key-Value）+ 本地缓存文件（用于临时 mpd/二维码图片等） (003-add-bilibili-history)
-- Kotlin 1.9.25（JVM target 1.8），Android Gradle Plugin 8.7.2 + AndroidX、Kotlin Coroutines、Retrofit+OkHttp、Moshi、Room、MMKV、Media3、NanoHTTPD（本地代理）、ARouter (001-baidu-pan-storage)
-- Room（`media_library` 等表）+ MMKV（偏好/登录态存储）+ 本地缓存文件（字幕/弹幕/临时清单等） (001-baidu-pan-storage)
-- Room（`media_library` 等表）+ MMKV（偏好/授权态隔离存储）+ 本地缓存文件（字幕/弹幕/临时清单等） (001-115-open-storage)
+- Kotlin 1.9.25 (JVM target 1.8), Android Gradle Plugin 8.7.2 + AndroidX (Lifecycle/ViewModel/Room, etc.), Kotlin Coroutines, Retrofit/OkHttp, Moshi, Media3, ARouter, MMKV (003-add-bilibili-history)
+- Room (SQLite) + MMKV (Key-Value) + local cache files (for temporary MPD/QR images, etc.) (003-add-bilibili-history)
+- Kotlin 1.9.25 (JVM target 1.8), Android Gradle Plugin 8.7.2 + AndroidX, Kotlin Coroutines, Retrofit + OkHttp, Moshi, Room, MMKV, Media3, NanoHTTPD (local proxy), ARouter (001-baidu-pan-storage)
+- Room (tables like `media_library`) + MMKV (preferences/login state storage) + local cache files (subtitles/danmaku/temporary manifests, etc.) (001-baidu-pan-storage)
+- Room (tables like `media_library`) + MMKV (preferences/authorization-isolated storage) + local cache files (subtitles/danmaku/temporary manifests, etc.) (001-115-open-storage)

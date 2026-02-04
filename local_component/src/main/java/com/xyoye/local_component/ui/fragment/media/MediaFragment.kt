@@ -10,6 +10,8 @@ import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.extension.deletable
 import com.xyoye.common_component.extension.setData
 import com.xyoye.common_component.extension.vertical
+import com.xyoye.common_component.focus.RecyclerViewFocusDelegate
+import com.xyoye.common_component.focus.requestDefaultFocus
 import com.xyoye.common_component.media3.Media3SessionStore
 import com.xyoye.common_component.weight.BottomActionDialog
 import com.xyoye.common_component.weight.ToastCenter
@@ -29,6 +31,15 @@ import com.xyoye.local_component.databinding.ItemMediaLibraryBinding
 
 @Route(path = RouteTable.Local.MediaFragment)
 class MediaFragment : BaseFragment<MediaViewModel, FragmentMediaBinding>() {
+    private val focusDelegate by lazy(LazyThreadSafetyMode.NONE) {
+        RecyclerViewFocusDelegate(
+            recyclerView = dataBinding.mediaLibRv,
+            uniqueKeyProvider = { item ->
+                (item as? MediaLibraryEntity)?.let { "${it.mediaType.name}|${it.url}" }
+            },
+        )
+    }
+
     override fun initViewModel() =
         ViewModelInit(
             BR.viewModel,
@@ -50,7 +61,22 @@ class MediaFragment : BaseFragment<MediaViewModel, FragmentMediaBinding>() {
 
         viewModel.mediaLibWithStatusLiveData.observe(this) {
             dataBinding.mediaLibRv.setData(it)
+            dataBinding.mediaLibRv.post { requestDefaultFocusIfNeeded(allowFallback = true) }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (bindingOrNull == null) return
+        focusDelegate.onResume()
+        dataBinding.mediaLibRv.post { requestDefaultFocusIfNeeded(allowFallback = false) }
+    }
+
+    override fun onPause() {
+        if (bindingOrNull != null) {
+            focusDelegate.onPause()
+        }
+        super.onPause()
     }
 
     private fun initRv() {
@@ -86,6 +112,22 @@ class MediaFragment : BaseFragment<MediaViewModel, FragmentMediaBinding>() {
                         }
                     }
                 }
+
+            focusDelegate.installVerticalDpadKeyNavigation(
+                onMenuKeyDown = { showAddStorageDialog() },
+                onSettingsKeyDown = { showAddStorageDialog() },
+            )
+        }
+    }
+
+    private fun requestDefaultFocusIfNeeded(allowFallback: Boolean) {
+        val binding = bindingOrNull ?: return
+        if (binding.root.isInTouchMode) return
+        if (binding.root.findFocus() != null) return
+
+        val moved = focusDelegate.requestFocus()
+        if (!moved && allowFallback) {
+            binding.addMediaStorageBt.requestDefaultFocus()
         }
     }
 
@@ -130,6 +172,7 @@ class MediaFragment : BaseFragment<MediaViewModel, FragmentMediaBinding>() {
             MediaType.ALSIT_STORAGE,
             MediaType.BAIDU_PAN_STORAGE,
             MediaType.OPEN_115_STORAGE,
+            MediaType.CLOUD_115_STORAGE,
             MediaType.BILIBILI_STORAGE -> {
                 ARouter
                     .getInstance()

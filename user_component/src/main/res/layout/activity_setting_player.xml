@@ -25,6 +25,7 @@
             android:id="@+id/tab_layout"
             android:layout_width="match_parent"
             android:layout_height="40dp"
+            app:tabBackground="@drawable/background_tab_press"
             app:tabIndicatorColor="@color/indicator_checked_color"
             app:tabIndicatorFullWidth="false"
             app:tabRippleColor="@android:color/transparent"

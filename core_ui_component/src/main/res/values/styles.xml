@@ -12,6 +12,12 @@
         <item name="android:textColorPrimary">@color/text_black</item>
         <item name="android:windowAnimationStyle">@style/ActivityAnimStyle</item>
         <item name="searchViewStyle">@style/Widget.DanDanPlay.SearchView</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.DanDanPlay</item>
+    </style>
+
+    <style name="PreferenceThemeOverlay.DanDanPlay" parent="PreferenceThemeOverlay">
+        <item name="android:selectableItemBackground">@drawable/background_item_press</item>
+        <item name="selectableItemBackground">@drawable/background_item_press</item>
     </style>
 
     <style name="ActivityAnimStyle" parent="@android:style/Animation.Activity">

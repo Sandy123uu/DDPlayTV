@@ -8,7 +8,7 @@ import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.services.DeveloperMenuService
 import com.xyoye.user_component.ui.weight.DeveloperMenus
 
-@Route(path = RouteTable.App.DeveloperMenuService, name = "开发者菜单 Service")
+@Route(path = RouteTable.User.DeveloperMenuService, name = "开发者菜单 Service")
 class DeveloperMenuServiceImpl : DeveloperMenuService {
     override fun init(context: Context?) {
     }

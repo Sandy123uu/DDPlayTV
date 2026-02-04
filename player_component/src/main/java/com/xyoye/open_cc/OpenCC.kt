@@ -1,5 +1,6 @@
 package com.xyoye.open_cc
 
+import android.os.Build
 import java.io.File
 
 /**
@@ -7,9 +8,15 @@ import java.io.File
  */
 
 object OpenCC {
-    init {
-        System.loadLibrary("open_cc")
-    }
+    @Volatile
+    private var nativeLoaded = false
+
+    @Volatile
+    private var nativeLoadError: Throwable? = null
+
+    private val nativeLoadLock = Any()
+
+    private val nativeConvertLock = Any()
 
     private external fun convert(
         text: String,
@@ -17,21 +24,113 @@ object OpenCC {
     ): String
 
     fun convertSC(text: String): String {
-        val config = OpenCCFile.t2s
-        if (config.exists().not()) {
-            return text
-        }
+        if (text.isEmpty()) return text
 
-        return convertWithConfigFile(text, config)
+        // Prefer ICU on API 24+ to avoid native OpenCC aborts caused by uncaught C++ exceptions.
+        convertWithIcuOrNull(text, toSimplified = true)?.let { return it }
+
+        if (OpenCCFile.isT2sReady().not()) return text
+        return convertWithConfigFile(text, OpenCCFile.t2s)
     }
 
     fun convertTC(text: String): String {
-        val config = OpenCCFile.s2t
-        if (config.exists().not()) {
-            return text
+        if (text.isEmpty()) return text
+
+        // Prefer ICU on API 24+ to avoid native OpenCC aborts caused by uncaught C++ exceptions.
+        convertWithIcuOrNull(text, toSimplified = false)?.let { return it }
+
+        if (OpenCCFile.isS2tReady().not()) return text
+        return convertWithConfigFile(text, OpenCCFile.s2t)
+    }
+
+    private fun convertWithIcuOrNull(
+        text: String,
+        toSimplified: Boolean
+    ): String? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            return null
         }
 
-        return convertWithConfigFile(text, config)
+        return try {
+            synchronized(IcuConverter) {
+                IcuConverter.convert(text, toSimplified)
+            }
+        } catch (t: Throwable) {
+            com.xyoye.common_component.utils.ErrorReportHelper.postCatchedException(
+                t,
+                "OpenCCIcu",
+                "Failed to convert text with ICU, toSimplified=$toSimplified",
+            )
+            null
+        }
+    }
+
+    private object IcuConverter {
+        private const val ICU_CLASS_NAME = "android.icu.text.Transliterator"
+        private const val ID_TRADITIONAL_TO_SIMPLIFIED = "Traditional-Simplified"
+        private const val ID_SIMPLIFIED_TO_TRADITIONAL = "Simplified-Traditional"
+
+        @Volatile
+        private var transliteratorClass: Class<*>? = null
+
+        @Volatile
+        private var getInstanceMethod: java.lang.reflect.Method? = null
+
+        @Volatile
+        private var transliterateMethod: java.lang.reflect.Method? = null
+
+        @Volatile
+        private var traditionalToSimplified: Any? = null
+
+        @Volatile
+        private var simplifiedToTraditional: Any? = null
+
+        private fun ensureInitialized() {
+            if (transliteratorClass != null) return
+
+            synchronized(this) {
+                if (transliteratorClass != null) return
+
+                val clazz = Class.forName(ICU_CLASS_NAME)
+                transliteratorClass = clazz
+                getInstanceMethod = clazz.getMethod("getInstance", String::class.java)
+                transliterateMethod = clazz.getMethod("transliterate", String::class.java)
+            }
+        }
+
+        private fun ensureInstances() {
+            if (traditionalToSimplified != null && simplifiedToTraditional != null) return
+
+            synchronized(this) {
+                if (traditionalToSimplified != null && simplifiedToTraditional != null) return
+
+                ensureInitialized()
+                val getInstance =
+                    getInstanceMethod
+                        ?: throw IllegalStateException("ICU Transliterator#getInstance not initialized")
+
+                if (traditionalToSimplified == null) {
+                    traditionalToSimplified = getInstance.invoke(null, ID_TRADITIONAL_TO_SIMPLIFIED)
+                }
+                if (simplifiedToTraditional == null) {
+                    simplifiedToTraditional = getInstance.invoke(null, ID_SIMPLIFIED_TO_TRADITIONAL)
+                }
+            }
+        }
+
+        fun convert(
+            text: String,
+            toSimplified: Boolean
+        ): String {
+            ensureInstances()
+
+            val instance = if (toSimplified) traditionalToSimplified else simplifiedToTraditional
+            val transliterate =
+                transliterateMethod ?: throw IllegalStateException("ICU Transliterator#transliterate not initialized")
+
+            val result = transliterate.invoke(instance, text)
+            return result as? String ?: text
+        }
     }
 
     private fun convertWithConfigFile(
@@ -68,7 +167,7 @@ object OpenCC {
         }
 
         if (containsJniModifiedUtf8IncompatibleChars(text).not()) {
-            return convert(text, configJsonPath)
+            return convertLocked(text, configJsonPath)
         }
 
         val output = StringBuilder(text.length)
@@ -132,12 +231,39 @@ object OpenCC {
         return false
     }
 
+    private fun convertLocked(
+        text: String,
+        configJsonPath: String
+    ): String =
+        synchronized(nativeConvertLock) {
+            ensureNativeLoaded()
+            convert(text, configJsonPath)
+        }
+
+    private fun ensureNativeLoaded() {
+        nativeLoadError?.let { throw it }
+        if (nativeLoaded) return
+
+        synchronized(nativeLoadLock) {
+            nativeLoadError?.let { throw it }
+            if (nativeLoaded) return
+
+            try {
+                System.loadLibrary("open_cc")
+                nativeLoaded = true
+            } catch (t: Throwable) {
+                nativeLoadError = t
+                throw t
+            }
+        }
+    }
+
     private fun convertSegmentOrFallback(
         text: String,
         configJsonPath: String
     ): String =
         try {
-            convert(text, configJsonPath)
+            convertLocked(text, configJsonPath)
         } catch (t: Throwable) {
             com.xyoye.common_component.utils.ErrorReportHelper.postCatchedException(
                 t,

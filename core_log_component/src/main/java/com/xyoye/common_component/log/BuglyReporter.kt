@@ -15,6 +15,12 @@ object BuglyReporter {
         CrashReport.initCrashReport(context.applicationContext, appId, debug)
     }
 
+    fun getAppId(): String? =
+        runCatching { CrashReport.getAppID() }.getOrNull()
+
+    fun getVersion(context: Context): String? =
+        runCatching { CrashReport.getBuglyVersion(context.applicationContext) }.getOrNull()
+
     fun putUserData(
         context: Context,
         key: String,

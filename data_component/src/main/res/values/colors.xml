@@ -9,4 +9,5 @@
     <!-- 三方存储库封面图标背景色 -->
     <color name="icon_baidu_pan_storage_bg_color">#2D7BFF</color>
     <color name="icon_open_115_storage_bg_color">#2070F8</color>
+    <color name="icon_cloud_115_storage_bg_color">#4A90E2</color>
 </resources>

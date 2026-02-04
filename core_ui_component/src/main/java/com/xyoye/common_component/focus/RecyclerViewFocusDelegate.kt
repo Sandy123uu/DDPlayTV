@@ -40,7 +40,8 @@ class RecyclerViewFocusDelegate(
         onMenuKeyDown: (() -> Unit)? = null,
         onSettingsKeyDown: (() -> Unit)? = onMenuKeyDown,
         consumeDownKeyWhenBottom: Boolean = false,
-        consumeUpKeyWhenTop: Boolean = false
+        consumeUpKeyWhenTop: Boolean = false,
+        onDpadUpKeyWhenTop: (() -> Boolean)? = null
     ) {
         recyclerView.setOnKeyListener { _, keyCode, event ->
             if (event?.action != KeyEvent.ACTION_DOWN) {
@@ -83,7 +84,7 @@ class RecyclerViewFocusDelegate(
 
                 KeyEvent.KEYCODE_DPAD_UP -> {
                     if (currentIndex <= 0) {
-                        consumeUpKeyWhenTop
+                        onDpadUpKeyWhenTop?.invoke() ?: consumeUpKeyWhenTop
                     } else {
                         moveFocusBy(
                             offset = -1,

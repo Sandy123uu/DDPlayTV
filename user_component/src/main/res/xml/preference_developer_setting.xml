@@ -19,6 +19,12 @@
             android:title="@string/developer_app_log_enable_title"
             android:summary="@string/developer_app_log_enable_summary_off"
             app:icon="@drawable/ic_app_setting" />
+
+        <SwitchPreference
+            android:key="tcp_log_server_enable"
+            android:title="@string/developer_tcp_log_server_title"
+            android:summary="@string/developer_tcp_log_server_summary_off"
+            app:icon="@drawable/ic_app_setting" />
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -50,6 +56,12 @@
             android:title="@string/developer_bugly_status_title"
             android:summary="@string/developer_bugly_status_summary"
             app:icon="@drawable/ic_app_setting_about_us" />
+
+        <Preference
+            android:key="bugly_test_report"
+            android:title="@string/developer_bugly_test_report_title"
+            android:summary="@string/developer_bugly_test_report_summary"
+            app:icon="@drawable/ic_feedback" />
     </PreferenceCategory>
 
 </PreferenceScreen>

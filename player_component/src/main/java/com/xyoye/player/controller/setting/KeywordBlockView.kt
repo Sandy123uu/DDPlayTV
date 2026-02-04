@@ -87,17 +87,17 @@ class KeywordBlockView(
         }
 
         viewBinding.keywordBlockAddTv.setOnClickListener {
-            viewBinding.keywordBlockLl.requestFocus()
-
             var isRegex = false
             var newKeyword = viewBinding.keywordBlockAddEt.text.toString()
 
             if (newKeyword.isEmpty()) {
                 ToastCenter.showOriginalToast("关键字不能为空")
+                viewBinding.keywordBlockAddEt.requestFocus()
                 return@setOnClickListener
             }
             if ("regex=" == newKeyword) {
                 ToastCenter.showOriginalToast("正则表达式内容不能为空")
+                viewBinding.keywordBlockAddEt.requestFocus()
                 return@setOnClickListener
             }
 
@@ -110,6 +110,9 @@ class KeywordBlockView(
             viewBinding.keywordBlockAddEt.setText("")
             mControlWrapper.addBlackList(isRegex, newKeyword)
             addKeyword?.invoke(newKeyword, isRegex)
+            viewBinding.keywordBlockAddEt.post {
+                viewBinding.keywordBlockAddEt.requestFocus()
+            }
         }
 
         viewBinding.keywordBlockAddEt.setOnEditorActionListener { _, actionId, _ ->

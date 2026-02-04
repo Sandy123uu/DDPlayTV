@@ -5,40 +5,50 @@ import android.view.View
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceDataStore
-import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
+import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.xyoye.common_component.config.DevelopConfig
+import com.xyoye.common_component.log.BuglyReporter
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.LogSystem
 import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.log.model.PolicySource
+import com.xyoye.common_component.log.tcp.TcpLogServerState
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.SecurityHelperConfig
+import com.xyoye.common_component.utils.SupervisorScope
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.user_component.R
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.net.Inet4Address
+import java.net.NetworkInterface
+import java.net.SocketException
 import java.util.Date
 import java.util.Locale
 
 /**
  * 开发者设置页，配置日志与调试相关选项。
  */
-class DeveloperSettingFragment : PreferenceFragmentCompat() {
+class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
     companion object {
         fun newInstance() = DeveloperSettingFragment()
 
         private const val TAG = "DeveloperSetting"
         private const val SUBTITLE_TAG = "DeveloperSubtitle"
         private const val KEY_APP_LOG_ENABLE = "app_log_enable"
+        private const val KEY_TCP_LOG_SERVER_ENABLE = "tcp_log_server_enable"
         private const val KEY_LOG_LEVEL = "developer_log_level"
         private const val KEY_BUGLY_STATUS = "bugly_status"
+        private const val KEY_BUGLY_TEST_REPORT = "bugly_test_report"
         private const val KEY_SUBTITLE_SESSION_STATUS = "subtitle_session_status"
         private const val SUBTITLE_STATUS_PROVIDER =
             "com.xyoye.player.subtitle.debug.PlaybackSessionStatusProvider"
     }
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
+    private var tcpLogServerIpText: String = "-"
 
     override fun onCreatePreferences(
         savedInstanceState: Bundle?,
@@ -66,6 +76,7 @@ class DeveloperSettingFragment : PreferenceFragmentCompat() {
         initLogPreferences()
         initSubtitleDebugPreferences()
         initBuglyStatusPreference()
+        initBuglyTestPreference()
     }
 
     override fun onResume() {
@@ -116,6 +127,32 @@ class DeveloperSettingFragment : PreferenceFragmentCompat() {
                 true
             }
         }
+
+        initTcpLogServerPreference()
+    }
+
+    private fun initTcpLogServerPreference() {
+        findPreference<SwitchPreference>(KEY_TCP_LOG_SERVER_ENABLE)?.apply {
+            refreshTcpLogServerPreferenceState(this, LogSystem.getTcpLogServerState())
+            setOnPreferenceChangeListener { _, newValue ->
+                val enable = newValue as? Boolean ?: return@setOnPreferenceChangeListener false
+                val updated = LogSystem.setTcpLogServerEnabled(enable)
+                isChecked = updated.enabled
+                refreshTcpLogServerPreferenceState(this, updated)
+
+                if (enable) {
+                    if (updated.running) {
+                        ToastCenter.showSuccess(getString(R.string.developer_tcp_log_server_toast_on))
+                    } else {
+                        val reason = updated.lastError ?: "-"
+                        ToastCenter.showError(getString(R.string.developer_tcp_log_server_toast_on_failed, reason))
+                    }
+                } else {
+                    ToastCenter.showSuccess(getString(R.string.developer_tcp_log_server_toast_off))
+                }
+                false
+            }
+        }
     }
 
     private fun initSubtitleDebugPreferences() {
@@ -133,10 +170,13 @@ class DeveloperSettingFragment : PreferenceFragmentCompat() {
             try {
                 title = getString(R.string.developer_bugly_status_title)
                 val statusInfo = SecurityHelperConfig.getBuglyStatusInfo()
+                val runtimeAppId = BuglyReporter.getAppId().orEmpty()
                 summary =
                     if (statusInfo.isInitialized) {
                         if (statusInfo.isDebugMode) {
                             getString(R.string.developer_bugly_status_on_debug)
+                        } else if (runtimeAppId.isBlank()) {
+                            getString(R.string.developer_bugly_status_runtime_missing)
                         } else {
                             val shortId =
                                 if (statusInfo.appId.length > 8) {
@@ -152,29 +192,55 @@ class DeveloperSettingFragment : PreferenceFragmentCompat() {
 
                 setOnPreferenceClickListener {
                     try {
-                        val statusInfo = SecurityHelperConfig.getBuglyStatusInfo()
+                        val statusSnapshot = SecurityHelperConfig.getBuglyStatusInfo()
+                        val runtimeAppIdSnapshot = BuglyReporter.getAppId().orEmpty()
+                        val runtimeVersionSnapshot = BuglyReporter.getVersion(requireContext()).orEmpty()
+                        val runtimeReady = runtimeAppIdSnapshot.isNotBlank()
                         val message =
                             buildString {
                                 append(getString(R.string.developer_bugly_status_detail_header)).append("\n\n")
                                 append(
                                     getString(
                                         R.string.developer_bugly_status_detail_state,
-                                        if (statusInfo.isInitialized) "✅ 已初始化" else "❌ 未初始化",
+                                        when {
+                                            statusSnapshot.isInitialized && runtimeReady -> "✅ 已初始化"
+                                            statusSnapshot.isInitialized -> "⚠ 已配置但未初始化"
+                                            else -> "❌ 未配置"
+                                        },
                                     ),
                                 ).append("\n")
                                 append(
                                     getString(
                                         R.string.developer_bugly_status_detail_app_id,
-                                        if (statusInfo.isDebugMode) "test_debug_id (测试模式)" else statusInfo.appId,
+                                        if (statusSnapshot.isDebugMode) "test_debug_id (测试模式)" else statusSnapshot.appId,
                                     ),
                                 ).append("\n")
-                                append(getString(R.string.developer_bugly_status_detail_source, statusInfo.source)).append("\n")
                                 append(
-                                    getString(R.string.developer_bugly_status_detail_debug, if (statusInfo.isDebugMode) "是" else "否"),
+                                    getString(
+                                        R.string.developer_bugly_status_detail_runtime_app_id,
+                                        runtimeAppIdSnapshot.ifBlank { "-" },
+                                    ),
+                                ).append("\n")
+                                append(
+                                    getString(
+                                        R.string.developer_bugly_status_detail_runtime_version,
+                                        runtimeVersionSnapshot.ifBlank { "-" },
+                                    ),
+                                ).append("\n")
+                                append(getString(R.string.developer_bugly_status_detail_source, statusSnapshot.source)).append("\n")
+                                append(
+                                    getString(
+                                        R.string.developer_bugly_status_detail_debug,
+                                        if (statusSnapshot.isDebugMode) "是" else "否",
+                                    ),
                                 ).append("\n\n")
-                                if (statusInfo.isInitialized) {
-                                    append(getString(R.string.developer_bugly_status_detail_working)).append("\n")
-                                    if (statusInfo.isDebugMode) {
+                                if (statusSnapshot.isInitialized) {
+                                    if (runtimeReady) {
+                                        append(getString(R.string.developer_bugly_status_detail_working)).append("\n")
+                                    } else {
+                                        append(getString(R.string.developer_bugly_status_detail_runtime_missing)).append("\n")
+                                    }
+                                    if (statusSnapshot.isDebugMode) {
                                         append(getString(R.string.developer_bugly_status_detail_notice))
                                     }
                                 } else {
@@ -200,6 +266,27 @@ class DeveloperSettingFragment : PreferenceFragmentCompat() {
                     "bugly_status_setup",
                     "Failed to setup Bugly status preference",
                 )
+            }
+        }
+    }
+
+    private fun initBuglyTestPreference() {
+        findPreference<Preference>(KEY_BUGLY_TEST_REPORT)?.apply {
+            title = getString(R.string.developer_bugly_test_report_title)
+            summary = getString(R.string.developer_bugly_test_report_summary)
+            setOnPreferenceClickListener {
+                if (!SecurityHelperConfig.isConfigured()) {
+                    ToastCenter.showError(getString(R.string.developer_bugly_test_report_not_configured))
+                    return@setOnPreferenceClickListener true
+                }
+
+                val now = dateFormat.format(Date())
+                ErrorReportHelper.postException(
+                    message = "Bugly test report at $now",
+                    tag = "BuglyTest",
+                )
+                ToastCenter.showSuccess(getString(R.string.developer_bugly_test_report_toast))
+                true
             }
         }
     }
@@ -308,6 +395,90 @@ class DeveloperSettingFragment : PreferenceFragmentCompat() {
             val level = LogSystem.getRuntimeState().activePolicy.defaultLevel
             updateLogLevelPreference(it, level)
         }
+        findPreference<SwitchPreference>(KEY_TCP_LOG_SERVER_ENABLE)?.let {
+            refreshTcpLogServerPreferenceState(it, LogSystem.getTcpLogServerState())
+        }
+    }
+
+    private fun refreshTcpLogServerPreferenceState(
+        preference: SwitchPreference,
+        state: TcpLogServerState
+    ) {
+        preference.isChecked = state.enabled
+        updateTcpLogServerSummary(preference, state)
+        if (state.enabled && state.running) {
+            refreshTcpLogServerIpTextAsync()
+        }
+    }
+
+    private fun updateTcpLogServerSummary(
+        preference: SwitchPreference,
+        state: TcpLogServerState
+    ) {
+        preference.summary =
+            when {
+                !state.enabled -> getString(R.string.developer_tcp_log_server_summary_off)
+                !state.running -> getString(R.string.developer_tcp_log_server_summary_error, state.lastError ?: "-")
+                else -> {
+                    val port = if (state.boundPort > 0) state.boundPort else state.requestedPort
+                    getString(
+                        R.string.developer_tcp_log_server_summary_on,
+                        port,
+                        tcpLogServerIpText.ifBlank { "-" },
+                    )
+                }
+            }
+    }
+
+    private fun refreshTcpLogServerIpTextAsync() {
+        SupervisorScope.IO.launch {
+            val ipText = resolveLocalIpText()
+            SupervisorScope.Main.launch {
+                if (!isAdded) return@launch
+                tcpLogServerIpText = ipText
+                val state = LogSystem.getTcpLogServerState()
+                findPreference<SwitchPreference>(KEY_TCP_LOG_SERVER_ENABLE)?.let { pref ->
+                    updateTcpLogServerSummary(pref, state)
+                }
+            }
+        }
+    }
+
+    private fun resolveLocalIpText(): String {
+        val ipv4 = mutableListOf<String>()
+        val ipv6 = mutableListOf<String>()
+        try {
+            val element = NetworkInterface.getNetworkInterfaces()
+            while (element.hasMoreElements()) {
+                val networkInterface = element.nextElement()
+                val addresses = networkInterface.inetAddresses
+                while (addresses.hasMoreElements()) {
+                    val address = addresses.nextElement()
+                    if (address.isLoopbackAddress || address.isLinkLocalAddress) {
+                        continue
+                    }
+
+                    val ip = address.hostAddress?.toString().orEmpty()
+                    if (ip.isEmpty()) continue
+
+                    if (address is Inet4Address) {
+                        ipv4.add(ip)
+                    } else {
+                        ipv6.add(ip)
+                    }
+                }
+            }
+        } catch (e: SocketException) {
+            ErrorReportHelper.postCatchedExceptionWithContext(
+                e,
+                "DeveloperSettingFragment",
+                "resolveLocalIpText",
+                "Failed to resolve local IP addresses",
+            )
+        }
+
+        val all = ipv4 + ipv6
+        return if (all.isEmpty()) "-" else all.joinToString(separator = "\n")
     }
 
     private class DeveloperSettingDataStore : PreferenceDataStore() {
@@ -317,6 +488,7 @@ class DeveloperSettingFragment : PreferenceFragmentCompat() {
         ): Boolean =
             when (key) {
                 KEY_APP_LOG_ENABLE -> LogSystem.getRuntimeState().debugSessionEnabled
+                KEY_TCP_LOG_SERVER_ENABLE -> LogSystem.getTcpLogServerState().enabled
                 else -> defValue
             }
 
