@@ -53,7 +53,7 @@
 
 | ID | 关联 Finding | 目标 | 范围 | 验收标准 | Impact | Effort | P | 负责人 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|
-| REPO_IMMERSION_BAR-T001 | REPO_IMMERSION_BAR-F001 | 为 ImmersionBar AAR 增加可追溯元信息（来源/版本/License/校验和/更新流程） | 新增 `repository/immersion_bar/README.md`（中文）；在 README 中引用/关联 `user_component/src/main/assets/license/ImmersionBar.txt`，并补充 AAR 的 SHA256 与升级步骤 | 1) README 明确：上游项目/下载地址、版本号、License、AAR SHA256、更新步骤；2) 任意人可按文档复现升级；3) 不影响现有依赖解析 | Medium | Small | P1 | 待分配（Repo） | Draft |
+| REPO_IMMERSION_BAR-T001 | REPO_IMMERSION_BAR-F001 | 为 ImmersionBar AAR 增加可追溯元信息（来源/版本/License/校验和/更新流程） | 新增 `repository/immersion_bar/README.md`（中文）；在 README 中引用/关联 `user_component/src/main/assets/license/ImmersionBar.txt`，并补充 AAR 的 SHA256 与升级步骤 | 1) README 明确：上游项目/下载地址、版本号、License、AAR SHA256、更新步骤；2) 任意人可按文档复现升级；3) 不影响现有依赖解析 | Medium | Small | P1 | AI（Codex） | Done |
 | REPO_IMMERSION_BAR-T002 | REPO_IMMERSION_BAR-F002 | 收敛第三方类型扩散：以 `core_ui_component` 提供统一状态栏/沉浸式配置入口 | 在 `:core_ui_component` 增加统一门面（例如 `StatusBarStyleApplier` / `ImmersionBarFacade`），并将 feature 侧直接 `ImmersionBar.with(...)` 的调用逐步迁移；迁移完成后评估是否可将 `api(project(":repository:immersion_bar"))` 降级为 `implementation(...)` | 1) 新增入口可覆盖现有常见用法（透明/fitSystemWindows/字体颜色等）；2) 至少迁移 2 个调用点验证可行（例如 `BaseActivity` 与 `BaseSplashActivity`）；3) 不影响 TV/移动端交互与样式；4) 迁移过程保持渐进（允许双栈共存一段时间） | Medium | Medium | P2 | 待分配（UI） | Draft |
 
 ## 5) 风险与回归关注点

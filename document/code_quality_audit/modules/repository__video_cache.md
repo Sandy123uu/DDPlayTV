@@ -52,7 +52,7 @@
 
 | ID | 关联 Finding | 目标 | 范围 | 验收标准 | Impact | Effort | P | 负责人 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|
-| REPO_VIDEO_CACHE-T001 | REPO_VIDEO_CACHE-F001 | 为 AAR 增加可追溯元信息（来源/版本/License/校验和/更新流程） | 新增 `repository/video_cache/README.md`（中文）；可选新增 `repository/video_cache/LICENSE` 或在 README 中明确 License 与引用位置 | 1) README 明确：上游项目/下载地址、版本号、License、AAR SHA256、更新步骤；2) 任意人可按文档复现升级；3) 不影响现有依赖解析 | Medium | Small | P1 | 待分配（Repo） | Draft |
+| REPO_VIDEO_CACHE-T001 | REPO_VIDEO_CACHE-F001 | 为 AAR 增加可追溯元信息（来源/版本/License/校验和/更新流程） | 新增 `repository/video_cache/README.md`（中文）；可选新增 `repository/video_cache/LICENSE` 或在 README 中明确 License 与引用位置 | 1) README 明确：上游项目/下载地址、版本号、License、AAR SHA256、更新步骤；2) 任意人可按文档复现升级；3) 不影响现有依赖解析 | Medium | Small | P1 | AI（Codex） | Done |
 | REPO_VIDEO_CACHE-T002 | REPO_VIDEO_CACHE-F002 | 对缓存/代理链路的 URL 日志进行脱敏，默认不输出 query/token 等敏感信息 | `player_component/src/main/java/com/xyoye/cache/OkHttpUrlSource.kt`（替换日志内容）；若已在 `:core_log_component` 提供 URL 脱敏工具则直接复用，否则先补齐该工具并统一替换调用点 | 1) 相关日志不包含 query/fragment/token；2) 仍可定位问题（保留 host/path + 可选 hash）；3) 与 `PLAYER-T001` 使用同一套脱敏策略；4) 全仓编译通过 | High | Small | P1 | 待分配（Player/Log） | Draft |
 
 ## 5) 风险与回归关注点

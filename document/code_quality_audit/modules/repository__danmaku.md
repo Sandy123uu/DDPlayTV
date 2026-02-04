@@ -52,7 +52,7 @@
 
 | ID | 关联 Finding | 目标 | 范围 | 验收标准 | Impact | Effort | P | 负责人 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|
-| REPO_DANMAKU-T001 | REPO_DANMAKU-F001 | 为 AAR 增加可追溯元信息（来源/版本/License/校验和/更新流程） | 新增 `repository/danmaku/README.md`（中文）；可选新增 `repository/danmaku/LICENSE` 或在 README 中明确 License 与引用位置 | 1) README 明确：上游项目/下载地址、版本号、License、AAR SHA256、更新步骤；2) 任意人可按文档复现升级；3) 不影响现有依赖解析 | Medium | Small | P1 | 待分配（Repo） | Draft |
+| REPO_DANMAKU-T001 | REPO_DANMAKU-F001 | 为 AAR 增加可追溯元信息（来源/版本/License/校验和/更新流程） | 新增 `repository/danmaku/README.md`（中文）；可选新增 `repository/danmaku/LICENSE` 或在 README 中明确 License 与引用位置 | 1) README 明确：上游项目/下载地址、版本号、License、AAR SHA256、更新步骤；2) 任意人可按文档复现升级；3) 不影响现有依赖解析 | Medium | Small | P1 | AI（Codex） | Done |
 | REPO_DANMAKU-T002 | REPO_DANMAKU-F002 | 统一 prebuilt AAR wrapper 的 Gradle 封装方式，减少脚本重复与漂移 | 在 `buildSrc` 提供约定插件（例如 `prebuilt-aar`），并迁移 `repository/*` wrapper 的 `build.gradle.kts` 使用统一写法（至少覆盖 6 个 AAR wrapper） | 1) wrapper 模块仍可被正常依赖（`assembleDebug`/`testDebugUnitTest` 可通过）；2) wrapper 脚本结构一致、可读；3) 不引入额外 module 依赖；4) `./gradlew verifyModuleDependencies` 通过 | Medium | Medium | P2 | 待分配（Build/Repo） | Draft |
 
 ## 5) 风险与回归关注点

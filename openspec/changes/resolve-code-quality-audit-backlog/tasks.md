@@ -7,7 +7,7 @@
 
 - [x] 1.1 关闭 `G-T0001`：WebDAV 默认启用严格 TLS，提供可控开关（用户显式；Release 允许）
 - [x] 1.2 关闭 `G-T0002`：收敛/下线 `UnsafeOkHttpClient`，提供更安全替代方案与文档
-- [ ] 1.3 关闭 `G-T0003`：为所有 repository wrapper AAR 补齐元信息与升级流程
+- [x] 1.3 关闭 `G-T0003`：为所有 repository wrapper AAR 补齐元信息与升级流程
 - [ ] 1.4 关闭 `G-T0004`：修复 `ActivityHelper#getTopActivity` 潜在崩溃
 - [ ] 1.5 关闭 `G-T0005`：修复 `ISequentialOutStream`（解压流式写入语义）
 - [ ] 1.6 关闭 `G-T0006`：解压线程/取消/资源释放策略（IO 线程 + 失败回收）
@@ -82,9 +82,9 @@
 
 ## 4. Validation（必须记录最终 BUILD 状态）
 
-- [ ] 4.1 `./gradlew verifyModuleDependencies`
+- [x] 4.1 `./gradlew verifyModuleDependencies`
 - [ ] 4.2 `./gradlew ktlintCheck`
 - [ ] 4.3 `./gradlew lint`（或 `lintDebug`）
 - [ ] 4.4 `./gradlew testDebugUnitTest`
-- [ ] 4.5 `./gradlew :app:assembleDebug`
+- [x] 4.5 `./gradlew :app:assembleDebug`
 - [ ] 4.6（如涉及 instrumentation）`./gradlew connectedDebugAndroidTest`
