@@ -4,6 +4,7 @@ import androidx.databinding.ViewDataBinding
 import androidx.lifecycle.MutableLiveData
 import com.alibaba.android.arouter.facade.annotation.Autowired
 import com.alibaba.android.arouter.launcher.ARouter
+import com.okamihoro.ddplaytv.BR
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.bridge.LoginObserver
 import com.xyoye.common_component.config.ScreencastConfig
@@ -11,7 +12,6 @@ import com.xyoye.common_component.config.UserConfig
 import com.xyoye.common_component.services.ScreencastReceiveService
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.common_component.weight.dialog.CommonDialog
-import com.okamihoro.ddplaytv.BR
 import com.xyoye.data_component.data.LoginData
 import kotlin.random.Random
 import kotlin.system.exitProcess

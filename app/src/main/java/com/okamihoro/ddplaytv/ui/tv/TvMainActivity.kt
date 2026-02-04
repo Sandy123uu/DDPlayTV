@@ -4,6 +4,10 @@ import android.view.KeyEvent
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.alibaba.android.arouter.launcher.ARouter
+import com.okamihoro.ddplaytv.R
+import com.okamihoro.ddplaytv.databinding.ActivityTvMainBinding
+import com.okamihoro.ddplaytv.databinding.ItemTvMainNavBinding
+import com.okamihoro.ddplaytv.ui.shell.BaseShellActivity
 import com.xyoye.common_component.adapter.addItem
 import com.xyoye.common_component.adapter.buildAdapter
 import com.xyoye.common_component.config.RouteTable
@@ -13,10 +17,6 @@ import com.xyoye.common_component.extension.requestIndexChildFocus
 import com.xyoye.common_component.extension.setData
 import com.xyoye.common_component.extension.showFragment
 import com.xyoye.common_component.extension.vertical
-import com.okamihoro.ddplaytv.R
-import com.okamihoro.ddplaytv.databinding.ActivityTvMainBinding
-import com.okamihoro.ddplaytv.databinding.ItemTvMainNavBinding
-import com.okamihoro.ddplaytv.ui.shell.BaseShellActivity
 
 class TvMainActivity : BaseShellActivity<ActivityTvMainBinding>() {
     companion object {

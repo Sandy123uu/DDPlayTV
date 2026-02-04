@@ -10,4 +10,3 @@ import com.alibaba.android.arouter.facade.template.IProvider
 interface Media3SessionServiceProvider : IProvider {
     fun createBindIntent(context: Context): Intent
 }
-

@@ -1,9 +1,9 @@
 package com.okamihoro.ddplaytv.app
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.xyoye.common_component.media3.testing.Media3Dependent
 import com.okamihoro.ddplaytv.app.service.Media3BackgroundCoordinator
 import com.okamihoro.ddplaytv.app.service.MediaSessionCommandBridge
+import com.xyoye.common_component.media3.testing.Media3Dependent
 import com.xyoye.data_component.entity.media3.Media3BackgroundMode
 import com.xyoye.data_component.entity.media3.Media3Capability
 import com.xyoye.data_component.entity.media3.PlayerCapabilityContract

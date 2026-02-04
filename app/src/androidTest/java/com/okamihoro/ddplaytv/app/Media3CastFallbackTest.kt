@@ -1,8 +1,8 @@
 package com.okamihoro.ddplaytv.app
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.xyoye.common_component.media3.testing.Media3Dependent
 import com.okamihoro.ddplaytv.app.cast.Media3CastManager
+import com.xyoye.common_component.media3.testing.Media3Dependent
 import com.xyoye.data_component.entity.media3.CastTarget
 import com.xyoye.data_component.entity.media3.CastTargetType
 import com.xyoye.data_component.entity.media3.Media3Capability

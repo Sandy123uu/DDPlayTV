@@ -27,9 +27,9 @@ import android.view.animation.Interpolator
 import androidx.annotation.ColorInt
 import androidx.annotation.IntDef
 import androidx.core.view.ViewCompat
+import com.okamihoro.ddplaytv.R
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
-import com.okamihoro.ddplaytv.R
 
 /**
  * Animated SVG Drawing for Android

@@ -11,11 +11,11 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
 import com.gyf.immersionbar.ImmersionBar
-import com.xyoye.common_component.base.BaseAppCompatActivity
-import com.xyoye.common_component.config.AppConfig
 import com.okamihoro.ddplaytv.R
 import com.okamihoro.ddplaytv.databinding.ActivitySplashBinding
 import com.okamihoro.ddplaytv.utils.image_anim.path.TextPathAnimView
+import com.xyoye.common_component.base.BaseAppCompatActivity
+import com.xyoye.common_component.config.AppConfig
 
 @SuppressLint("CustomSplashScreen")
 abstract class BaseSplashActivity : BaseAppCompatActivity<ActivitySplashBinding>() {

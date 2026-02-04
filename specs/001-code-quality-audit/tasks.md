@@ -64,11 +64,11 @@ description: "任务清单：代码质量排查与复用治理（分模块）"
 
 **独立验收**：仅完成本阶段即可验收——团队能按 `module_status.md` 分工，且所有模块报告遵循同一模板与口径
 
-- [ ] T014 [US1] 输出统一“排查规划”主文档（链接到配置/模板/门禁/分工）：`document/code_quality_audit/plan.md`
-- [ ] T015 [US1] 填写每个模块的负责人/状态/预计完成时间，并明确“观察项”策略：更新 `document/code_quality_audit/global/module_status.md`
-- [ ] T016 [P] [US1] 建立“观察项（Out of Build Scope）”清单（非构建目录/历史目录/第三方拷贝等）：`document/code_quality_audit/global/observing.md`
-- [ ] T017 [US1] 建立模块报告复核清单（证据/多实现分类/结论/优先级矩阵/依赖治理）：`document/code_quality_audit/global/review_checklist.md`
-- [ ] T018 [US1] 执行一次基础门禁并记录结果（必须确认 `BUILD SUCCESSFUL`）：`document/code_quality_audit/runlogs/foundation_gates.md`
+- [X] T014 [US1] 输出统一“排查规划”主文档（链接到配置/模板/门禁/分工）：`document/code_quality_audit/plan.md`
+- [X] T015 [US1] 填写每个模块的负责人/状态/预计完成时间，并明确“观察项”策略：更新 `document/code_quality_audit/global/module_status.md`
+- [X] T016 [P] [US1] 建立“观察项（Out of Build Scope）”清单（非构建目录/历史目录/第三方拷贝等）：`document/code_quality_audit/global/observing.md`
+- [X] T017 [US1] 建立模块报告复核清单（证据/多实现分类/结论/优先级矩阵/依赖治理）：`document/code_quality_audit/global/review_checklist.md`
+- [X] T018 [US1] 执行一次基础门禁并记录结果（必须确认 `BUILD SUCCESSFUL`）：`document/code_quality_audit/runlogs/foundation_gates.md`
 
 **Checkpoint**：US1 Ready（可分工、可开工、口径不漂移）
 

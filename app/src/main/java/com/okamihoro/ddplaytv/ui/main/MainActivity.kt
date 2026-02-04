@@ -7,6 +7,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.alibaba.android.arouter.facade.annotation.Autowired
 import com.alibaba.android.arouter.launcher.ARouter
+import com.okamihoro.ddplaytv.R
+import com.okamihoro.ddplaytv.databinding.ActivityMainBinding
+import com.okamihoro.ddplaytv.ui.shell.BaseShellActivity
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.extension.findAndRemoveFragment
 import com.xyoye.common_component.extension.hideFragment
@@ -14,9 +17,6 @@ import com.xyoye.common_component.extension.showFragment
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.services.DeveloperMenuService
-import com.okamihoro.ddplaytv.R
-import com.okamihoro.ddplaytv.databinding.ActivityMainBinding
-import com.okamihoro.ddplaytv.ui.shell.BaseShellActivity
 
 class MainActivity : BaseShellActivity<ActivityMainBinding>() {
     companion object {

@@ -16,8 +16,8 @@ import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.extension.clamp
 import com.xyoye.common_component.extension.dp
-import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.extension.isNightMode
+import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.extension.loadImage
 import com.xyoye.common_component.extension.opacity
 import com.xyoye.common_component.extension.setTextColorRes

@@ -81,14 +81,20 @@ class BilibiliLivePlaybackSession(
         val ordered =
             data.durl.sortedWith(
                 compareBy<BilibiliLivePlayUrlDurl> { it.order }
-                    .thenBy { it.url }
+                    .thenBy { it.url },
             )
 
         val urls = LinkedHashSet<String>()
         ordered.forEach { durl ->
-            durl.url.trim().takeIf { it.isNotEmpty() }?.let(urls::add)
+            durl.url
+                .trim()
+                .takeIf { it.isNotEmpty() }
+                ?.let(urls::add)
             durl.backupUrl.forEach { backup ->
-                backup.trim().takeIf { it.isNotEmpty() }?.let(urls::add)
+                backup
+                    .trim()
+                    .takeIf { it.isNotEmpty() }
+                    ?.let(urls::add)
             }
         }
         return urls.toList()

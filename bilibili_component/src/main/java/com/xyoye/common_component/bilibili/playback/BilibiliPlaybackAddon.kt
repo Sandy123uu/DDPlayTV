@@ -99,7 +99,7 @@ class BilibiliPlaybackAddon(
             val playUrl =
                 session
                     .recover(
-                        failure = request.toFailureContext()
+                        failure = request.toFailureContext(),
                     ).getOrElse { return Result.failure(it) }
 
             if (playUrl.isBlank()) {
