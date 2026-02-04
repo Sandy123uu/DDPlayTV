@@ -51,12 +51,11 @@ jobs:
               shell: bash
               run: |
                   set -euo pipefail
-                  mapfile -t dirs < <(
-                      find . -type d \( \
-                          -path "*/build/intermediates/javac/*/classes" -o \
-                          -path "*/build/tmp/kotlin-classes/*" -o \
-                          -path "*/build/classes/java/*" \
-                      \) -print | sed 's|^\./||' | sort -u
+                  mapfile -t dirs < <( \
+                      find . -type d -print \
+                        | sed 's|^\\./||' \
+                        | grep -E '(^|/)build/intermediates/javac/[^/]+/[^/]+/classes$|(^|/)build/tmp/kotlin-classes/[^/]+$|(^|/)build/classes/java/[^/]+$' \
+                        | sort -u \
                   )
                   if [ "${#dirs[@]}" -eq 0 ]; then
                       echo "No class directories found. Make sure the build step produced compiled classes." >&2
