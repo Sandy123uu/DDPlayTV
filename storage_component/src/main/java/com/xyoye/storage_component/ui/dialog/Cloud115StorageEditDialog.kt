@@ -1,8 +1,8 @@
 package com.xyoye.storage_component.ui.dialog
 
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.xyoye.common_component.config.PlayerActions
 import com.xyoye.common_component.database.DatabaseManager
@@ -17,8 +17,8 @@ import com.xyoye.common_component.weight.BottomActionDialog
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.common_component.weight.dialog.CommonDialog
 import com.xyoye.common_component.weight.dialog.CommonEditDialog
-import com.xyoye.data_component.bean.SheetActionBean
 import com.xyoye.data_component.bean.EditBean
+import com.xyoye.data_component.bean.SheetActionBean
 import com.xyoye.data_component.entity.MediaLibraryEntity
 import com.xyoye.data_component.enums.MediaType
 import com.xyoye.storage_component.R
@@ -98,13 +98,13 @@ class Cloud115StorageEditDialog(
                 SheetActionBean(
                     actionId = AuthMethod.QRCODE,
                     actionName = "扫码授权",
-                    describe = "推荐：使用 115 App 扫码确认"
+                    describe = "推荐：使用 115 App 扫码确认",
                 ),
                 SheetActionBean(
                     actionId = AuthMethod.TOKEN,
                     actionName = "手动输入 token",
-                    describe = "粘贴 Cookie（UID/CID/SEID/KID）"
-                )
+                    describe = "粘贴 Cookie（UID/CID/SEID/KID）",
+                ),
             )
 
         BottomActionDialog(activity, actions, "授权方式") {
@@ -127,7 +127,9 @@ class Cloud115StorageEditDialog(
                 }
 
                 val storageKey = Cloud115AuthStore.storageKey(editLibrary)
-                Cloud115AuthStore.read(storageKey).loginApp
+                Cloud115AuthStore
+                    .read(storageKey)
+                    .loginApp
                     ?.trim()
                     ?.takeIf { it.isNotBlank() }
                     ?: DEFAULT_LOGIN_APP
@@ -143,7 +145,7 @@ class Cloud115StorageEditDialog(
                     loginApp = result.loginApp,
                     userName = result.userName,
                     avatarUrl = result.avatarUrl,
-                    authMethod = "qrcode"
+                    authMethod = "qrcode",
                 )
             },
             onDismiss = { refreshAuthViews() },
@@ -166,7 +168,7 @@ class Cloud115StorageEditDialog(
                     hint = "UID=...; CID=...; SEID=...; KID=...",
                     defaultText = "",
                     inputTips = "将仅用于本机授权校验，请勿分享/截图。支持 Cookie: 前缀与大小写/空格差异。",
-                    canInputEmpty = false
+                    canInputEmpty = false,
                 ),
             inputOnlyDigit = false,
             checkBlock = { input ->
@@ -199,9 +201,9 @@ class Cloud115StorageEditDialog(
                                     "libraryId" to (activity.editData?.id ?: editLibrary.id).toString(),
                                     "userId" to parsed.userId,
                                     "cookie" to safeCookie,
-                                    "exception" to t::class.java.simpleName
+                                    "exception" to t::class.java.simpleName,
                                 ),
-                                t
+                                t,
                             )
                             ToastCenter.showError(t.message?.takeIf { it.isNotBlank() } ?: "token 校验失败")
                             return@launch
@@ -213,13 +215,13 @@ class Cloud115StorageEditDialog(
                             loginApp = null,
                             userName = null,
                             avatarUrl = null,
-                            authMethod = "token"
+                            authMethod = "token",
                         )
                     } finally {
                         activity.hideLoading()
                     }
                 }
-            }
+            },
         ).show()
     }
 
@@ -232,13 +234,13 @@ class Cloud115StorageEditDialog(
                 SheetActionBean(
                     actionId = DisconnectAction.CLEAR_AUTH,
                     actionName = "仅清除授权",
-                    describe = "保留媒体库，可稍后重新授权"
+                    describe = "保留媒体库，可稍后重新授权",
                 ),
                 SheetActionBean(
                     actionId = DisconnectAction.CLEAR_AUTH_AND_DELETE_LIBRARY,
                     actionName = "清除授权并删除媒体库",
-                    describe = "从列表移除该账号（不会删除云盘文件）"
-                )
+                    describe = "从列表移除该账号（不会删除云盘文件）",
+                ),
             )
 
         BottomActionDialog(activity, actions, "断开连接") {
@@ -423,7 +425,7 @@ class Cloud115StorageEditDialog(
                 loginApp = loginApp,
                 userName = userName,
                 avatarUrl = avatarUrl,
-                updatedAtMs = nowMs
+                updatedAtMs = nowMs,
             )
 
             if (!oldStorageKey.isNullOrBlank() && oldStorageKey != newStorageKey) {
@@ -442,8 +444,8 @@ class Cloud115StorageEditDialog(
                     "newStorageKey" to newStorageKey,
                     "userId" to userId,
                     "loginApp" to loginApp.orEmpty(),
-                    "cookie" to safeCookie
-                )
+                    "cookie" to safeCookie,
+                ),
             )
 
             ToastCenter.showOriginalToast("授权成功")
@@ -466,15 +468,15 @@ class Cloud115StorageEditDialog(
                     "libraryId" to (activity.editData?.id ?: editLibrary.id).toString(),
                     "userId" to userId,
                     "cookie" to safeCookie,
-                    "exception" to t::class.java.simpleName
+                    "exception" to t::class.java.simpleName,
                 ),
-                t
+                t,
             )
             ErrorReportHelper.postCatchedExceptionWithContext(
                 t,
                 "Cloud115StorageEditDialog",
                 "handleAuthSuccess",
-                "authMethod=$authMethod isEditMode=${originalLibrary != null} libraryId=${activity.editData?.id ?: editLibrary.id} userId=$userId cookie=$safeCookie"
+                "authMethod=$authMethod isEditMode=${originalLibrary != null} libraryId=${activity.editData?.id ?: editLibrary.id} userId=$userId cookie=$safeCookie",
             )
             val message = t.message?.takeIf { it.isNotBlank() } ?: "授权失败"
             ToastCenter.showError(message)

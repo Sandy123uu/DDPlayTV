@@ -129,7 +129,7 @@ class FTPStorageEditDialog(
 
     private fun buildLibraryIfValid(
         serverData: MediaLibraryEntity,
-        showToast: Boolean,
+        showToast: Boolean
     ): MediaLibraryEntity? {
         val address = serverData.ftpAddress.trim()
         if (address.isEmpty()) {

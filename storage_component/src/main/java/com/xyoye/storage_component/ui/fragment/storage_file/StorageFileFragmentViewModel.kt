@@ -337,8 +337,11 @@ class StorageFileFragmentViewModel : BaseViewModel() {
                 return@launch
             }
 
-            val appended = result.getOrNull().orEmpty()
-                .filter { isDisplayFile(it) }
+            val appended =
+                result
+                    .getOrNull()
+                    .orEmpty()
+                    .filter { isDisplayFile(it) }
             val existingKeys = current.map { it.uniqueKey() }.toHashSet()
             val merged =
                 current.toMutableList<StorageFile>().apply {
@@ -353,7 +356,8 @@ class StorageFileFragmentViewModel : BaseViewModel() {
             val displayFiles =
                 if (storage.library.mediaType == MediaType.BAIDU_PAN_STORAGE ||
                     storage.library.mediaType == MediaType.OPEN_115_STORAGE ||
-                    storage.library.mediaType == MediaType.CLOUD_115_STORAGE) {
+                    storage.library.mediaType == MediaType.CLOUD_115_STORAGE
+                ) {
                     merged.sortedWith(StorageSortOption.comparator())
                 } else {
                     merged

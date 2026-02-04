@@ -139,4 +139,3 @@ internal class MpvAssFullSubtitleParser {
         private const val ASS_DIALOGUE_DELIMITERS = 9
     }
 }
-

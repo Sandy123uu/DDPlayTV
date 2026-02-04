@@ -187,7 +187,7 @@ class StorageFileFragment : BaseFragment<StorageFileFragmentViewModel, FragmentS
                 focusTargetProvider = { rv -> rv.resolveVerticalMoveFocusTarget() },
                 onMenuKeyDown = { triggerTvRefresh() },
                 onSettingsKeyDown = { triggerTvRefresh() },
-                consumeDownKeyWhenBottom = true
+                consumeDownKeyWhenBottom = true,
             )
         }
     }
@@ -354,14 +354,14 @@ class StorageFileFragment : BaseFragment<StorageFileFragmentViewModel, FragmentS
                     expiresAtMs = expiresAtMs,
                     refreshToken = token.refreshToken,
                     scope = token.scope,
-                    updatedAtMs = nowMs
+                    updatedAtMs = nowMs,
                 )
                 BaiduPanAuthStore.writeProfile(
                     storageKey = storageKey,
                     uk = uk,
                     netdiskName = uinfo.netdiskName,
                     avatarUrl = uinfo.avatarUrl,
-                    updatedAtMs = nowMs
+                    updatedAtMs = nowMs,
                 )
 
                 ToastCenter.showOriginalToast("授权成功")

@@ -9,16 +9,16 @@ import com.xyoye.common_component.network.repository.ResourceRepository
 import com.xyoye.common_component.storage.AbstractStorage
 import com.xyoye.common_component.storage.AuthStorage
 import com.xyoye.common_component.storage.PagedStorage
+import com.xyoye.common_component.storage.cloud115.auth.Cloud115AuthStore
 import com.xyoye.common_component.storage.cloud115.auth.Cloud115NotConfiguredException
+import com.xyoye.common_component.storage.cloud115.net.Cloud115Headers
 import com.xyoye.common_component.storage.cloud115.path.Cloud115FolderInfoCache
 import com.xyoye.common_component.storage.cloud115.play.Cloud115DownUrlCache
-import com.xyoye.common_component.storage.cloud115.net.Cloud115Headers
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.file.helper.HttpPlayServer
 import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.common_component.storage.file.impl.Cloud115StorageFile
 import com.xyoye.common_component.storage.file.payloadAs
-import com.xyoye.common_component.storage.cloud115.auth.Cloud115AuthStore
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.data_component.bean.PlaybackProfile
 import com.xyoye.data_component.bean.PlaybackProfileSource
@@ -125,12 +125,13 @@ class Cloud115Storage(
 
         val response =
             runCatching {
-                repository.listFiles(
-                    cid = cid,
-                    limit = DEFAULT_PAGE_LIMIT,
-                    offset = 0,
-                    showDir = 1,
-                ).getOrThrow()
+                repository
+                    .listFiles(
+                        cid = cid,
+                        limit = DEFAULT_PAGE_LIMIT,
+                        offset = 0,
+                        showDir = 1,
+                    ).getOrThrow()
             }.getOrElse { t ->
                 val dirPath = runCatching { file.filePath() }.getOrNull()
                 val cookie = redactedCookie()
@@ -174,12 +175,13 @@ class Cloud115Storage(
     override suspend fun listFiles(file: StorageFile): List<StorageFile> {
         val cid = resolveDirectoryCid(file)
         val response =
-            repository.listFiles(
-                cid = cid,
-                limit = DEFAULT_PAGE_LIMIT,
-                offset = 0,
-                showDir = 1,
-            ).getOrThrow()
+            repository
+                .listFiles(
+                    cid = cid,
+                    limit = DEFAULT_PAGE_LIMIT,
+                    offset = 0,
+                    showDir = 1,
+                ).getOrThrow()
         val parentPath = file.filePath()
         return response.data.orEmpty().map { Cloud115StorageFile(it, parentPath, this) }
     }
@@ -206,12 +208,13 @@ class Cloud115Storage(
         val dirPath = runCatching { currentDirectory.filePath() }.getOrNull()
         return runCatching {
             val response =
-                repository.listFiles(
-                    cid = cid,
-                    limit = DEFAULT_PAGE_LIMIT,
-                    offset = pagingOffset,
-                    showDir = 1,
-                ).getOrThrow()
+                repository
+                    .listFiles(
+                        cid = cid,
+                        limit = DEFAULT_PAGE_LIMIT,
+                        offset = pagingOffset,
+                        showDir = 1,
+                    ).getOrThrow()
 
             val parentPath = currentDirectory.filePath()
             val items = response.data.orEmpty()
@@ -264,7 +267,8 @@ class Cloud115Storage(
         }
 
         val segments =
-            Uri.parse(normalized)
+            Uri
+                .parse(normalized)
                 .pathSegments
                 .filter { it.isNotBlank() }
         if (segments.isEmpty()) return null
@@ -444,7 +448,12 @@ class Cloud115Storage(
     override fun preferredPlayerType(): PlayerType = PlayerType.TYPE_EXO_PLAYER
 
     override fun getNetworkHeaders(): Map<String, String> {
-        val cookie = Cloud115AuthStore.read(storageKey).cookie?.trim().orEmpty()
+        val cookie =
+            Cloud115AuthStore
+                .read(storageKey)
+                .cookie
+                ?.trim()
+                .orEmpty()
         return buildMap {
             put(Cloud115Headers.HEADER_USER_AGENT, Cloud115Headers.USER_AGENT)
             if (cookie.isNotBlank()) {
@@ -472,14 +481,15 @@ class Cloud115Storage(
         val dirPath = runCatching { directory?.filePath() }.getOrNull()
         val response =
             runCatching {
-                repository.searchFiles(
-                    searchValue = trimmed,
-                    cid = cid,
-                    type = SEARCH_TYPE_VIDEO,
-                    countFolders = SEARCH_COUNT_FOLDERS_ONLY_FILE,
-                    limit = DEFAULT_PAGE_LIMIT,
-                    offset = 0,
-                ).getOrThrow()
+                repository
+                    .searchFiles(
+                        searchValue = trimmed,
+                        cid = cid,
+                        type = SEARCH_TYPE_VIDEO,
+                        countFolders = SEARCH_COUNT_FOLDERS_ONLY_FILE,
+                        limit = DEFAULT_PAGE_LIMIT,
+                        offset = 0,
+                    ).getOrThrow()
             }.getOrElse { t ->
                 val cookie = redactedCookie()
                 LogFacade.e(
@@ -533,12 +543,13 @@ class Cloud115Storage(
         var offset = 0
         while (true) {
             val response =
-                repository.listFiles(
-                    cid = cid,
-                    limit = PATH_RESOLVE_PAGE_LIMIT,
-                    offset = offset,
-                    showDir = 1,
-                ).getOrThrow()
+                repository
+                    .listFiles(
+                        cid = cid,
+                        limit = PATH_RESOLVE_PAGE_LIMIT,
+                        offset = offset,
+                        showDir = 1,
+                    ).getOrThrow()
 
             val items = response.data.orEmpty()
             val target =
@@ -653,6 +664,7 @@ class Cloud115Storage(
         val name = item.n?.trim().orEmpty()
         if (name.isBlank()) return false
 
-        return com.xyoye.common_component.utils.isVideoFile(name)
+        return com.xyoye.common_component.utils
+            .isVideoFile(name)
     }
 }

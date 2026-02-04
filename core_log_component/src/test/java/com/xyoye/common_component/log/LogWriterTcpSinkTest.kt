@@ -71,4 +71,3 @@ class LogWriterTcpSinkTest {
         assertEquals(0, received.size)
     }
 }
-

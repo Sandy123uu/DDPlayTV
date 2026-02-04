@@ -30,7 +30,7 @@ class StoragePlusViewModel : BaseViewModel() {
     fun addStorage(
         oldLibrary: MediaLibraryEntity?,
         newLibrary: MediaLibraryEntity,
-        showToast: Boolean = true,
+        showToast: Boolean = true
     ): Job {
         return viewModelScope.launch(Dispatchers.IO) {
             if (oldLibrary != null) {

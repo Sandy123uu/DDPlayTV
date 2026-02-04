@@ -28,6 +28,10 @@ Thumbs.db
 .vscode/
 .gradle-cache/
 
+# Python caches (scripts/)
+__pycache__/
+*.pyc
+
 # Accidental AAR extraction artifacts at repo root
 /AndroidManifest.xml
 /res/

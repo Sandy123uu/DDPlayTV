@@ -131,12 +131,12 @@ description: "任务清单：代码质量排查与复用治理（分模块）"
 
 **目的**：降低人工成本、增强一致性校验、沉淀可复用工具
 
-- [ ] T045 [P] 新增文档一致性校验脚本（模块覆盖率/必填字段/ID 基本校验）：`scripts/code_quality_audit/validate_audit_docs.py`
-- [ ] T046 执行校验脚本并记录输出（作为覆盖率与一致性快照）：`document/code_quality_audit/runlogs/validate_audit_docs.md`
-- [ ] T047 执行质量与架构门禁并记录输出（确认 `BUILD SUCCESSFUL`）：`document/code_quality_audit/runlogs/final_gates.md`
-- [ ] T048 [P] （可选）改进 numeric prefix 冲突提示：支持显式指定 FEATURE_DIR：更新 `.specify/scripts/bash/check-prerequisites.sh`
-- [ ] T049 [P] 补充贡献指南（如何新增/更新模块报告与全局汇总、如何过滤日志）：更新 `document/code_quality_audit/README.md`
-- [ ] T050 走通 quickstart 冒烟流程并记录（对照 `specs/001-code-quality-audit/quickstart.md`）：`document/code_quality_audit/runlogs/quickstart_smoke.md`
+- [X] T045 [P] 新增文档一致性校验脚本（模块覆盖率/必填字段/ID 基本校验）：`scripts/code_quality_audit/validate_audit_docs.py`
+- [X] T046 执行校验脚本并记录输出（作为覆盖率与一致性快照）：`document/code_quality_audit/runlogs/validate_audit_docs.md`
+- [X] T047 执行质量与架构门禁并记录输出（确认 `BUILD SUCCESSFUL`）：`document/code_quality_audit/runlogs/final_gates.md`
+- [X] T048 [P] （可选）改进 numeric prefix 冲突提示：支持显式指定 FEATURE_DIR：更新 `.specify/scripts/bash/check-prerequisites.sh`
+- [X] T049 [P] 补充贡献指南（如何新增/更新模块报告与全局汇总、如何过滤日志）：更新 `document/code_quality_audit/README.md`
+- [X] T050 走通 quickstart 冒烟流程并记录（对照 `specs/001-code-quality-audit/quickstart.md`）：`document/code_quality_audit/runlogs/quickstart_smoke.md`
 
 ---
 

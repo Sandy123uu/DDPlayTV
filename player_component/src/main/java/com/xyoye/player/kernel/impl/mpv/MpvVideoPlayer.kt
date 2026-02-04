@@ -30,7 +30,7 @@ class MpvVideoPlayer(
     SubtitleKernelBridge {
     private data class PendingExternalTrack(
         val type: TrackType,
-        val path: String,
+        val path: String
     )
 
     private val appContext: Context = context.applicationContext
@@ -472,7 +472,7 @@ class MpvVideoPlayer(
                     id = "${it.nativeType}:${it.id}",
                     name = it.title,
                     type = type,
-                    selected = it.selected
+                    selected = it.selected,
                 )
             }
     }

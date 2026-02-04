@@ -96,14 +96,15 @@ object TcpLogServerManager {
                     port = port,
                     backlogProvider = { snapshotRingBuffer() },
                 )
-            runCatching { newServer.start() }.onSuccess {
-                server = newServer
-            }.onFailure { error ->
-                lastError = error.message ?: error::class.java.simpleName
-                LogConfig.putTcpLogServerEnabled(false)
-                runCatching { newServer.stop() }
-                server = null
-            }
+            runCatching { newServer.start() }
+                .onSuccess {
+                    server = newServer
+                }.onFailure { error ->
+                    lastError = error.message ?: error::class.java.simpleName
+                    LogConfig.putTcpLogServerEnabled(false)
+                    runCatching { newServer.stop() }
+                    server = null
+                }
             return snapshot()
         }
     }

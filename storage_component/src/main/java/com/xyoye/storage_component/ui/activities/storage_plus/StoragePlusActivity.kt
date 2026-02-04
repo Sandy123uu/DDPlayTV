@@ -104,16 +104,12 @@ class StoragePlusActivity : BaseActivity<StoragePlusViewModel, ActivityStoragePl
         storageEditDialog = dialog
     }
 
-    fun addStorage(library: MediaLibraryEntity): Job {
-        return viewModel.addStorage(editData, library)
-    }
+    fun addStorage(library: MediaLibraryEntity): Job = viewModel.addStorage(editData, library)
 
     fun addStorage(
         library: MediaLibraryEntity,
-        showToast: Boolean,
-    ): Job {
-        return viewModel.addStorage(editData, library, showToast)
-    }
+        showToast: Boolean
+    ): Job = viewModel.addStorage(editData, library, showToast)
 
     fun testStorage(library: MediaLibraryEntity) {
         viewModel.testStorage(library)

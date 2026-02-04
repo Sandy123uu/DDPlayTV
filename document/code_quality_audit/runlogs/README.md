@@ -9,8 +9,9 @@
 ## 命名建议
 
 - `init_audit_docs.md`：初始化脚本输出
-- `gates_YYYYMMDD.md`：门禁执行记录
+- `gates_YYYYMMDD.md`：门禁执行记录（或使用更具体的名称，例如 `foundation_gates.md` / `final_gates.md`）
 - `quickstart_smoke.md`：按 quickstart 走通的冒烟记录
+- `validate_audit_docs.md`：文档一致性校验输出（覆盖率/必填字段/ID 基础校验）
 
 ## adb logcat 过滤规范（强制）
 
@@ -29,4 +30,3 @@
 
 - 只保留与证据直接相关的 20~200 行片段（按实际需要）
 - 在 runlog 中标注过滤条件与触发步骤，避免后续无法复现
-

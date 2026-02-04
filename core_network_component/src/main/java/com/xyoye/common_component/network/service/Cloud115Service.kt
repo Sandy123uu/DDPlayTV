@@ -107,4 +107,3 @@ interface Cloud115Service {
         @Field("data") data: String
     ): Cloud115DownloadResp
 }
-

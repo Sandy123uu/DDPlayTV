@@ -8,4 +8,3 @@ data class TcpLogServerState(
     val clientCount: Int,
     val lastError: String? = null
 )
-

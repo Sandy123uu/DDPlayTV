@@ -21,10 +21,10 @@ import com.xyoye.common_component.utils.SupervisorScope
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.user_component.R
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.net.SocketException
+import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 

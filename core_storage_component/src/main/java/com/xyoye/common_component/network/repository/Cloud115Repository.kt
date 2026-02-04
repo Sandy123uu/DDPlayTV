@@ -96,7 +96,12 @@ class Cloud115Repository(
             }
 
             val cookieHeader = Cloud115Headers.buildCookieHeader(response.data?.cookie)
-            val userId = response.data?.userId?.toString()?.trim().orEmpty()
+            val userId =
+                response.data
+                    ?.userId
+                    ?.toString()
+                    ?.trim()
+                    .orEmpty()
 
             if (cookieHeader.isBlank() || userId.isBlank()) {
                 throw IllegalStateException("扫码登录返回数据异常")
@@ -134,9 +139,7 @@ class Cloud115Repository(
             response
         }
 
-    suspend fun cookieStatus(
-        forceCheck: Boolean = false
-    ): Result<Cloud115CookieStatusResp> =
+    suspend fun cookieStatus(forceCheck: Boolean = false): Result<Cloud115CookieStatusResp> =
         requestMyApi(reason = "cookieStatus", extraInfo = "forceCheck=$forceCheck") {
             ensureCookieValid(forceCheck = forceCheck)
         }
@@ -214,9 +217,7 @@ class Cloud115Repository(
             response
         }
 
-    suspend fun stat(
-        cid: String
-    ): Result<Cloud115FileStatResponse> =
+    suspend fun stat(cid: String): Result<Cloud115FileStatResponse> =
         requestWebApi(
             reason = "stat",
             extraInfo = "cid=$cid",
@@ -323,7 +324,8 @@ class Cloud115Repository(
 
         val decodedBytes = M115Crypto.decode(encrypted, key)
         val json = String(decodedBytes, StandardCharsets.UTF_8)
-        return JsonHelper.parseJson<DecodedDownloadUrl>(json)
+        return JsonHelper
+            .parseJson<DecodedDownloadUrl>(json)
             ?.takeIf { it.url.isNotBlank() }
     }
 

@@ -11,10 +11,10 @@ import com.xyoye.common_component.bilibili.BilibiliDanmakuBlockPreferencesStore
 import com.xyoye.common_component.bilibili.BilibiliPlayMode
 import com.xyoye.common_component.bilibili.BilibiliPlaybackPreferences
 import com.xyoye.common_component.bilibili.BilibiliPlaybackPreferencesStore
-import com.xyoye.common_component.bilibili.auth.BilibiliAuthStore
-import com.xyoye.common_component.bilibili.auth.BilibiliCookieJarStore
 import com.xyoye.common_component.bilibili.BilibiliQuality
 import com.xyoye.common_component.bilibili.BilibiliVideoCodec
+import com.xyoye.common_component.bilibili.auth.BilibiliAuthStore
+import com.xyoye.common_component.bilibili.auth.BilibiliCookieJarStore
 import com.xyoye.common_component.bilibili.cdn.BilibiliCdnService
 import com.xyoye.common_component.bilibili.cleanup.BilibiliCleanup
 import com.xyoye.common_component.config.PlayerActions
@@ -393,7 +393,11 @@ class BilibiliStorageEditDialog(
             return null
         }
 
-        val url = editLibrary.url.trim().removeSuffix("/").ifBlank { Api.BILI_BILI_API.trim().removeSuffix("/") }
+        val url =
+            editLibrary.url
+                .trim()
+                .removeSuffix("/")
+                .ifBlank { Api.BILI_BILI_API.trim().removeSuffix("/") }
         val displayName = editLibrary.displayName.trim().ifEmpty { "Bilibili媒体库" }
 
         if (preferences.preferredQualityQn == BilibiliQuality.QN_4K.qn && !preferences.allow4k) {

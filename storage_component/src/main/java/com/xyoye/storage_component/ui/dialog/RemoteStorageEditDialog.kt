@@ -115,7 +115,7 @@ class RemoteStorageEditDialog(
 
     private fun buildLibraryIfValid(
         remoteData: MediaLibraryEntity,
-        showToast: Boolean,
+        showToast: Boolean
     ): MediaLibraryEntity? {
         val url = remoteData.url.trim()
         if (url.isEmpty()) {

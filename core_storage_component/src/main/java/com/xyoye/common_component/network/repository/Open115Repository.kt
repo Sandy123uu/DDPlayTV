@@ -100,9 +100,7 @@ class Open115Repository(
             )
         }
 
-    suspend fun folderGetInfo(
-        fileId: String
-    ): Result<Open115FolderInfoResponse> =
+    suspend fun folderGetInfo(fileId: String): Result<Open115FolderInfoResponse> =
         requestProApi(
             reason = "folderGetInfo",
             extraInfo = "fileId=$fileId",
@@ -177,9 +175,7 @@ class Open115Repository(
         }
 
     companion object {
-        suspend fun userInfo(
-            accessToken: String
-        ): Result<Open115UserInfoResponse> =
+        suspend fun userInfo(accessToken: String): Result<Open115UserInfoResponse> =
             withContext(Dispatchers.IO) {
                 runCatching {
                     val trimmed = accessToken.trim()
@@ -219,9 +215,7 @@ class Open115Repository(
                 }
             }
 
-        suspend fun refreshToken(
-            refreshToken: String
-        ): Result<Open115RefreshTokenResponse> =
+        suspend fun refreshToken(refreshToken: String): Result<Open115RefreshTokenResponse> =
             withContext(Dispatchers.IO) {
                 runCatching {
                     val trimmed = refreshToken.trim()

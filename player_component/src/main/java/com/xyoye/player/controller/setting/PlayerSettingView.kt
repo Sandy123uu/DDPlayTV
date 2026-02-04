@@ -18,12 +18,10 @@ import com.xyoye.common_component.utils.view.ItemDecorationSpace
 import com.xyoye.data_component.enums.PlayerType
 import com.xyoye.data_component.enums.SettingViewType
 import com.xyoye.data_component.enums.TrackType
-import com.xyoye.data_component.enums.VideoScreenScale
 import com.xyoye.player.info.PlayerInitializer
 import com.xyoye.player.info.SettingAction
 import com.xyoye.player.info.SettingActionType
 import com.xyoye.player.info.SettingItem
-import com.xyoye.player.kernel.anime4k.Anime4kMode
 import com.xyoye.player.kernel.impl.mpv.MpvOptions
 import com.xyoye.player_component.R
 import com.xyoye.player_component.databinding.ItemPlayerSettingBinding

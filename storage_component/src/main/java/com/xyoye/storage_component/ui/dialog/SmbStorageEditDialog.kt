@@ -122,7 +122,7 @@ class SmbStorageEditDialog(
 
     private fun buildLibraryIfValid(
         serverData: MediaLibraryEntity,
-        showToast: Boolean,
+        showToast: Boolean
     ): MediaLibraryEntity? {
         val host = serverData.url.trim()
         if (host.isEmpty()) {

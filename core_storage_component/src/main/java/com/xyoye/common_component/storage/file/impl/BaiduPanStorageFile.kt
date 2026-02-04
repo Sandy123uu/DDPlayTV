@@ -3,8 +3,8 @@ package com.xyoye.common_component.storage.file.impl
 import com.xyoye.common_component.storage.file.AbstractStorageFile
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.impl.BaiduPanStorage
-import com.xyoye.common_component.utils.isVideoFile as isVideoFileByName
 import com.xyoye.data_component.data.baidupan.xpan.BaiduPanXpanFileItem
+import com.xyoye.common_component.utils.isVideoFile as isVideoFileByName
 
 class BaiduPanStorageFile(
     private val fileItem: BaiduPanXpanFileItem,
@@ -62,4 +62,3 @@ class BaiduPanStorageFile(
             )
     }
 }
-

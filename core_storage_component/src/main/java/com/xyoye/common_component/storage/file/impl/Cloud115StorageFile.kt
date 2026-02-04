@@ -3,8 +3,8 @@ package com.xyoye.common_component.storage.file.impl
 import com.xyoye.common_component.storage.file.AbstractStorageFile
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.impl.Cloud115Storage
-import com.xyoye.common_component.utils.isVideoFile as isVideoFileByName
 import com.xyoye.data_component.data.cloud115.Cloud115FileInfo
+import com.xyoye.common_component.utils.isVideoFile as isVideoFileByName
 
 class Cloud115StorageFile(
     private val fileInfo: Cloud115FileInfo,
@@ -30,8 +30,7 @@ class Cloud115StorageFile(
 
     override fun fileUrl(): String = "115cloud://file/${resolveId()}"
 
-    override fun isDirectory(): Boolean =
-        root || fileInfo.fid?.trim().isNullOrBlank()
+    override fun isDirectory(): Boolean = root || fileInfo.fid?.trim().isNullOrBlank()
 
     override fun fileName(): String =
         fileInfo.n
@@ -57,7 +56,7 @@ class Cloud115StorageFile(
             fileInfo = fileInfo,
             parentPath = parentPath,
             storage = storage as Cloud115Storage,
-            root = root
+            root = root,
         ).also {
             it.playHistory = playHistory
         }
@@ -90,4 +89,3 @@ class Cloud115StorageFile(
             )
     }
 }
-

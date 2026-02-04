@@ -26,9 +26,7 @@ class Open115TokenManager(
 
     fun clearAuth() = Open115AuthStore.clear(storageKey)
 
-    suspend fun requireAccessToken(
-        forceRefresh: Boolean = false
-    ): String {
+    suspend fun requireAccessToken(forceRefresh: Boolean = false): String {
         val state = Open115AuthStore.read(storageKey)
         val now = System.currentTimeMillis()
         val accessToken = state.accessToken?.takeIf { it.isNotBlank() }
@@ -40,9 +38,7 @@ class Open115TokenManager(
         return refreshAccessToken(forceRefresh = forceRefresh)
     }
 
-    suspend fun refreshAccessToken(
-        forceRefresh: Boolean = false
-    ): String =
+    suspend fun refreshAccessToken(forceRefresh: Boolean = false): String =
         refreshMutex(storageKey)
             .withLock {
                 val state = Open115AuthStore.read(storageKey)

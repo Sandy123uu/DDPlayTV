@@ -82,13 +82,13 @@ class BaiduPanStorageEditDialog(
                 SheetActionBean(
                     actionId = DisconnectAction.CLEAR_AUTH,
                     actionName = "仅清除授权",
-                    describe = "保留媒体库，可稍后重新扫码授权"
+                    describe = "保留媒体库，可稍后重新扫码授权",
                 ),
                 SheetActionBean(
                     actionId = DisconnectAction.CLEAR_AUTH_AND_DELETE_LIBRARY,
                     actionName = "清除授权并删除媒体库",
-                    describe = "从列表移除该账号（不会删除网盘文件）"
-                )
+                    describe = "从列表移除该账号（不会删除网盘文件）",
+                ),
             )
 
         BottomActionDialog(activity, actions, "断开连接") {
@@ -221,7 +221,12 @@ class BaiduPanStorageEditDialog(
             }.getOrNull()
 
         val isAuthorized = state?.isAuthorized() == true
-        val uk = state?.uk?.takeIf { it > 0 }?.toString().orEmpty()
+        val uk =
+            state
+                ?.uk
+                ?.takeIf { it > 0 }
+                ?.toString()
+                .orEmpty()
 
         binding.authStatusTv.text =
             if (isAuthorized) {

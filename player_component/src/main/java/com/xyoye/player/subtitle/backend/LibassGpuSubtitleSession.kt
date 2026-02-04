@@ -16,7 +16,6 @@ import com.xyoye.data_component.enums.SubtitleViewType
 import com.xyoye.player.info.PlayerInitializer
 import com.xyoye.player.kernel.subtitle.SubtitleFrameDriver
 import com.xyoye.player.kernel.subtitle.SubtitleKernelBridge
-import com.xyoye.player.subtitle.ui.SubtitleSurfaceOverlay
 import com.xyoye.player.subtitle.gpu.AssGpuRenderer
 import com.xyoye.player.subtitle.gpu.LocalSubtitlePipelineApi
 import com.xyoye.player.subtitle.gpu.SubtitleFallbackController
@@ -24,6 +23,7 @@ import com.xyoye.player.subtitle.gpu.SubtitleOutputTargetTracker
 import com.xyoye.player.subtitle.gpu.SubtitlePipelineController
 import com.xyoye.player.subtitle.gpu.SubtitleRecoveryCoordinator
 import com.xyoye.player.subtitle.gpu.SubtitleSurfaceLifecycleHandler
+import com.xyoye.player.subtitle.ui.SubtitleSurfaceOverlay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

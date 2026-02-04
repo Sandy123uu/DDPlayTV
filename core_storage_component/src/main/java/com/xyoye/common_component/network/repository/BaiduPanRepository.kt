@@ -8,7 +8,6 @@ import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.network.request.PassThroughException
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanAuthStore
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanNotConfiguredException
-import com.xyoye.common_component.storage.baidupan.auth.BaiduPanReAuthRequiredException
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanTokenManager
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.JsonHelper
@@ -35,9 +34,7 @@ class BaiduPanRepository(
 
     fun isAuthorized(): Boolean = BaiduPanAuthStore.read(storageKey).isAuthorized()
 
-    suspend fun oauthDeviceCode(
-        scope: String = DEFAULT_SCOPE
-    ): Result<BaiduPanDeviceCodeResponse> =
+    suspend fun oauthDeviceCode(scope: String = DEFAULT_SCOPE): Result<BaiduPanDeviceCodeResponse> =
         requestOAuth(reason = "oauthDeviceCode", extraInfo = "scope=$scope") {
             ensureConfigured()
             Retrofit.baiduPanService.oauthDeviceCode(
@@ -48,9 +45,7 @@ class BaiduPanRepository(
             )
         }
 
-    suspend fun oauthTokenByDeviceCode(
-        deviceCode: String
-    ): Result<BaiduPanTokenResponse> =
+    suspend fun oauthTokenByDeviceCode(deviceCode: String): Result<BaiduPanTokenResponse> =
         requestOAuth(
             reason = "oauthTokenByDeviceCode",
             extraInfo = "deviceCodeLength=${deviceCode.length}",
@@ -66,9 +61,7 @@ class BaiduPanRepository(
             )
         }
 
-    suspend fun xpanUinfo(
-        vipVersion: String? = "v2"
-    ): Result<BaiduPanUinfoResponse> =
+    suspend fun xpanUinfo(vipVersion: String? = "v2"): Result<BaiduPanUinfoResponse> =
         requestXpan(reason = "xpanUinfo", extraInfo = "vipVersion=$vipVersion") { accessToken ->
             Retrofit.baiduPanService.xpanUinfo(
                 baseUrl = Api.BAIDU_PAN,

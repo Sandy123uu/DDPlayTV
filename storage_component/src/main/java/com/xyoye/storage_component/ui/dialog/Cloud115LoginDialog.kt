@@ -3,8 +3,8 @@ package com.xyoye.storage_component.ui.dialog
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import androidx.core.view.isVisible
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import com.xyoye.common_component.extension.toResColor
 import com.xyoye.common_component.network.Retrofit
 import com.xyoye.common_component.network.config.Api
@@ -43,7 +43,7 @@ class Cloud115LoginDialog(
         val userId: String,
         val userName: String?,
         val avatarUrl: String?,
-        val loginApp: String,
+        val loginApp: String
     )
 
     private lateinit var binding: DialogCloud115LoginBinding
@@ -244,7 +244,12 @@ class Cloud115LoginDialog(
                     }
 
                     val cookieHeader = Cloud115Headers.buildCookieHeader(login.data?.cookie).trim()
-                    val userId = login.data?.userId?.toString()?.trim().orEmpty()
+                    val userId =
+                        login.data
+                            ?.userId
+                            ?.toString()
+                            ?.trim()
+                            .orEmpty()
                     if (cookieHeader.isBlank() || userId.isBlank()) {
                         binding.loadingPb.isVisible = false
                         binding.statusTv.text = "登录返回数据异常，请重试"
@@ -280,7 +285,11 @@ class Cloud115LoginDialog(
                     return
                 }
                 else -> {
-                    val message = statusResp.data?.msg?.trim().orEmpty()
+                    val message =
+                        statusResp.data
+                            ?.msg
+                            ?.trim()
+                            .orEmpty()
                     binding.statusTv.text = if (message.isBlank()) "状态异常，请重试" else message
                 }
             }
@@ -296,13 +305,15 @@ class Cloud115LoginDialog(
                 if (content.isNotBlank()) {
                     val bitmap =
                         QrCodeHelper.createQrCode(
-                        context = activity,
-                        content = content,
-                        sizePx = dp2px(220),
-                        logoResId = R.mipmap.ic_logo,
-                        bitmapColor = com.xyoye.core_ui_component.R.color.text_black.toResColor(activity),
-                        errorContext = "生成 115 Cloud 授权二维码失败",
-                    )
+                            context = activity,
+                            content = content,
+                            sizePx = dp2px(220),
+                            logoResId = R.mipmap.ic_logo,
+                            bitmapColor =
+                                com.xyoye.core_ui_component.R.color.text_black
+                                    .toResColor(activity),
+                            errorContext = "生成 115 Cloud 授权二维码失败",
+                        )
                     return@runCatching bitmap
                         ?: throw IllegalStateException("生成二维码失败")
                 }

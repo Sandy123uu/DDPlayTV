@@ -14,4 +14,3 @@ interface AuthStorage {
 
     fun loginActionText(directory: StorageFile?): String
 }
-

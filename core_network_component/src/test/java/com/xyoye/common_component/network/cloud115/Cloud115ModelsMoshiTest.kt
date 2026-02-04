@@ -44,4 +44,3 @@ class Cloud115ModelsMoshiTest {
         assertEquals("37610873_I1_1769999716", parsed.data!!.cookie!!.uid)
     }
 }
-

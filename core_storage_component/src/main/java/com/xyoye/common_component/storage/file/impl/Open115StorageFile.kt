@@ -3,8 +3,8 @@ package com.xyoye.common_component.storage.file.impl
 import com.xyoye.common_component.storage.file.AbstractStorageFile
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.impl.Open115Storage
-import com.xyoye.common_component.utils.isVideoFile as isVideoFileByName
 import com.xyoye.data_component.data.open115.Open115FileItem
+import com.xyoye.common_component.utils.isVideoFile as isVideoFileByName
 
 class Open115StorageFile(
     private val fileItem: Open115FileItem,
@@ -56,7 +56,7 @@ class Open115StorageFile(
             fileItem = fileItem,
             parentPath = parentPath,
             storage = storage as Open115Storage,
-            root = root
+            root = root,
         ).also {
             it.playHistory = playHistory
         }
@@ -78,11 +78,11 @@ class Open115StorageFile(
                         uppt = null,
                         isv = null,
                         ico = null,
-                        thumb = null
+                        thumb = null,
                     ),
                 parentPath = "/",
                 storage = storage,
-                root = true
+                root = true,
             )
     }
 }

@@ -100,4 +100,3 @@ class Open115ModelsMoshiTest {
         assertNull(parsed.data)
     }
 }
-

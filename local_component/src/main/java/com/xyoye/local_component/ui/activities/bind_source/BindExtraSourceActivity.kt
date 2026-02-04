@@ -1,7 +1,7 @@
 package com.xyoye.local_component.ui.activities.bind_source
 
-import android.view.inputmethod.EditorInfo
 import android.view.KeyEvent
+import android.view.inputmethod.EditorInfo
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment

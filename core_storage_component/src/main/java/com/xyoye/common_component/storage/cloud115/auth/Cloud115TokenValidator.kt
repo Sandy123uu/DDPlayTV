@@ -25,7 +25,7 @@ object Cloud115TokenValidator {
                         cookie = cookie,
                         ct = "guide",
                         ac = "status",
-                        timestamp = System.currentTimeMillis().toString()
+                        timestamp = System.currentTimeMillis().toString(),
                     )
 
                 if (!resp.state) {
@@ -38,11 +38,10 @@ object Cloud115TokenValidator {
                     "validate token failed",
                     mapOf(
                         "cookie" to Cloud115Headers.redactCookie(cookieHeader),
-                        "exception" to t::class.java.simpleName
+                        "exception" to t::class.java.simpleName,
                     ),
-                    t
+                    t,
                 )
             }
         }
 }
-

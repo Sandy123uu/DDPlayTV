@@ -74,4 +74,3 @@ class Open115DownUrlCache {
         private val DEFAULT_TTL_MS: Long = TimeUnit.MINUTES.toMillis(2)
     }
 }
-

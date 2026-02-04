@@ -25,7 +25,7 @@ enum class TabDpadMode {
     /**
      * 设置页模式：Tab 行仅作选中指示（TV/非触摸模式下不可聚焦），内容内通过 DPAD_LEFT/RIGHT 切页。
      */
-    SettingsIndicatorOnly,
+    SettingsIndicatorOnly
 }
 
 /**
@@ -244,9 +244,7 @@ class TabLayoutViewPager2DpadFocusCoordinator(
 
     private fun viewPagerRecyclerView(): RecyclerView? = viewPager.getChildAt(0) as? RecyclerView
 
-    private fun currentPageItemView(): View? {
-        return pageItemView(pageIndex = viewPager.currentItem)
-    }
+    private fun currentPageItemView(): View? = pageItemView(pageIndex = viewPager.currentItem)
 
     private fun pageItemView(pageIndex: Int): View? {
         val rv = viewPagerRecyclerView() ?: return null

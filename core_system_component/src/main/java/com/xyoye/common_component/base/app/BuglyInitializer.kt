@@ -25,7 +25,5 @@ class BuglyInitializer : Initializer<Unit> {
         )
     }
 
-    override fun dependencies(): MutableList<Class<out Initializer<*>>> =
-        mutableListOf(BaseInitializer::class.java)
+    override fun dependencies(): MutableList<Class<out Initializer<*>>> = mutableListOf(BaseInitializer::class.java)
 }
-

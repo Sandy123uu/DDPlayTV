@@ -36,4 +36,3 @@ class SubtitleLoadSheddingPolicyTest {
         assertTrue(policy.allowRender(nowMs = 1_500L))
     }
 }
-

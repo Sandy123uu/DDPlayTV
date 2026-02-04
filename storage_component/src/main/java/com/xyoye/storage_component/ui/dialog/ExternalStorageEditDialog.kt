@@ -2,8 +2,8 @@ package com.xyoye.storage_component.ui.dialog
 
 import android.content.Intent
 import android.net.Uri
-import androidx.documentfile.provider.DocumentFile
 import androidx.core.widget.addTextChangedListener
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.lifecycleScope
 import com.xyoye.common_component.extension.toResColor
 import com.xyoye.common_component.extension.toResDrawable

@@ -47,19 +47,19 @@ class TcpLogServer(
             serverSocket = socket
             running.set(true)
 
-            acceptExecutor =
+            val accept =
                 Executors.newSingleThreadExecutor { runnable ->
                     Thread(runnable, "TcpLogAccept").apply { isDaemon = true }
-                }.also { executor ->
-                    executor.execute { acceptLoop(socket) }
                 }
+            accept.execute { acceptLoop(socket) }
+            acceptExecutor = accept
 
-            broadcastExecutor =
+            val broadcast =
                 Executors.newSingleThreadExecutor { runnable ->
                     Thread(runnable, "TcpLogBroadcast").apply { isDaemon = true }
-                }.also { executor ->
-                    executor.execute { broadcastLoop() }
                 }
+            broadcast.execute { broadcastLoop() }
+            broadcastExecutor = broadcast
 
             return socket.localPort
         }
@@ -212,4 +212,3 @@ class TcpLogServer(
         private const val DEFAULT_CLIENT_QUEUE_CAPACITY = 256
     }
 }
-
