@@ -41,7 +41,7 @@ object SignConfig {
             System.getenv("CI")?.equals("true", ignoreCase = true) == true ||
                 System.getenv("GITHUB_ACTIONS")?.equals("true", ignoreCase = true) == true
 
-        if (isCi) {
+        if (isCi && isReleaseSigningRequiredInCi(project)) {
             throw GradleException(
                 "Release signing config not ready in CI: keystoreFileExists=${keystoreFile.exists()} env(KEYSTORE_PASS/ALIAS_NAME/ALIAS_PASS)=${storePassword != null}/${aliasName != null}/${aliasPassword != null}",
             )
@@ -51,6 +51,19 @@ object SignConfig {
             "Release signing config not ready (missing keystore or env), fallback to debug signing config",
         )
         debug(project, config)
+    }
+
+    private fun isReleaseSigningRequiredInCi(project: Project): Boolean {
+        val taskNames = project.gradle.startParameter.taskNames
+        if (taskNames.isEmpty()) return false
+
+        return taskNames.any { fullName ->
+            val name = fullName.substringAfterLast(':')
+            name.equals("assemble", ignoreCase = true) ||
+                name.equals("bundle", ignoreCase = true) ||
+                name.contains("Release", ignoreCase = true) ||
+                name.contains("Beta", ignoreCase = true)
+        }
     }
 
     private fun loadProperties(project: Project): Properties? {
@@ -67,6 +80,6 @@ object SignConfig {
     }
 
     private fun Project.getAssembleFile(fileName: String): File {
-        return File(rootDir,"gradle/assemble/$fileName")
+        return File(rootDir, "gradle/assemble/$fileName")
     }
 }
