@@ -11,6 +11,7 @@ class ArchiveExtractCallback constructor(
 ) : IArchiveExtractCallback {
     private var totalProgress: Long = 0
     private var isCompleted = false
+    private var currentOutStream: SequentialOutStream? = null
 
     @Throws(SevenZipException::class)
     override fun getStream(
@@ -19,12 +20,16 @@ class ArchiveExtractCallback constructor(
     ): ISequentialOutStream {
         val fileName: String =
             getFileName(inArchive.getProperty(index, PropID.PATH) as String)
-        return SequentialOutStream(destDir, fileName)
+        val outStream = SequentialOutStream(destDir, fileName)
+        currentOutStream = outStream
+        return outStream
     }
 
     override fun prepareOperation(extractAskMode: ExtractAskMode?) {}
 
     override fun setOperationResult(extractOperationResult: ExtractOperationResult) {
+        currentOutStream?.close()
+        currentOutStream = null
         if (extractOperationResult !== ExtractOperationResult.OK) {
             callback.invoke(null)
         }
@@ -38,6 +43,8 @@ class ArchiveExtractCallback constructor(
         if (complete == totalProgress) {
             if (!isCompleted) {
                 isCompleted = true
+                currentOutStream?.close()
+                currentOutStream = null
                 callback.invoke(destDir.absolutePath)
             }
         }
