@@ -6,8 +6,10 @@ import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.network.Retrofit
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.network.helper.AgentInterceptor
+import com.xyoye.common_component.network.helper.OkHttpTlsConfigurer
+import com.xyoye.common_component.network.helper.OkHttpTlsPolicy
 import com.xyoye.common_component.network.helper.RedirectAuthorizationInterceptor
-import com.xyoye.common_component.network.helper.UnsafeOkHttpClient
+import com.xyoye.common_component.network.helper.UnsafeTlsApi
 import com.xyoye.common_component.network.service.ExtendedService
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.RangeUtils
@@ -89,7 +91,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         /**
          * 不安全 TLS：信任所有证书 + 忽略主机名校验（必须由用户显式开启）。
          */
-        UNSAFE_TRUST_ALL,
+        UNSAFE_TRUST_ALL
     }
 
     data class UpstreamSource(
@@ -97,7 +99,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         val headers: Map<String, String> = emptyMap(),
         val contentType: String = "application/octet-stream",
         val contentLength: Long = -1L,
-        val tlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.LEGACY_INSECURE_HOSTNAME,
+        val tlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.LEGACY_INSECURE_HOSTNAME
     )
 
     private val strictClient: OkHttpClient by lazy {
@@ -123,14 +125,10 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
             .build()
     }
 
+    @OptIn(UnsafeTlsApi::class)
     private val unsafeTrustAllClient: OkHttpClient by lazy {
-        UnsafeOkHttpClient
-            .client
-            .newBuilder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(10, TimeUnit.SECONDS)
-            .addInterceptor(AgentInterceptor())
+        OkHttpTlsConfigurer
+            .apply(strictClient.newBuilder(), OkHttpTlsPolicy.UnsafeTrustAll)
             .build()
     }
 

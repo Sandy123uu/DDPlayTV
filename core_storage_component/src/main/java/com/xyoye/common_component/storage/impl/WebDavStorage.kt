@@ -3,8 +3,10 @@ package com.xyoye.common_component.storage.impl
 import android.net.Uri
 import com.xyoye.common_component.config.PlayerConfig
 import com.xyoye.common_component.network.config.HeaderKey
-import com.xyoye.common_component.network.helper.UnsafeOkHttpClient
+import com.xyoye.common_component.network.helper.OkHttpTlsPolicy
+import com.xyoye.common_component.network.helper.UnsafeTlsApi
 import com.xyoye.common_component.network.helper.WebDavOkHttpClient
+import com.xyoye.common_component.network.helper.WebDavOkHttpClientFactory
 import com.xyoye.common_component.storage.AbstractStorage
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.file.helper.HttpPlayServer
@@ -31,10 +33,11 @@ import java.util.Date
 class WebDavStorage(
     library: MediaLibraryEntity
 ) : AbstractStorage(library) {
+    @OptIn(UnsafeTlsApi::class)
     private val sardine =
         OkHttpSardine(
             if (this.library.webDavAllowInsecureTls) {
-                UnsafeOkHttpClient.client
+                WebDavOkHttpClientFactory.create(OkHttpTlsPolicy.UnsafeTrustAll)
             } else {
                 WebDavOkHttpClient.client
             },

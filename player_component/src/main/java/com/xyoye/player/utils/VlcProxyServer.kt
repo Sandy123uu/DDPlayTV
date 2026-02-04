@@ -1,6 +1,7 @@
 package com.xyoye.player.utils
 
 import com.xyoye.common_component.network.helper.UnsafeOkHttpClient
+import com.xyoye.common_component.network.helper.UnsafeTlsApi
 import com.xyoye.common_component.utils.getFileName
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.NanoHTTPD.Response.Status
@@ -63,6 +64,7 @@ class VlcProxyServer private constructor() : NanoHTTPD(randomPort()) {
         return "http://127.0.0.1:$listeningPort/$encodeFileName"
     }
 
+    @OptIn(UnsafeTlsApi::class)
     private fun getProxyResponse(session: IHTTPSession): okhttp3.Response {
         val requestBuilder = Request.Builder()
         var ifMatchValue: String? = null

@@ -10,7 +10,7 @@
 | G-ID | 状态 | 负责人 | 目标 | 关联 G-F | 涉及模块 | 来源任务 |
 |---|---|---|---|---|---|---|
 | G-T0001 | Done | AI（Codex） | WebDAV 默认启用严格 TLS：替换 `UnsafeOkHttpClient`，并为“特殊场景”提供可控开关（用户显式；Release 允许） | G-F0001 | :core_storage_component | CORE_STORAGE-T002 |
-| G-T0002 | Draft | 待分配（Infra/Network） | 下线/收敛 `UnsafeOkHttpClient`：仅允许在明确场景使用，并提供更安全替代（证书导入/Pin/仅 HTTP） | G-F0001 | :core_network_component | CORE_NETWORK-T002 |
+| G-T0002 | Done | AI（Codex） | 下线/收敛 `UnsafeOkHttpClient`：仅允许在明确场景使用，并提供更安全替代（证书导入/Pin/仅 HTTP） | G-F0001 | :core_network_component | CORE_NETWORK-T002 |
 | G-T0003 | Draft | 待分配（Repo） | 为所有 repository wrapper AAR 补齐元信息（来源/版本/License/校验和/更新流程） | G-F0017 | :repository:danmaku,:repository:immersion_bar,:repository:panel_switch,:repository:seven_zip,:repository:thunder,:repository:video_cache | REPO_DANMAKU-T001,REPO_IMMERSION_BAR-T001,REPO_PANEL_SWITCH-T001,REPO_SEVEN_ZIP-T001,REPO_THUNDER-T001,REPO_VIDEO_CACHE-T001 |
 | G-T0004 | Draft | 待分配（Runtime） | 修复 `ActivityHelper#getTopActivity` 的潜在崩溃：返回 `firstOrNull` 并清理已销毁 Activity | G-F0022 | :core_system_component | CORE_SYSTEM-T002 |
 | G-T0005 | Draft | 待分配（Storage） | 修复 `ISequentialOutStream` 实现：按“流式追加写入”语义输出文件，避免覆盖与性能劣化 | G-F0023 | :repository:seven_zip | REPO_SEVEN_ZIP-T003 |
