@@ -144,6 +144,16 @@
     <string name="developer_bugly_test_report_toast">已触发测试上报，请稍后到 Bugly 控制台查看</string>
     <string name="developer_bugly_test_report_not_configured">Bugly 未配置，无法测试上报</string>
 
+    <string name="developer_credential_category_title">凭证</string>
+    <string name="developer_bilibili_tv_credential_title">B站 TV APP_KEY/APP_SEC</string>
+    <string name="developer_bilibili_tv_credential_summary_missing">未配置：TV 登录/签名已禁用</string>
+    <string name="developer_bilibili_tv_credential_summary_local">已配置：使用本地配置（加密存储）</string>
+    <string name="developer_bilibili_tv_credential_summary_injected">已配置：构建期注入（不回显）</string>
+    <string name="developer_bilibili_tv_credential_dialog_title">B站 TV 密钥</string>
+    <string name="developer_bilibili_tv_credential_dialog_hint_app_key">APP_KEY</string>
+    <string name="developer_bilibili_tv_credential_dialog_hint_app_secret">APP_SEC</string>
+    <string name="developer_bilibili_tv_credential_dialog_tips">用于 TV 登录/APP API 签名；未配置时相关能力会被禁用。</string>
+
     <integer-array name="cover">
         <item>@drawable/ic_bailitusu</item>
         <item>@drawable/ic_baoqingtian</item>

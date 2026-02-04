@@ -11,7 +11,7 @@
 - [x] 1.4 关闭 `G-T0004`：修复 `ActivityHelper#getTopActivity` 潜在崩溃
 - [x] 1.5 关闭 `G-T0005`：修复 `ISequentialOutStream`（解压流式写入语义）
 - [x] 1.6 关闭 `G-T0006`：解压线程/取消/资源释放策略（IO 线程 + 失败回收）
-- [ ] 1.7 关闭 `G-T0007`：去硬编码 `APP_KEY/APP_SEC`（构建期注入/本地配置 + 可控回退）
+- [x] 1.7 关闭 `G-T0007`：去硬编码 `APP_KEY/APP_SEC`（构建期注入/本地配置 + 可控回退）
 - [ ] 1.8 关闭 `G-T0008`：VLC 代理拉流迁移到默认安全 OkHttpClient（可控降级）
 - [ ] 1.9 关闭 `G-T0009`：TV 禁用后台/画中画策略显式化，避免误伤移动端
 - [ ] 1.10 关闭 `G-T0010`：迅雷 SDK 初始化改为按需 + 可降级
@@ -83,8 +83,8 @@
 ## 4. Validation（必须记录最终 BUILD 状态）
 
 - [x] 4.1 `./gradlew verifyModuleDependencies`
-- [ ] 4.2 `./gradlew ktlintCheck`
-- [ ] 4.3 `./gradlew lint`（或 `lintDebug`）
-- [ ] 4.4 `./gradlew testDebugUnitTest`
+- [x] 4.2 `./gradlew ktlintCheck`
+- [x] 4.3 `./gradlew lint`（或 `lintDebug`）
+- [x] 4.4 `./gradlew testDebugUnitTest`
 - [x] 4.5 `./gradlew :app:assembleDebug`
 - [ ] 4.6（如涉及 instrumentation）`./gradlew connectedDebugAndroidTest`

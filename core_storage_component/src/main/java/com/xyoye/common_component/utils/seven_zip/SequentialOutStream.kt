@@ -8,10 +8,11 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
-class SequentialOutStream constructor(
+class SequentialOutStream(
     private val destDir: File,
     private var fileName: String
-) : ISequentialOutStream, Closeable {
+) : ISequentialOutStream,
+    Closeable {
     private var outFile: File? = null
     private var outputStream: FileOutputStream? = null
 

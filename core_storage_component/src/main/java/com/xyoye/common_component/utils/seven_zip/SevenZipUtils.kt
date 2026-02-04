@@ -64,18 +64,17 @@ object SevenZipUtils {
     suspend fun extractFile(
         compressFile: File,
         destDir: File
-    ): String? {
-        return extractFileInternal(
+    ): String? =
+        extractFileInternal(
             compressFile = compressFile,
             destDir = destDir,
             cleanupOnFailure = false,
         )
-    }
 
     private suspend fun extractFileInternal(
         compressFile: File,
         destDir: File,
-        cleanupOnFailure: Boolean,
+        cleanupOnFailure: Boolean
     ): String? {
         if (!compressFile.exists() || !compressFile.isFile) throw IOException("compress file not found")
         if (!destDir.exists() || !destDir.isDirectory) throw IOException("Dest directory not found")

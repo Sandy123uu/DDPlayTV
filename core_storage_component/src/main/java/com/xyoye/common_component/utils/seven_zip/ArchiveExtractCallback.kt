@@ -1,15 +1,22 @@
 package com.xyoye.common_component.utils.seven_zip
 
 import com.xyoye.common_component.utils.getFileName
-import net.sf.sevenzipjbinding.*
-import java.io.File
+import net.sf.sevenzipjbinding.ExtractAskMode
+import net.sf.sevenzipjbinding.ExtractOperationResult
+import net.sf.sevenzipjbinding.IArchiveExtractCallback
+import net.sf.sevenzipjbinding.IInArchive
+import net.sf.sevenzipjbinding.ISequentialOutStream
+import net.sf.sevenzipjbinding.PropID
+import net.sf.sevenzipjbinding.SevenZipException
 import java.io.Closeable
+import java.io.File
 
-class ArchiveExtractCallback constructor(
+class ArchiveExtractCallback(
     private val inArchive: IInArchive,
     private val destDir: File,
     private val callback: (destDirPath: String?) -> Unit
-) : IArchiveExtractCallback, Closeable {
+) : IArchiveExtractCallback,
+    Closeable {
     private var totalProgress: Long = 0
     private var isCompleted = false
     private var currentOutStream: SequentialOutStream? = null

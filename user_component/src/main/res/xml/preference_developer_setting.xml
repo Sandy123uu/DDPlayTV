@@ -64,4 +64,15 @@
             app:icon="@drawable/ic_feedback" />
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:key="developer_credential_category"
+        android:title="@string/developer_credential_category_title">
+
+        <Preference
+            android:key="bilibili_tv_credential"
+            android:title="@string/developer_bilibili_tv_credential_title"
+            android:summary="@string/developer_bilibili_tv_credential_summary_missing"
+            app:icon="@drawable/ic_app_setting" />
+    </PreferenceCategory>
+
 </PreferenceScreen>

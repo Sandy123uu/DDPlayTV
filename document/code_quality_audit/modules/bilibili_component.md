@@ -21,7 +21,7 @@
   - `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/repository/BilibiliRepository.kt` + `class BilibiliRepository`（登录/风控/播放/历史等聚合入口，约 1653 行）
   - `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/auth/BilibiliCookieJarStore.kt` + `BilibiliCookieJarStore#saveFromResponse/loadForRequest/exportCookieHeader`
   - `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/auth/BilibiliAuthStore.kt` + `BilibiliAuthStore#read/write/updateFromCookies/updateAppTokens`
-  - `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/app/BilibiliTvClient.kt` + `BilibiliTvClient.APP_KEY/APP_SEC`
+  - `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/app/BilibiliTvClient.kt` + `BilibiliTvClient#sign/requireAppCredential`
   - `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/error/BilibiliPlaybackErrorReporter.kt` + `BilibiliPlaybackErrorReporter#reportPlaybackError`（URL/Header 脱敏）
   - `bilibili_component/src/main/java/com/xyoye/common_component/network/service/BilibiliService.kt` + `interface BilibiliService`（Retrofit API 定义）
 - 依赖边界（与哪些模块交互，是否存在边界疑点）
@@ -35,7 +35,7 @@
 
 - 维度：重复实现 / 冗余 / 复用机会 / 架构一致性风险 / 安全与隐私风险（明显高风险项）
 - 方法：`rg` 先行 + 必要时 ast-grep 确证；结合门禁与依赖治理文档复核
-  - 本轮使用 ast-grep 确证：`MMKV.mmkvWithID(...)` 的使用分布、`BilibiliTvClient` 中硬编码的 `APP_KEY/APP_SEC` 常量。
+  - 本轮使用 ast-grep 确证：`MMKV.mmkvWithID(...)` 的使用分布、`BilibiliTvClient` 中硬编码 `APP_KEY/APP_SEC` 的证据点与迁移调用面。
   - 本轮使用 `rg` 检查：敏感字段（cookie/token/access_key 等）在日志输出链路中的脱敏策略是否一致（`BilibiliPlaybackErrorReporter` 已做 URL/字段脱敏）。
 
 ## 3) Findings（发现列表）
@@ -45,7 +45,7 @@
 
 | ID | 类别 | 标题 | 证据（至少路径+符号） | 多实现（有意/无意） | 结论（保留/统一/废弃） | 落点建议 | Impact | Effort | P | 风险/依赖 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| BILIBILI-F001 | SecurityPrivacy | TV 客户端 `APP_KEY/APP_SEC` 在源码硬编码（等同固定凭证），存在泄露/封禁风险，且不利于多渠道/多策略切换 | `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/app/BilibiliTvClient.kt` + `BilibiliTvClient.APP_KEY/APP_SEC`；调用示例：`bilibili_component/src/main/java/com/xyoye/common_component/bilibili/repository/BilibiliRepository.kt` + `BilibiliRepository#loginQrCodeGenerate`（内部 `BilibiliAppSigner.sign(..., appKey=BilibiliTvClient.APP_KEY, appSec=BilibiliTvClient.APP_SEC)`） | N/A | Unify | `:core_system_component`（构建期注入/配置隔离）+ `:bilibili_component`（消费端改造） | High | Medium | P1 | Release 未配置时禁用 TV 登录/签名能力并提示用户配置；配置到位后需回归 TV 登录/签名链路 |
+| BILIBILI-F001 | SecurityPrivacy | TV 客户端 `APP_KEY/APP_SEC` 在源码硬编码（等同固定凭证），存在泄露/封禁风险，且不利于多渠道/多策略切换 | `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/app/BilibiliTvClient.kt` + `BilibiliTvClient#requireAppCredential/sign`（读取 `BilibiliTvCredentialStore` 配置）；调用示例：`bilibili_component/src/main/java/com/xyoye/common_component/bilibili/repository/BilibiliRepository.kt` + `BilibiliRepository#loginQrCodeGenerate`（TV 分支调用 `BilibiliTvClient.sign(...)`） | N/A | Unify | `:core_system_component`（构建期注入/本地配置）+ `:bilibili_component`（消费端改造） | High | Medium | P1 | Release 未配置时禁用 TV 登录/签名能力并提示用户配置；配置到位后需回归 TV 登录/签名链路 |
 | BILIBILI-F002 | SecurityPrivacy | 登录态（Cookie/Token）使用 MMKV 明文持久化，缺少加密/密钥管理与迁移策略 | `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/auth/BilibiliCookieJarStore.kt` + `MMKV.mmkvWithID("bilibili_cookie_jar_...")`；`bilibili_component/src/main/java/com/xyoye/common_component/bilibili/auth/BilibiliAuthStore.kt` + `MMKV.mmkvWithID(MMKV_ID)` | N/A | Unify | `:core_system_component`（通用加密存储能力，参考 `DeveloperCredentialStore`）+ `:bilibili_component`（迁移与落地） | High | Large | P2 | 需要兼容旧数据迁移与回滚；加密实现需考虑多进程/性能/密钥丢失场景 |
 | BILIBILI-F003 | ArchitectureRisk | `BilibiliRepository` 单类过大且多职责（登录/风控/播放/历史/直播弹幕等），演进与测试成本高 | `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/repository/BilibiliRepository.kt` + `class BilibiliRepository` | N/A | Unify | `:bilibili_component`（按子域拆分：Auth/Risk/Playback/History/Live 等） | Medium | Large | P2 | 拆分需要保证调用侧 API 稳定；建议先引入 facade + 渐进迁移，避免一次性大改 |
 
@@ -53,7 +53,7 @@
 
 | ID | 关联 Finding | 目标 | 范围 | 验收标准 | Impact | Effort | P | 负责人 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|
-| BILIBILI-T001 | BILIBILI-F001 | 去硬编码：将 `APP_KEY/APP_SEC` 改为“构建期注入/本地配置”，并提供可控回退策略（避免与发行物强绑定） | `core_system_component`（新增/扩展 BuildConfig 注入与读取入口）；`bilibili_component`（`BilibiliTvClient` 改造为配置读取 + 校验） | 1) 仓库源码中不再出现明文 `APP_SEC`；2) 未配置时给出明确错误与降级策略（例如禁用 TV 登录/提示）；3) 配置到位时登录/播放签名链路可回归 | High | Medium | P1 | 待分配（Infra/Build & Bilibili） | Draft |
+| BILIBILI-T001 | BILIBILI-F001 | 去硬编码：将 `APP_KEY/APP_SEC` 改为“构建期注入/本地配置”，并提供可控回退策略（避免与发行物强绑定） | `core_system_component`（扩展 BuildConfig 注入 + 本地存储读取入口）；`bilibili_component`（`BilibiliTvClient` 改造为配置读取 + 校验） | 1) 仓库源码中不再出现明文 `APP_SEC`；2) 未配置时给出明确错误与降级策略（例如禁用 TV 登录/提示）；3) 配置到位时登录/播放签名链路可回归 | High | Medium | P1 | AI（Codex） | Done |
 | BILIBILI-T002 | BILIBILI-F002 | 为 Cookie/Token 引入加密存储：落地统一的密钥管理与数据迁移，避免明文落盘 | `core_system_component`（抽取通用 `EncryptedStore`/`Crypto`，可参考 `DeveloperCredentialStore`）；`bilibili_component`（替换 `MMKV.mmkvWithID` 明文存储、迁移旧数据） | 1) Cookie/Token 落盘为密文（不可直接 grep 出明文）；2) 旧数据可迁移且不强制用户重新登录（可接受可控场景下的回退）；3) 登录/播放/心跳/直播弹幕等关键流程不回退 | High | Large | P2 | 待分配（Security/System/Bilibili） | Draft |
 | BILIBILI-T003 | BILIBILI-F003 | 拆分 `BilibiliRepository`：按子域抽取组件并引入单测/契约化接口，提高可维护性 | `bilibili_component`（新增 `AuthRepository/RiskRepository/PlaybackRepository/HistoryRepository/LiveRepository` 等）；对外保留 facade 以降低调用方改动 | 1) 对外 API 基本不变（或提供 deprecate 迁移期）；2) 关键签名/存储/URL 脱敏具备单测覆盖；3) 全仓编译通过 | Medium | Large | P2 | 待分配（Bilibili） | Draft |
 

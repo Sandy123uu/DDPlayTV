@@ -15,7 +15,7 @@
 | G-T0004 | Done | AI（Codex） | 修复 `ActivityHelper#getTopActivity` 的潜在崩溃：返回 `firstOrNull` 并清理已销毁 Activity | G-F0022 | :core_system_component | CORE_SYSTEM-T002 |
 | G-T0005 | Done | AI（Codex） | 修复 `ISequentialOutStream` 实现：按“流式追加写入”语义输出文件，避免覆盖与性能劣化 | G-F0023 | :repository:seven_zip | REPO_SEVEN_ZIP-T003 |
 | G-T0006 | Done | AI（Codex） | 修复资源释放与线程/取消策略：解压过程在 IO 线程执行，且无论成功/失败/取消都能回收 | G-F0025,G-F0066 | :repository:seven_zip | REPO_SEVEN_ZIP-T002 |
-| G-T0007 | Draft | 待分配（Infra/Build & Bilibili） | 去硬编码：将 `APP_KEY/APP_SEC` 改为“构建期注入/本地配置”，并提供可控回退策略（避免与发行物强绑定） | G-F0002 | :bilibili_component | BILIBILI-T001 |
+| G-T0007 | Done | AI（Codex） | 去硬编码：将 `APP_KEY/APP_SEC` 改为“构建期注入/本地配置”，并提供可控回退策略（避免与发行物强绑定） | G-F0002 | :bilibili_component | BILIBILI-T001 |
 | G-T0008 | Draft | 待分配（Network/Player） | 将 VLC 代理拉流从 `UnsafeOkHttpClient` 迁移到“默认安全”的 OkHttpClient，并提供可控降级策略 | G-F0004 | :player_component | PLAYER-T002 |
 | G-T0009 | Draft | 待分配（App/Player） | 将“TV 禁用后台/画中画”的策略显式化并避免误伤移动端 | G-F0013 | :app | APP-T001 |
 | G-T0010 | Draft | 待分配（Storage） | 将迅雷 SDK 初始化策略改为按需 + 可降级，降低启动期开销与崩溃面 | G-F0024 | :repository:thunder | REPO_THUNDER-T003 |

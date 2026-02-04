@@ -2,68 +2,68 @@ package com.xyoye.common_component.config
 
 import com.xyoye.core_system_component.BuildConfig
 
-object DeveloperCredentialStore {
-    fun isBuildCredentialInjected(): Boolean = BuildConfig.DANDAN_DEV_CREDENTIAL_INJECTED
+object BilibiliTvCredentialStore {
+    fun isBuildCredentialInjected(): Boolean = BuildConfig.BILIBILI_TV_CREDENTIAL_INJECTED
 
-    fun getAppId(): String? {
+    fun getAppKey(): String? {
         if (isBuildCredentialInjected()) {
-            return BuildConfig.DANDAN_APP_ID.trim().takeIf { it.isNotEmpty() }
+            return BuildConfig.BILIBILI_TV_APP_KEY.trim().takeIf { it.isNotEmpty() }
         }
 
         return getCredential(
-            encrypted = DevelopConfig.getAppIdEncrypted(),
-            legacyPlain = DevelopConfig.getAppId(),
-            saveEncrypted = DevelopConfig::putAppIdEncrypted,
-            clearLegacyPlain = { DevelopConfig.putAppId("") },
+            encrypted = DevelopConfig.getBilibiliTvAppKeyEncrypted(),
+            legacyPlain = DevelopConfig.getBilibiliTvAppKey(),
+            saveEncrypted = DevelopConfig::putBilibiliTvAppKeyEncrypted,
+            clearLegacyPlain = { DevelopConfig.putBilibiliTvAppKey("") },
         )
     }
 
     fun getAppSecret(): String? {
         if (isBuildCredentialInjected()) {
-            return BuildConfig.DANDAN_APP_SECRET.trim().takeIf { it.isNotEmpty() }
+            return BuildConfig.BILIBILI_TV_APP_SECRET.trim().takeIf { it.isNotEmpty() }
         }
 
         return getCredential(
-            encrypted = DevelopConfig.getAppSecretEncrypted(),
-            legacyPlain = DevelopConfig.getAppSecret(),
-            saveEncrypted = DevelopConfig::putAppSecretEncrypted,
-            clearLegacyPlain = { DevelopConfig.putAppSecret("") },
+            encrypted = DevelopConfig.getBilibiliTvAppSecretEncrypted(),
+            legacyPlain = DevelopConfig.getBilibiliTvAppSecret(),
+            saveEncrypted = DevelopConfig::putBilibiliTvAppSecretEncrypted,
+            clearLegacyPlain = { DevelopConfig.putBilibiliTvAppSecret("") },
         )
     }
 
     /**
-     * 仅用于认证输入框回显：只回显本地保存的值，不回显编译期注入的值，避免在UI里直接暴露。
+     * 仅用于输入框回显：只回显本地保存的值，不回显编译期注入的值，避免在UI里直接暴露。
      */
-    fun getStoredAppIdForPrefill(): String? =
+    fun getStoredAppKeyForPrefill(): String? =
         getStoredCredentialForPrefill(
-            encrypted = DevelopConfig.getAppIdEncrypted(),
-            legacyPlain = DevelopConfig.getAppId(),
+            encrypted = DevelopConfig.getBilibiliTvAppKeyEncrypted(),
+            legacyPlain = DevelopConfig.getBilibiliTvAppKey(),
         )
 
     /**
-     * 仅用于认证输入框回显：只回显本地保存的值，不回显编译期注入的值，避免在UI里直接暴露。
+     * 仅用于输入框回显：只回显本地保存的值，不回显编译期注入的值，避免在UI里直接暴露。
      */
     fun getStoredAppSecretForPrefill(): String? =
         getStoredCredentialForPrefill(
-            encrypted = DevelopConfig.getAppSecretEncrypted(),
-            legacyPlain = DevelopConfig.getAppSecret(),
+            encrypted = DevelopConfig.getBilibiliTvAppSecretEncrypted(),
+            legacyPlain = DevelopConfig.getBilibiliTvAppSecret(),
         )
 
-    fun putAppId(appId: String) {
+    fun putAppKey(appKey: String) {
         putCredential(
-            value = appId,
-            saveEncrypted = DevelopConfig::putAppIdEncrypted,
-            clearLegacyPlain = { DevelopConfig.putAppId("") },
-            saveLegacyPlain = DevelopConfig::putAppId,
+            value = appKey,
+            saveEncrypted = DevelopConfig::putBilibiliTvAppKeyEncrypted,
+            clearLegacyPlain = { DevelopConfig.putBilibiliTvAppKey("") },
+            saveLegacyPlain = DevelopConfig::putBilibiliTvAppKey,
         )
     }
 
     fun putAppSecret(appSecret: String) {
         putCredential(
             value = appSecret,
-            saveEncrypted = DevelopConfig::putAppSecretEncrypted,
-            clearLegacyPlain = { DevelopConfig.putAppSecret("") },
-            saveLegacyPlain = DevelopConfig::putAppSecret,
+            saveEncrypted = DevelopConfig::putBilibiliTvAppSecretEncrypted,
+            clearLegacyPlain = { DevelopConfig.putBilibiliTvAppSecret("") },
+            saveLegacyPlain = DevelopConfig::putBilibiliTvAppSecret,
         )
     }
 

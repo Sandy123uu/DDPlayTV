@@ -6,7 +6,6 @@ import com.xyoye.common_component.bilibili.BilibiliApiType
 import com.xyoye.common_component.bilibili.BilibiliKeys
 import com.xyoye.common_component.bilibili.BilibiliPlaybackPreferences
 import com.xyoye.common_component.bilibili.BilibiliPlayurlPreferencesMapper
-import com.xyoye.common_component.bilibili.app.BilibiliAppSigner
 import com.xyoye.common_component.bilibili.app.BilibiliTvClient
 import com.xyoye.common_component.bilibili.auth.BilibiliAuthStore
 import com.xyoye.common_component.bilibili.auth.BilibiliCookieJarStore
@@ -381,8 +380,8 @@ class BilibiliRepository(
             }
         }
 
-    suspend fun loginQrCodeGenerate(apiType: BilibiliApiType = currentApiType()): Result<BilibiliLoginQrCode> =
-        when (apiType) {
+    suspend fun loginQrCodeGenerate(apiType: BilibiliApiType = currentApiType()): Result<BilibiliLoginQrCode> {
+        return when (apiType) {
             BilibiliApiType.WEB -> {
                 qrcodeGenerate().mapCatching { data ->
                     if (data.url.isBlank() || data.qrcodeKey.isBlank()) {
@@ -396,16 +395,17 @@ class BilibiliRepository(
             }
 
             BilibiliApiType.TV -> {
+                if (!BilibiliTvClient.isAppCredentialReady()) {
+                    return Result.failure(BilibiliTvClient.missingCredentialException())
+                }
+
                 val params: RequestParams =
                     hashMapOf(
                         "local_id" to BilibiliTvClient.LOCAL_ID,
                     )
                 val signed =
-                    BilibiliAppSigner.sign(
-                        params = params,
-                        appKey = BilibiliTvClient.APP_KEY,
-                        appSec = BilibiliTvClient.APP_SEC,
-                    )
+                    runCatching { BilibiliTvClient.sign(params) }
+                        .getOrElse { return Result.failure(it) }
                 requestBilibili {
                     service.tvQrcodeAuthCode(BASE_PASSPORT, signed)
                 }.mapCatching { data ->
@@ -419,12 +419,13 @@ class BilibiliRepository(
                 }
             }
         }
+    }
 
     suspend fun loginQrCodePoll(
         qrcodeKey: String,
         apiType: BilibiliApiType = currentApiType()
-    ): Result<BilibiliLoginPollResult> =
-        when (apiType) {
+    ): Result<BilibiliLoginPollResult> {
+        return when (apiType) {
             BilibiliApiType.WEB -> {
                 qrcodePoll(qrcodeKey).mapCatching { data ->
                     when (data.statusCode) {
@@ -438,17 +439,18 @@ class BilibiliRepository(
             }
 
             BilibiliApiType.TV -> {
+                if (!BilibiliTvClient.isAppCredentialReady()) {
+                    return Result.failure(BilibiliTvClient.missingCredentialException())
+                }
+
                 val params: RequestParams =
                     hashMapOf(
                         "auth_code" to qrcodeKey,
                         "local_id" to BilibiliTvClient.LOCAL_ID,
                     )
                 val signed =
-                    BilibiliAppSigner.sign(
-                        params = params,
-                        appKey = BilibiliTvClient.APP_KEY,
-                        appSec = BilibiliTvClient.APP_SEC,
-                    )
+                    runCatching { BilibiliTvClient.sign(params) }
+                        .getOrElse { return Result.failure(it) }
 
                 request()
                     .doGet {
@@ -481,6 +483,7 @@ class BilibiliRepository(
                     }
             }
         }
+    }
 
     suspend fun historyCursor(
         max: Long? = null,
@@ -732,13 +735,17 @@ class BilibiliRepository(
                     }
 
                     // Web 无法取流时，尝试使用 TV/API 签名链路作为兜底（不改变用户偏好）。
+                    if (!BilibiliTvClient.isAppCredentialReady()) {
+                        return@run html5Result ?: pcResult
+                    }
+
                     val tvResult =
                         retryBilibiliRiskControlWithRemedy(
                             reason = "playurl(tvFallback)",
                             maxAttempts = PLAYURL_RISK_MAX_ATTEMPTS,
                             initialDelayMs = PLAYURL_RISK_INITIAL_DELAY_MS,
                             maxDelayMs = PLAYURL_RISK_MAX_DELAY_MS,
-                        ) {
+                        ) block@{
                             val attemptParams = baseParams.toMutableMap()
                             val auth = BilibiliAuthStore.read(storageKey)
                             auth.appAccessToken?.takeIf { it.isNotBlank() }?.let { attemptParams["access_key"] = it }
@@ -746,11 +753,8 @@ class BilibiliRepository(
                             attemptParams["platform"] = BilibiliTvClient.PLATFORM
 
                             val signed =
-                                BilibiliAppSigner.sign(
-                                    params = attemptParams,
-                                    appKey = BilibiliTvClient.APP_KEY,
-                                    appSec = BilibiliTvClient.APP_SEC,
-                                )
+                                runCatching { BilibiliTvClient.sign(attemptParams) }
+                                    .getOrElse { return@block Result.failure(it) }
 
                             requestBilibili {
                                 service.playurlOld(BASE_API, signed)
@@ -772,6 +776,10 @@ class BilibiliRepository(
                 }
 
             BilibiliApiType.TV -> {
+                if (!BilibiliTvClient.isAppCredentialReady()) {
+                    return Result.failure(BilibiliTvClient.missingCredentialException())
+                }
+
                 prepareRiskControl(reason = "playurl(tv)", force = false)
 
                 retryBilibiliRiskControlWithRemedy(
@@ -779,7 +787,7 @@ class BilibiliRepository(
                     maxAttempts = PLAYURL_RISK_MAX_ATTEMPTS,
                     initialDelayMs = PLAYURL_RISK_INITIAL_DELAY_MS,
                     maxDelayMs = PLAYURL_RISK_MAX_DELAY_MS,
-                ) {
+                ) block@{
                     val attemptParams = baseParams.toMutableMap()
                     val auth = BilibiliAuthStore.read(storageKey)
                     auth.appAccessToken?.takeIf { it.isNotBlank() }?.let { attemptParams["access_key"] = it }
@@ -787,11 +795,8 @@ class BilibiliRepository(
                     attemptParams["platform"] = BilibiliTvClient.PLATFORM
 
                     val signed =
-                        BilibiliAppSigner.sign(
-                            params = attemptParams,
-                            appKey = BilibiliTvClient.APP_KEY,
-                            appSec = BilibiliTvClient.APP_SEC,
-                        )
+                        runCatching { BilibiliTvClient.sign(attemptParams) }
+                            .getOrElse { return@block Result.failure(it) }
 
                     requestBilibili {
                         service.playurlOld(BASE_API, signed)
@@ -868,6 +873,10 @@ class BilibiliRepository(
             }
 
             BilibiliApiType.TV -> {
+                if (!BilibiliTvClient.isAppCredentialReady()) {
+                    return Result.failure(BilibiliTvClient.missingCredentialException())
+                }
+
                 prepareRiskControl(reason = "playurlFallback(tv)", force = false)
 
                 retryBilibiliRiskControlWithRemedy(
@@ -875,7 +884,7 @@ class BilibiliRepository(
                     maxAttempts = PLAYURL_RISK_MAX_ATTEMPTS,
                     initialDelayMs = PLAYURL_RISK_INITIAL_DELAY_MS,
                     maxDelayMs = PLAYURL_RISK_MAX_DELAY_MS,
-                ) {
+                ) block@{
                     val attemptParams = baseParams.toMutableMap()
                     val auth = BilibiliAuthStore.read(storageKey)
                     auth.appAccessToken?.takeIf { it.isNotBlank() }?.let { attemptParams["access_key"] = it }
@@ -883,11 +892,8 @@ class BilibiliRepository(
                     attemptParams["platform"] = BilibiliTvClient.PLATFORM
 
                     val signed =
-                        BilibiliAppSigner.sign(
-                            params = attemptParams,
-                            appKey = BilibiliTvClient.APP_KEY,
-                            appSec = BilibiliTvClient.APP_SEC,
-                        )
+                        runCatching { BilibiliTvClient.sign(attemptParams) }
+                            .getOrElse { return@block Result.failure(it) }
 
                     requestBilibili {
                         service.playurlOld(BASE_API, signed)
@@ -969,6 +975,10 @@ class BilibiliRepository(
                     }
 
                     // Web 番剧接口触发风控时，尝试使用 TV/API 签名链路兜底（不改变用户偏好）。
+                    if (!BilibiliTvClient.isAppCredentialReady()) {
+                        return@run webResult
+                    }
+
                     val tvResult =
                         retryBilibiliRiskControlWithRemedy(
                             reason = "pgcPlayurl(tvFallback)",
@@ -986,6 +996,10 @@ class BilibiliRepository(
                 }
 
             BilibiliApiType.TV -> {
+                if (!BilibiliTvClient.isAppCredentialReady()) {
+                    return Result.failure(BilibiliTvClient.missingCredentialException())
+                }
+
                 prepareRiskControl(reason = "pgcPlayurl(tv)", force = false)
                 retryBilibiliRiskControlWithRemedy(
                     reason = "pgcPlayurl(tv)",
@@ -1063,6 +1077,10 @@ class BilibiliRepository(
                         return@run webResult
                     }
 
+                    if (!BilibiliTvClient.isAppCredentialReady()) {
+                        return@run webResult
+                    }
+
                     retryBilibiliRiskControlWithRemedy(
                         reason = "pgcPlayurlFallback(tvFallback)",
                         maxAttempts = PGC_PLAYURL_RISK_MAX_ATTEMPTS,
@@ -1074,6 +1092,10 @@ class BilibiliRepository(
                 }
 
             BilibiliApiType.TV -> {
+                if (!BilibiliTvClient.isAppCredentialReady()) {
+                    return Result.failure(BilibiliTvClient.missingCredentialException())
+                }
+
                 prepareRiskControl(reason = "pgcPlayurlFallback(tv)", force = false)
                 retryBilibiliRiskControlWithRemedy(
                     reason = "pgcPlayurlFallback(tv)",
@@ -1093,19 +1115,21 @@ class BilibiliRepository(
     ): Result<BilibiliPlayurlData> {
         val baseTvParams = params.toMutableMap()
 
+        if (!BilibiliTvClient.isAppCredentialReady()) {
+            return Result.failure(BilibiliTvClient.missingCredentialException())
+        }
+
         val auth = BilibiliAuthStore.read(storageKey)
         auth.appAccessToken?.takeIf { it.isNotBlank() }?.let { baseTvParams["access_key"] = it }
         baseTvParams["mobi_app"] = BilibiliTvClient.MOBI_APP
         baseTvParams["platform"] = BilibiliTvClient.PLATFORM
 
+        val signed =
+            runCatching { BilibiliTvClient.sign(baseTvParams) }
+                .getOrElse { return Result.failure(it) }
+
         return request()
             .doGet {
-                val signed =
-                    BilibiliAppSigner.sign(
-                        params = baseTvParams,
-                        appKey = BilibiliTvClient.APP_KEY,
-                        appSec = BilibiliTvClient.APP_SEC,
-                    )
                 service.pgcPlayurlApi(BASE_API, signed)
             }.mapCatching { model ->
                 if (model.code != 0) {
