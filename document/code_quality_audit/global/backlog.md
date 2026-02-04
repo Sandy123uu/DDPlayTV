@@ -9,7 +9,7 @@
 
 | G-ID | 状态 | 负责人 | 目标 | 关联 G-F | 涉及模块 | 来源任务 |
 |---|---|---|---|---|---|---|
-| G-T0001 | Draft | 待分配（Infra/Network/Storage） | WebDAV 默认启用严格 TLS：替换 `UnsafeOkHttpClient`，并为“特殊场景”提供可控开关（debug/用户显式） | G-F0001 | :core_storage_component | CORE_STORAGE-T002 |
+| G-T0001 | Draft | 待分配（Infra/Network/Storage） | WebDAV 默认启用严格 TLS：替换 `UnsafeOkHttpClient`，并为“特殊场景”提供可控开关（用户显式；Release 允许） | G-F0001 | :core_storage_component | CORE_STORAGE-T002 |
 | G-T0002 | Draft | 待分配（Infra/Network） | 下线/收敛 `UnsafeOkHttpClient`：仅允许在明确场景使用，并提供更安全替代（证书导入/Pin/仅 HTTP） | G-F0001 | :core_network_component | CORE_NETWORK-T002 |
 | G-T0003 | Draft | 待分配（Repo） | 为所有 repository wrapper AAR 补齐元信息（来源/版本/License/校验和/更新流程） | G-F0017 | :repository:danmaku,:repository:immersion_bar,:repository:panel_switch,:repository:seven_zip,:repository:thunder,:repository:video_cache | REPO_DANMAKU-T001,REPO_IMMERSION_BAR-T001,REPO_PANEL_SWITCH-T001,REPO_SEVEN_ZIP-T001,REPO_THUNDER-T001,REPO_VIDEO_CACHE-T001 |
 | G-T0004 | Draft | 待分配（Runtime） | 修复 `ActivityHelper#getTopActivity` 的潜在崩溃：返回 `firstOrNull` 并清理已销毁 Activity | G-F0022 | :core_system_component | CORE_SYSTEM-T002 |
@@ -28,11 +28,11 @@
 | G-T0017 | Draft | AI（Codex） | 收敛可写 `LiveData` 暴露：对外只读 + 统一发送入口 | G-F0015 | :core_contract_component | CORE_CONTRACT-T002 |
 | G-T0018 | Draft | 待分配（Runtime） | 收敛异常处理口径：移除 `printStackTrace()`，统一使用 `ErrorReportHelper` + `LogFacade` 记录必要信息 | G-F0020 | :core_system_component | CORE_SYSTEM-T003 |
 | G-T0019 | Draft | 待分配（UI） | 明确 Fragment 宿主契约：引入 `LoadingHost`（或等价接口）并替换强制 cast，避免隐藏崩溃点 | G-F0011 | :core_ui_component | CORE_UI-T003 |
-| G-T0020 | Draft | 待分配（Storage/TV） | 明确投屏 Sender 的产品策略并落地成“可维护的分流实现”，清理注释掉的旧实现与全端 stub | G-F0021 | :storage_component | STORAGE-T001 |
+| G-T0020 | Draft | 待分配（Storage/TV） | 移除投屏 Sender 整条链路：删除旧实现与全端 stub，清理入口/路由/服务暴露 | G-F0021 | :storage_component | STORAGE-T001 |
 | G-T0021 | Draft | 待分配（Player/Log） | 清理 `printStackTrace()` 并补齐异常上报上下文（引擎/会话/源类型） | G-F0016 | :player_component | PLAYER-T005 |
 | G-T0022 | Draft | 待分配（Runtime/Storage） | 用安全方案替换 `EntropyUtils` 的对称加密（至少支持随机 IV/带认证），并为投屏 UDP 消息引入版本/兼容策略 | G-F0003 | :core_system_component | CORE_SYSTEM-T001 |
 | G-T0023 | Draft | 待分配（Log/Feature） | 移除 `printStackTrace()` 并统一异常上报上下文与脱敏策略（URL/token/password/路径） | G-F0006 | :storage_component | STORAGE-T002 |
-| G-T0024 | Draft | 待分配（Infra/Network） | 统一 TLS 安全默认：移除默认路径中的 `hostnameVerifier { _, _ -> true }`，并为“特殊场景”提供可控开关（debug/用户显式） | G-F0001 | :core_network_component | CORE_NETWORK-T001 |
+| G-T0024 | Draft | 待分配（Infra/Network） | 统一 TLS 安全默认：移除默认路径中的 `hostnameVerifier { _, _ -> true }`，并为“特殊场景”提供可控开关（用户显式；Release 允许） | G-F0001 | :core_network_component | CORE_NETWORK-T001 |
 | G-T0025 | Draft | 待分配（Infra/DB/Log） | 统一手动迁移异常可观测性：替换 `printStackTrace()` 为结构化日志/异常上报，并补充必要上下文 | G-F0014 | :core_database_component | CORE_DATABASE-T003 |
 | G-T0026 | Draft | 待分配（Log/Feature） | 统一错误上报上下文的构建与脱敏策略，减少重复样板并降低隐私风险 | G-F0008 | :local_component | LOCAL-T003 |
 
@@ -67,7 +67,7 @@
 | G-T0051 | Draft | 待分配（Infra/Player/Storage） | 收敛本地代理/HTTP server 能力，减少多实现与策略漂移 | G-F0054 | :player_component | PLAYER-T003 |
 | G-T0052 | Draft | 待分配（Infra/Storage） | 收敛第三方协议库依赖泄漏：减少/消除 `api(...)`，上层模块不再直接 import 协议库类型 | G-F0032 | :core_storage_component | CORE_STORAGE-T001 |
 | G-T0053 | Draft | 待分配（UI） | 收敛第三方类型扩散：以 `core_ui_component` 提供统一状态栏/沉浸式配置入口 | G-F0047 | :repository:immersion_bar | REPO_IMMERSION_BAR-T002 |
-| G-T0054 | Draft | 待分配（Player） | 明确“发送弹幕”能力是否仍在产品范围：移除无效链路或恢复并补齐策略 | G-F0062 | :repository:panel_switch | REPO_PANEL_SWITCH-T002 |
+| G-T0054 | Draft | 待分配（Player） | 移除“发送弹幕”整条链路：删除相关 UI/代码并移除 `:repository:panel_switch` 依赖 | G-F0062 | :repository:panel_switch | REPO_PANEL_SWITCH-T002 |
 | G-T0055 | Draft | 待分配（System/User） | 明确登录态单一事实源：用 UserSessionManager 统一 token/登录态更新与观察 | G-F0044 | :user_component | USER-T004 |
 | G-T0056 | Draft | 待分配（Infra/DB） | 统一 MD5/hex 工具：复用 `CacheKeyMapper`（或抽取 `HashUtils`），移除 `ManualMigration#md5Hex` 重复实现 | G-F0052 | :core_database_component | CORE_DATABASE-T004 |
 | G-T0057 | Draft | 待分配（Runtime） | 统一 MMKV 初始化策略：明确“Startup 初始化”与“BaseApplication 初始化”的职责边界，避免重复与时序不一致 | G-F0057 | :core_system_component | CORE_SYSTEM-T004 |
