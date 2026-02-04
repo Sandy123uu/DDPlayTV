@@ -6,9 +6,11 @@ import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceDataStore
 import androidx.preference.SeekBarPreference
+import androidx.preference.SwitchPreference
 import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.xyoye.common_component.config.PlayerConfig
 import com.xyoye.common_component.utils.ErrorReportHelper
+import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.enums.LocalProxyMode
 import com.xyoye.data_component.enums.PlayerType
 import com.xyoye.data_component.enums.VLCAudioOutput
@@ -58,6 +60,7 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
                 "vlc_audio_output",
                 "vlc_proxy_range_interval_ms",
                 "vlc_local_proxy_mode",
+                "vlc_proxy_allow_insecure_tls",
             )
 
         val exoPreference =
@@ -260,6 +263,17 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
                 PlayerConfig.putVlcLocalProxyMode(resolved.toInt())
             }
             summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
+        }
+
+        findPreference<SwitchPreference>("vlc_proxy_allow_insecure_tls")?.apply {
+            onPreferenceChangeListener =
+                Preference.OnPreferenceChangeListener { _, newValue ->
+                    val enabled = newValue as? Boolean ?: return@OnPreferenceChangeListener true
+                    if (enabled) {
+                        ToastCenter.showWarning("已启用不安全TLS：VLC 代理将忽略证书/主机名校验，存在中间人攻击风险")
+                    }
+                    true
+                }
         }
 
         // Media3 本地防风控代理（HttpPlayServer）
@@ -557,6 +571,7 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
             try {
                 when (key) {
                     "surface_renders" -> PlayerConfig.isUseSurfaceView()
+                    "vlc_proxy_allow_insecure_tls" -> PlayerConfig.isVlcProxyAllowInsecureTls()
                     else -> super.getBoolean(key, defValue)
                 }
             } catch (e: Exception) {
@@ -576,6 +591,7 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
             try {
                 when (key) {
                     "surface_renders" -> PlayerConfig.putUseSurfaceView(value)
+                    "vlc_proxy_allow_insecure_tls" -> PlayerConfig.putVlcProxyAllowInsecureTls(value)
                     else -> super.putBoolean(key, value)
                 }
             } catch (e: Exception) {

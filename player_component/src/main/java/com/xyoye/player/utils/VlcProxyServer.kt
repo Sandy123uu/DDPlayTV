@@ -1,12 +1,18 @@
 package com.xyoye.player.utils
 
-import com.xyoye.common_component.network.helper.UnsafeOkHttpClient
+import com.xyoye.common_component.config.PlayerConfig
+import com.xyoye.common_component.log.LogFacade
+import com.xyoye.common_component.log.model.LogModule
+import com.xyoye.common_component.network.helper.OkHttpTlsPolicy
+import com.xyoye.common_component.network.helper.ProxyOkHttpClientFactory
 import com.xyoye.common_component.network.helper.UnsafeTlsApi
 import com.xyoye.common_component.utils.getFileName
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.NanoHTTPD.Response.Status
+import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.net.URLEncoder
+import javax.net.ssl.SSLException
 import kotlin.random.Random
 
 /**
@@ -19,6 +25,7 @@ class VlcProxyServer private constructor() : NanoHTTPD(randomPort()) {
 
     private val removeHeaderKeys = setOf("host", "remote-addr", "http-client-ip")
     private val persistentHeaderKeys = setOf("referer", "cookie", "authorization", "user-agent")
+    private val logTag = "VlcProxyServer"
 
     private object Holder {
         val instance = VlcProxyServer()
@@ -31,6 +38,18 @@ class VlcProxyServer private constructor() : NanoHTTPD(randomPort()) {
         @JvmStatic
         fun getInstance() = Holder.instance
     }
+
+    private val strictClient: OkHttpClient by lazy {
+        ProxyOkHttpClientFactory.create(OkHttpTlsPolicy.Strict)
+    }
+
+    @OptIn(UnsafeTlsApi::class)
+    private val unsafeTrustAllClient: OkHttpClient by lazy {
+        ProxyOkHttpClientFactory.create(OkHttpTlsPolicy.UnsafeTrustAll)
+    }
+
+    @Volatile
+    private var hasLoggedUnsafeFallback: Boolean = false
 
     override fun serve(session: IHTTPSession?): Response {
         session ?: return super.serve(session)
@@ -64,7 +83,6 @@ class VlcProxyServer private constructor() : NanoHTTPD(randomPort()) {
         return "http://127.0.0.1:$listeningPort/$encodeFileName"
     }
 
-    @OptIn(UnsafeTlsApi::class)
     private fun getProxyResponse(session: IHTTPSession): okhttp3.Response {
         val requestBuilder = Request.Builder()
         var ifMatchValue: String? = null
@@ -116,8 +134,53 @@ class VlcProxyServer private constructor() : NanoHTTPD(randomPort()) {
 
         val request = requestBuilder.url(url).build()
 
-        val call = UnsafeOkHttpClient.client.newCall(request)
-        return call.execute()
+        return try {
+            strictClient.newCall(request).execute()
+        } catch (e: Exception) {
+            if (!isUserAllowedUnsafeTlsFallback(e)) {
+                throw e
+            }
+
+            logUnsafeTlsFallbackOnce(request, e)
+            unsafeTrustAllClient.newCall(request).execute()
+        }
+    }
+
+    private fun isUserAllowedUnsafeTlsFallback(error: Throwable): Boolean {
+        if (!PlayerConfig.isVlcProxyAllowInsecureTls()) {
+            return false
+        }
+
+        var cursor: Throwable? = error
+        var depth = 0
+        while (cursor != null && depth < 8) {
+            if (cursor is SSLException) {
+                return true
+            }
+            cursor = cursor.cause
+            depth++
+        }
+        return false
+    }
+
+    private fun logUnsafeTlsFallbackOnce(
+        request: Request,
+        error: Throwable
+    ) {
+        if (hasLoggedUnsafeFallback) return
+        hasLoggedUnsafeFallback = true
+
+        val urlHash = request.url.toString().hashCode().toString()
+        LogFacade.w(
+            LogModule.PLAYER,
+            logTag,
+            "TLS verification failed, fallback to UNSAFE_TRUST_ALL (user opted-in)",
+            context =
+                mapOf(
+                    "urlHash" to urlHash,
+                    "error" to (error.javaClass.simpleName ?: "unknown"),
+                ),
+        )
     }
 
     private fun shouldRemoveHeader(headerKey: String): Boolean = removeHeaderKeys.any { headerKey.equals(it, true) }

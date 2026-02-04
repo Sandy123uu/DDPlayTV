@@ -71,6 +71,10 @@
         android:title="VLC 本地防风控代理"
         android:summary="关闭：不使用本地代理；自动：仅对部分上游启用；强制：尽量对可寻址的 HTTP(S) 直链启用（可能带来额外开销）" />
     <SwitchPreference
+        android:key="vlc_proxy_allow_insecure_tls"
+        android:title="VLC 代理不安全 TLS（强警告）"
+        android:summary="默认关闭。开启后将忽略证书/主机名校验，存在中间人攻击风险；仅建议用于可信的自签证书环境。" />
+    <SwitchPreference
         android:key="surface_renders"
         android:summary="使用后视频渲染性能更高"
         android:title="SurfaceView"
