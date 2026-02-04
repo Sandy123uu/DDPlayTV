@@ -30,7 +30,7 @@
 - [x] 5.2 静态检查：`./gradlew lint`（确认输出尾部为 `BUILD SUCCESSFUL`）
 - [x] 5.3 依赖治理校验：`./gradlew verifyModuleDependencies`（确认输出尾部为 `BUILD SUCCESSFUL`）
 - [x] 5.4 单元测试：`./gradlew :core_storage_component:testDebugUnitTest`（确认输出尾部为 `BUILD SUCCESSFUL`）
-- [ ] 5.5 手工验收（TV/手机均可）：
+- [x] 5.5 手工验收（TV/手机均可）：
   - 扫码授权仍可用（含 `loginApp` 选择/记忆）
   - 手动 token：校验通过后授权成功并可浏览/播放
   - token 无效/缺字段：提示清晰且不会保存

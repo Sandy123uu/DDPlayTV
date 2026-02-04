@@ -19,7 +19,7 @@
 - [x] 3.1 编译验证：`./gradlew :storage_component:assembleDebug`（确认输出尾部为 `BUILD SUCCESSFUL`）
 - [x] 3.2 静态检查：`./gradlew lint`（确认输出尾部为 `BUILD SUCCESSFUL`）
 - [x] 3.3 依赖治理校验：`./gradlew verifyModuleDependencies`（确认输出尾部为 `BUILD SUCCESSFUL`）
-- [ ] 3.4 手工验收（TV/手机均可）：
+- [x] 3.4 手工验收（TV/手机均可）：
   - 新增 115 Cloud：默认 `tv`，可切换到其他 app 并成功授权
   - 对同一账号再次扫码授权：默认回显上次选择的 app
   - 清除授权后：app 记忆随授权态一并清理

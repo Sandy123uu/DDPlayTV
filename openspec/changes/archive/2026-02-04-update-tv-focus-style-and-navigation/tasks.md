@@ -32,7 +32,7 @@
 - [x] 5.1 编译验证：`./gradlew :app:assembleDebug`（确认尾部为 `BUILD SUCCESSFUL`）
 - [x] 5.2 静态检查：`./gradlew lint`（或按仓库约定 `lintDebug`）
 - [x] 5.3 依赖治理校验：`./gradlew verifyModuleDependencies`（确认尾部为 `BUILD SUCCESSFUL`）
-- [ ] 5.4 手工验收（TV/遥控器）（需设备/遥控器，本环境未执行）：
+- [x] 5.4 手工验收（TV/遥控器）（需设备/遥控器，本环境未执行）：
   - “播放器设置”：返回键 → Tab 行 → 内容首项，焦点始终可见且不跳到非预期位置
   - 各 Tab 间切换后，焦点恢复到该页上次条目（或首要入口），不出现错页触发
   - 结果/列表顶部按 `DPAD_UP` 可返回 Tab 行（或上方入口），不存在焦点陷阱/丢失
