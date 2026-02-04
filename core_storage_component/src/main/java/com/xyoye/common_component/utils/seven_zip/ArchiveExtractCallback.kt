@@ -3,12 +3,13 @@ package com.xyoye.common_component.utils.seven_zip
 import com.xyoye.common_component.utils.getFileName
 import net.sf.sevenzipjbinding.*
 import java.io.File
+import java.io.Closeable
 
 class ArchiveExtractCallback constructor(
     private val inArchive: IInArchive,
     private val destDir: File,
     private val callback: (destDirPath: String?) -> Unit
-) : IArchiveExtractCallback {
+) : IArchiveExtractCallback, Closeable {
     private var totalProgress: Long = 0
     private var isCompleted = false
     private var currentOutStream: SequentialOutStream? = null
@@ -30,7 +31,8 @@ class ArchiveExtractCallback constructor(
     override fun setOperationResult(extractOperationResult: ExtractOperationResult) {
         currentOutStream?.close()
         currentOutStream = null
-        if (extractOperationResult !== ExtractOperationResult.OK) {
+        if (!isCompleted && extractOperationResult !== ExtractOperationResult.OK) {
+            isCompleted = true
             callback.invoke(null)
         }
     }
@@ -48,5 +50,10 @@ class ArchiveExtractCallback constructor(
                 callback.invoke(destDir.absolutePath)
             }
         }
+    }
+
+    override fun close() {
+        currentOutStream?.close()
+        currentOutStream = null
     }
 }
