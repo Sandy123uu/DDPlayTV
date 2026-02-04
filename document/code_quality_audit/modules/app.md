@@ -66,7 +66,7 @@
 
 | ID | 关联 Finding | 目标 | 范围 | 验收标准 | Impact | Effort | P | 负责人 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|
-| APP-T001 | APP-F001 | 将“TV 禁用后台/画中画”的策略显式化并避免误伤移动端 | 调整 `Media3BackgroundCoordinator#sync`：仅 TV 下强制清空；非 TV 按 `PlayerCapabilityContract` 同步能力；必要时引入配置开关（例如 `AppConfig`/`BuildConfig`） | 1) TV 模式下 capability 同步后 `sessionCommands/backgroundModes` 为空；2) 非 TV 模式下按契约同步（可用单测/仪表测试覆盖）；3) 不引入跨 feature 直接依赖；4) 行为变更有文档说明 | High | Small | P1 | 待分配（App/Player） | Draft |
+| APP-T001 | APP-F001 | 将“TV 禁用后台/画中画”的策略显式化并避免误伤移动端 | 调整 `Media3BackgroundCoordinator#sync`：仅 TV 下强制清空；非 TV 按 `PlayerCapabilityContract` 同步能力；必要时引入配置开关（例如 `AppConfig`/`BuildConfig`） | 1) TV 模式下 capability 同步后 `sessionCommands/backgroundModes` 为空；2) 非 TV 模式下按契约同步（可用单测/仪表测试覆盖）；3) 不引入跨 feature 直接依赖；4) 行为变更有文档说明 | High | Small | P1 | AI（Codex） | Done |
 | APP-T002 | APP-F002 | 以显式结果/能力开关替代 “禁用功能即 throw”，降低误调用崩溃风险 | `Media3CastManager#prepareCastSession`：改为返回失败结果（例如 `Result`/sealed class），或仅在入口层判断能力并禁用 UI；避免在底层直接抛异常 | 1) 任何 UI/业务入口都不会因误调用导致崩溃；2) TV 模式下仍保持“投屏发送不可用”的用户可理解反馈；3) 覆盖至少 1 个用例测试（可复用现有 androidTest 或迁移为 JVM test） | Medium | Small | P2 | 待分配（App） | Draft |
 | APP-T003 | APP-F003 | 抽取壳层 Fragment 装载/切换逻辑，减少重复实现与差异漂移 | 抽取 `FragmentSwitcher`/delegate（建议落在 `:core_ui_component` 或 `:app` 内部包），统一 `findFragmentByTag/add/show/hide` 与状态处理；TV 专有的导航数据结构保留在 `TvMainActivity` | 1) `MainActivity` 与 `TvMainActivity` 使用同一套切换实现；2) 旋转/进程重建后不出现错乱（当前已 `findAndRemoveFragment` 规避）；3) TV DPAD 焦点可达、可见、可返回；4) 不改变现有路由路径与功能入口 | Medium | Medium | P2 | 待分配（App/UI） | Draft |
 
@@ -78,3 +78,4 @@
 ## 6) 备注（历史背景/待确认点）
 
 - `Media3BackgroundCoordinator` 与 `Media3CastManager` 的“TV 裁剪”属于产品决策还是临时方案需进一步确认；若为全端禁用，应在配置/文档中明确为“全端禁用”，避免以“TV 适配”名义静默 stub。
+- 2026-02-04：已将 `Media3BackgroundCoordinator#sync` 的“TV 禁用后台/画中画”策略显式化为 `isTelevisionUiMode()` 分流；TV 仍强制清空，非 TV 恢复按 `PlayerCapabilityContract` 同步能力（见 `Media3BackgroundCoordinatorTest`）。

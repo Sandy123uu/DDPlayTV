@@ -1,6 +1,7 @@
 package com.okamihoro.ddplaytv.app.service
 
 import com.xyoye.data_component.entity.media3.Media3BackgroundMode
+import com.xyoye.data_component.entity.media3.Media3Capability
 import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
 
 /**
@@ -13,11 +14,17 @@ class Media3BackgroundCoordinator(
     private var lastCommands: Set<String> = emptySet()
     private var lastModes: Set<Media3BackgroundMode> = emptySet()
 
-    fun sync(contract: PlayerCapabilityContract?) {
-        // TV adaptation: 禁用后台播放与画中画，同步时强制清空能力指令
-        emitCommands(emptySet())
-        emitModes(emptySet())
-        /*
+    fun sync(
+        contract: PlayerCapabilityContract?,
+        isTelevisionUiMode: Boolean
+    ) {
+        if (isTelevisionUiMode) {
+            // TV adaptation: 禁用后台播放与画中画，同步时强制清空能力指令
+            emitCommands(emptySet())
+            emitModes(emptySet())
+            return
+        }
+
         if (contract == null) {
             emitCommands(emptySet())
             emitModes(emptySet())
@@ -40,7 +47,6 @@ class Media3BackgroundCoordinator(
         val modes = contract.backgroundModes.toSet()
         emitCommands(commands)
         emitModes(modes)
-         */
     }
 
     private fun emitCommands(commands: Set<String>) {

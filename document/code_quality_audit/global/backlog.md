@@ -17,7 +17,7 @@
 | G-T0006 | Done | AI（Codex） | 修复资源释放与线程/取消策略：解压过程在 IO 线程执行，且无论成功/失败/取消都能回收 | G-F0025,G-F0066 | :repository:seven_zip | REPO_SEVEN_ZIP-T002 |
 | G-T0007 | Done | AI（Codex） | 去硬编码：将 `APP_KEY/APP_SEC` 改为“构建期注入/本地配置”，并提供可控回退策略（避免与发行物强绑定） | G-F0002 | :bilibili_component | BILIBILI-T001 |
 | G-T0008 | Done | AI（Codex） | 将 VLC 代理拉流从 `UnsafeOkHttpClient` 迁移到“默认安全”的 OkHttpClient，并提供可控降级策略 | G-F0004 | :player_component | PLAYER-T002 |
-| G-T0009 | Draft | 待分配（App/Player） | 将“TV 禁用后台/画中画”的策略显式化并避免误伤移动端 | G-F0013 | :app | APP-T001 |
+| G-T0009 | Done | AI（Codex） | 将“TV 禁用后台/画中画”的策略显式化并避免误伤移动端 | G-F0013 | :app | APP-T001 |
 | G-T0010 | Draft | 待分配（Storage） | 将迅雷 SDK 初始化策略改为按需 + 可降级，降低启动期开销与崩溃面 | G-F0024 | :repository:thunder | REPO_THUNDER-T003 |
 | G-T0011 | Draft | AI（Codex） | 将遥测聚合/事件构建逻辑迁出 Base：`data_component` 仅保留数据类型与契约 payload | G-F0009 | :data_component | DATA-T001 |
 | G-T0012 | Draft | AI（Codex） / 待分配（Infra/Log） / 待分配（Log/Storage） / 待分配（Player/Log） | 建立统一脱敏工具与默认策略，并替换关键链路调用点（网络/播放器/缓存/下载） | G-F0005 | :core_log_component,:core_network_component,:player_component,:repository:thunder,:repository:video_cache | CORE_NETWORK-T003,CORE_LOG-T004,PLAYER-T001,REPO_THUNDER-T004,REPO_VIDEO_CACHE-T002 |
