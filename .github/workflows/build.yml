@@ -18,6 +18,8 @@ jobs:
     sonarqube:
         name: SonarQube
         runs-on: ubuntu-latest
+        env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         steps:
             - uses: actions/checkout@v4
               with:
@@ -67,10 +69,9 @@ jobs:
                   echo "Collected ${#dirs[@]} class dirs for sonar.java.binaries"
             - name: SonarQube Scan
               uses: SonarSource/sonarqube-scan-action@v6
-              if: ${{ secrets.SONAR_TOKEN != '' }}
+              if: ${{ env.SONAR_TOKEN != '' }}
               with:
                   args: >
                       -Dsonar.java.binaries=${{ env.SONAR_JAVA_BINARIES }}
               env:
-                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
