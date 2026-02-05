@@ -41,7 +41,7 @@ import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
             DownloadAssetCheck::class,
         ],
     version = 16,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class DatabaseInfo : RoomDatabase() {
     abstract fun getVideoDao(): VideoDao
