@@ -63,7 +63,7 @@
 - [ ] 2.27 关闭 `G-T0053`：收敛第三方类型扩散（统一状态栏/沉浸式入口）
 - [x] 2.28 关闭 `G-T0054`：移除“发送弹幕”整条链路（删除相关 UI/代码并移除依赖）
 - [ ] 2.29 关闭 `G-T0055`：登录态单一事实源（UserSessionManager 统一 token/状态）
-- [ ] 2.30 关闭 `G-T0056`：统一 MD5/hex 工具（移除重复实现）
+- [x] 2.30 关闭 `G-T0056`：统一 MD5/hex 工具（移除重复实现）
 - [ ] 2.31 关闭 `G-T0057`：统一 MMKV 初始化策略（Startup vs BaseApplication）
 - [x] 2.32 关闭 `G-T0058`：统一 Service 包结构（service/services）
 - [ ] 2.33 关闭 `G-T0059`：统一 Telemetry repository 的模块归属与包命名

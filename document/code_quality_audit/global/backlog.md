@@ -69,7 +69,7 @@
 | G-T0053 | Draft | 待分配（UI） | 收敛第三方类型扩散：以 `core_ui_component` 提供统一状态栏/沉浸式配置入口 | G-F0047 | :repository:immersion_bar | REPO_IMMERSION_BAR-T002 |
 | G-T0054 | Done | AI（Codex） | 移除“发送弹幕”整条链路：删除相关 UI/代码并移除 `:repository:panel_switch` 依赖 | G-F0062 | :player_component,:repository:panel_switch | REPO_PANEL_SWITCH-T002 |
 | G-T0055 | Draft | 待分配（System/User） | 明确登录态单一事实源：用 UserSessionManager 统一 token/登录态更新与观察 | G-F0044 | :user_component | USER-T004 |
-| G-T0056 | Draft | 待分配（Infra/DB） | 统一 MD5/hex 工具：复用 `CacheKeyMapper`（或抽取 `HashUtils`），移除 `ManualMigration#md5Hex` 重复实现 | G-F0052 | :core_database_component | CORE_DATABASE-T004 |
+| G-T0056 | Done | AI（Codex） | 统一 MD5/hex 工具：复用 `CacheKeyMapper`（或抽取 `HashUtils`），移除 `ManualMigration#md5Hex` 重复实现 | G-F0052 | :core_database_component | CORE_DATABASE-T004 |
 | G-T0057 | Draft | 待分配（Runtime） | 统一 MMKV 初始化策略：明确“Startup 初始化”与“BaseApplication 初始化”的职责边界，避免重复与时序不一致 | G-F0057 | :core_system_component | CORE_SYSTEM-T004 |
 | G-T0058 | Done | AI（Codex） | 统一 Service 包结构（service/services）：提升 discoverability 并减少迁移成本 | G-F0060 | :core_contract_component | CORE_CONTRACT-T003 |
 | G-T0059 | Draft | 待分配（Network/Player） | 统一 Telemetry repository 的模块归属与包命名，避免“core_network 包名却在 feature 模块” | G-F0012 | :player_component | PLAYER-T004 |

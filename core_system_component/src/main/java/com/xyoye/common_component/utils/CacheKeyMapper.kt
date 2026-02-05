@@ -1,8 +1,5 @@
 package com.xyoye.common_component.utils
 
-import com.xyoye.common_component.extension.toHexString
-import java.security.MessageDigest
-
 /**
  * 将业务侧的 key（可能是 URL/URI/路径等）映射为稳定且可落盘的安全文件名。
  *
@@ -29,8 +26,6 @@ object CacheKeyMapper {
     }
 
     private fun md5Hex(input: String): String {
-        val messageDigest = MessageDigest.getInstance("MD5")
-        messageDigest.update(input.toByteArray())
-        return messageDigest.digest().toHexString()
+        return HashUtils.md5Hex(input)
     }
 }
