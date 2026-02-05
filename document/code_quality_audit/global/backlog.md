@@ -28,7 +28,7 @@
 | G-T0017 | Done | AI（Codex） | 收敛可写 `LiveData` 暴露：对外只读 + 统一发送入口 | G-F0015 | :core_contract_component | CORE_CONTRACT-T002 |
 | G-T0018 | Done | AI（Codex） | 收敛异常处理口径：移除 `printStackTrace()`，统一使用 `ErrorReportHelper` + `LogFacade` 记录必要信息 | G-F0020 | :core_system_component | CORE_SYSTEM-T003 |
 | G-T0019 | Done | AI（Codex） | 明确 Fragment 宿主契约：引入 `LoadingHost`（或等价接口）并替换强制 cast，避免隐藏崩溃点 | G-F0011 | :core_ui_component | CORE_UI-T003 |
-| G-T0020 | Draft | 待分配（Storage/TV） | 移除投屏 Sender 整条链路：删除旧实现与全端 stub，清理入口/路由/服务暴露 | G-F0021 | :storage_component | STORAGE-T001 |
+| G-T0020 | Done | AI（Codex） | 移除投屏 Sender 整条链路：删除旧实现与全端 stub，清理入口/路由/服务暴露 | G-F0021 | :storage_component | STORAGE-T001 |
 | G-T0021 | Draft | 待分配（Player/Log） | 清理 `printStackTrace()` 并补齐异常上报上下文（引擎/会话/源类型） | G-F0016 | :player_component | PLAYER-T005 |
 | G-T0022 | Draft | 待分配（Runtime/Storage） | 用安全方案替换 `EntropyUtils` 的对称加密（至少支持随机 IV/带认证），并为投屏 UDP 消息引入版本/兼容策略 | G-F0003 | :core_system_component | CORE_SYSTEM-T001 |
 | G-T0023 | Draft | 待分配（Log/Feature） | 移除 `printStackTrace()` 并统一异常上报上下文与脱敏策略（URL/token/password/路径） | G-F0006 | :storage_component | STORAGE-T002 |

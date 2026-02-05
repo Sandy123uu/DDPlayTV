@@ -212,19 +212,6 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
         //     startLocateToHistory(it)
         // }
 
-        /*
-         * TV adaptation: 投屏发送链路关闭，保留原逻辑以便后续按 flavor 恢复
-         * viewModel.castLiveData.observe(this) {
-         *     ARouter.getInstance()
-         *         .navigation(ScreencastProvideService::class.java)
-         *         .startService(this, it)
-         * }
-         *
-         * viewModel.selectDeviceLiveData.observe(this) {
-         *     showSelectDeviceDialog(it.first, it.second)
-         * }
-         */
-
         if (storage is FtpStorage) {
             lifecycle.coroutineScope.launchWhenResumed {
                 withContext(Dispatchers.IO) {
@@ -444,26 +431,6 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
             LogFacade.d(LogModule.STORAGE, TAG, "pathRv smoothScrollToPosition index=${newPathData.size - 1}")
         }
     }
-
-    /*
-     * TV adaptation: Sender 设备选择入口关闭，保留原实现方便迁移至非 TV flavor
-    private fun showSelectDeviceDialog(file: StorageFile, devices: List<MediaLibraryEntity>) {
-        val drawable = com.xyoye.core_ui_component.R.drawable.ic_screencast_device
-        val actionData = devices.map {
-            SheetActionBean(it.id, it.displayName, drawable, it.url)
-        }
-        BottomActionDialog(
-            title = "选择投屏设备",
-            activity = this,
-            actionData = actionData
-        ) { action ->
-            devices.firstOrNull { it.id == action.actionId }?.let {
-                viewModel.castItem(file, it)
-            }
-            return@BottomActionDialog true
-        }.show()
-    }
-     */
 
     /**
      * 更新标题栏副标题

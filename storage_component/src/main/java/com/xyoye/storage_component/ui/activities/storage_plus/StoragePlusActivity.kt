@@ -5,6 +5,7 @@ import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.launcher.ARouter
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
+import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.entity.MediaLibraryEntity
 import com.xyoye.data_component.enums.MediaType
 import com.xyoye.storage_component.BR
@@ -18,7 +19,6 @@ import com.xyoye.storage_component.ui.dialog.ExternalStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.FTPStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.Open115StorageEditDialog
 import com.xyoye.storage_component.ui.dialog.RemoteStorageEditDialog
-import com.xyoye.storage_component.ui.dialog.ScreencastStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.SmbStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.StorageEditDialog
 import com.xyoye.storage_component.ui.dialog.WebDavStorageEditDialog
@@ -88,7 +88,11 @@ class StoragePlusActivity : BaseActivity<StoragePlusViewModel, ActivityStoragePl
                 MediaType.FTP_SERVER -> FTPStorageEditDialog(this, editData)
                 MediaType.WEBDAV_SERVER -> WebDavStorageEditDialog(this, editData)
                 MediaType.SMB_SERVER -> SmbStorageEditDialog(this, editData)
-                MediaType.SCREEN_CAST -> ScreencastStorageEditDialog(this, editData)
+                MediaType.SCREEN_CAST -> {
+                    ToastCenter.showWarning("电视端不支持发起投屏发送")
+                    finish()
+                    null
+                }
                 MediaType.ALSIT_STORAGE -> AlistStorageEditDialog(this, editData)
                 MediaType.BAIDU_PAN_STORAGE -> BaiduPanStorageEditDialog(this, editData)
                 MediaType.OPEN_115_STORAGE -> Open115StorageEditDialog(this, editData)

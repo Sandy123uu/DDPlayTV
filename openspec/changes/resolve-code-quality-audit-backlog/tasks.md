@@ -24,7 +24,7 @@
 - [x] 1.17 关闭 `G-T0017`：收敛可写 `LiveData` 暴露（对外只读 + 统一发送入口）
 - [x] 1.18 关闭 `G-T0018`：`core_system_component` 移除 `printStackTrace()`，统一异常处理口径
 - [x] 1.19 关闭 `G-T0019`：引入 `LoadingHost`（或等价）并替换强制 cast
-- [ ] 1.20 关闭 `G-T0020`：移除投屏 Sender 整条链路（删除 stub/注释旧实现与对外暴露入口）
+- [x] 1.20 关闭 `G-T0020`：移除投屏 Sender 整条链路（删除 stub/注释旧实现与对外暴露入口）
 - [ ] 1.21 关闭 `G-T0021`：`player_component` 清理 `printStackTrace()` 并补齐异常上报上下文
 - [ ] 1.22 关闭 `G-T0022`：替换 `EntropyUtils` 加密实现（随机 IV/带认证）+ UDP 版本/兼容策略
 - [ ] 1.23 关闭 `G-T0023`：`storage_component` 移除 `printStackTrace()` + 统一脱敏上下文
