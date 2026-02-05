@@ -1,4 +1,4 @@
-package com.xyoye.data_component.media3
+package com.xyoye.common_component.telemetry.media3
 
 import com.xyoye.common_component.media3.testing.Media3Dependent
 import com.xyoye.data_component.entity.media3.Media3PlayerEngine
@@ -7,7 +7,6 @@ import com.xyoye.data_component.entity.media3.Media3TelemetryEventType
 import com.xyoye.data_component.entity.media3.Media3ToggleCohort
 import com.xyoye.data_component.entity.media3.PlaybackSession
 import com.xyoye.data_component.entity.media3.PlaybackSessionMetrics
-import com.xyoye.data_component.media3.mapper.TelemetryEventMapper
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
@@ -86,3 +85,4 @@ class TelemetryEventMapperTest {
         assertEquals(mapOf("bufferingRatio" to 0.12), metricsInput)
     }
 }
+

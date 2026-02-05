@@ -1,4 +1,4 @@
-package com.xyoye.data_component.media3.mapper
+package com.xyoye.common_component.telemetry.media3
 
 import com.xyoye.data_component.entity.media3.Media3TelemetryEventType
 import com.xyoye.data_component.entity.media3.Media3ToggleCohort
@@ -47,3 +47,4 @@ class TelemetryEventMapper(
 
     private fun cohortValue(cohort: Media3ToggleCohort?): String = cohort?.name ?: "UNKNOWN"
 }
+

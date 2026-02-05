@@ -1,12 +1,12 @@
 package com.xyoye.common_component.media3.testing
 
 /**
- * Shadow copy of the annotation used in common_component to avoid wiring a
- * circular dependency into data_component's unit tests. Once a shared
- * testing utilities module exists this duplicate should be removed.
+ * Marker annotation for regression cases that must execute against the Media3 delegate.
+ * Used by `scripts/testing/media3-regression-report.sh` to verify coverage.
  */
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Media3Dependent(
     val reason: String = ""
 )
+

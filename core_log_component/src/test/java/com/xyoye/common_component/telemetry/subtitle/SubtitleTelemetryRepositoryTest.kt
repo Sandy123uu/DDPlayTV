@@ -1,4 +1,4 @@
-package com.xyoye.data_component.repository.subtitle
+package com.xyoye.common_component.telemetry.subtitle
 
 import com.xyoye.data_component.bean.subtitle.FallbackEvent
 import com.xyoye.data_component.bean.subtitle.SubtitlePipelineState
@@ -94,3 +94,4 @@ class SubtitleTelemetryRepositoryTest {
             assertEquals(9.0, snapshot.cpuPeakPct!!, 0.0001)
         }
 }
+

@@ -1,4 +1,4 @@
-package com.xyoye.data_component.repository.subtitle
+package com.xyoye.common_component.telemetry.subtitle
 
 import com.xyoye.data_component.bean.subtitle.FallbackEvent
 import com.xyoye.data_component.bean.subtitle.SubtitlePipelineState
@@ -85,3 +85,4 @@ class SubtitleTelemetryRepository(
         private const val DEFAULT_MAX_SAMPLES = 240
     }
 }
+

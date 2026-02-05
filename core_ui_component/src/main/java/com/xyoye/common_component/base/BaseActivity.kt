@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModelProvider
 import com.gyf.immersionbar.ImmersionBar
 import com.xyoye.common_component.extension.isNightMode
 import com.xyoye.core_ui_component.R
-import com.xyoye.data_component.helper.Loading
 
 /**
  * Created by xyoye on 2020/4/13.

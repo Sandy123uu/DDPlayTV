@@ -1,8 +1,4 @@
-package com.xyoye.data_component.helper
-
-/**
- * Created by xyoye on 2021/1/29.
- */
+package com.xyoye.common_component.base
 
 object Loading {
     const val SHOW_LOADING = 1
@@ -12,3 +8,4 @@ object Loading {
     const val HIDE_LOADING_FAILED = -2
     const val HIDE_LOADING_SUCCESS = -3
 }
+

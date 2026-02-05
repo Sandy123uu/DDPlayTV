@@ -19,7 +19,7 @@
 | G-T0008 | Done | AI（Codex） | 将 VLC 代理拉流从 `UnsafeOkHttpClient` 迁移到“默认安全”的 OkHttpClient，并提供可控降级策略 | G-F0004 | :player_component | PLAYER-T002 |
 | G-T0009 | Done | AI（Codex） | 将“TV 禁用后台/画中画”的策略显式化并避免误伤移动端 | G-F0013 | :app | APP-T001 |
 | G-T0010 | Done | AI（Codex） | 将迅雷 SDK 初始化策略改为按需 + 可降级，降低启动期开销与崩溃面 | G-F0024 | :repository:thunder | REPO_THUNDER-T003 |
-| G-T0011 | Draft | AI（Codex） | 将遥测聚合/事件构建逻辑迁出 Base：`data_component` 仅保留数据类型与契约 payload | G-F0009 | :data_component | DATA-T001 |
+| G-T0011 | Done | AI（Codex） | 将遥测聚合/事件构建逻辑迁出 Base：`data_component` 仅保留数据类型与契约 payload | G-F0009 | :data_component | DATA-T001 |
 | G-T0012 | Draft | AI（Codex） / 待分配（Infra/Log） / 待分配（Log/Storage） / 待分配（Player/Log） | 建立统一脱敏工具与默认策略，并替换关键链路调用点（网络/播放器/缓存/下载） | G-F0005 | :core_log_component,:core_network_component,:player_component,:repository:thunder,:repository:video_cache | CORE_NETWORK-T003,CORE_LOG-T004,PLAYER-T001,REPO_THUNDER-T004,REPO_VIDEO_CACHE-T002 |
 | G-T0013 | Draft | 待分配（Log/User） | 建立错误上报脱敏规则并改造登录/用户资料相关上报，避免泄露个人信息 | G-F0007 | :user_component | USER-T002 |
 | G-T0014 | Draft | 待分配（Infra/DB） | 开启 Room schema 导出并建立迁移校验门禁（至少覆盖主库版本演进） | G-F0010 | :core_database_component | CORE_DATABASE-T005 |

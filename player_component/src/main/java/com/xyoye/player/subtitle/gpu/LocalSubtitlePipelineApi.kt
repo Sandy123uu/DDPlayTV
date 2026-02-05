@@ -12,7 +12,7 @@ import com.xyoye.data_component.bean.subtitle.TelemetrySample
 import com.xyoye.data_component.bean.subtitle.TelemetrySnapshot
 import com.xyoye.data_component.enums.SubtitlePipelineMode
 import com.xyoye.data_component.enums.SubtitlePipelineStatus
-import com.xyoye.data_component.repository.subtitle.SubtitleTelemetryRepository
+import com.xyoye.common_component.telemetry.subtitle.SubtitleTelemetryRepository
 
 /**
  * In-process implementation of SubtitlePipelineApi to back the GPU renderer.
