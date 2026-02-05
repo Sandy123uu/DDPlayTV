@@ -71,7 +71,7 @@ object SensitiveDataSanitizer {
         /**
          * 详细模式：保留 query key，但 value 统一遮蔽；fragment 仍不输出。
          */
-        KEYS_ONLY,
+        KEYS_ONLY
     }
 
     fun sanitizeHeader(
@@ -260,10 +260,11 @@ object SensitiveDataSanitizer {
         val query = rawQuery?.trim().orEmpty()
         if (query.isBlank()) return ""
         val keys =
-            query.split('&')
+            query
+                .split('&')
                 .mapNotNull { it.substringBefore('=').takeIf { key -> key.isNotBlank() } }
         if (keys.isEmpty()) return ""
-        return keys.joinToString(prefix = "?", separator = "&") { "${it}=$REDACTED" }
+        return keys.joinToString(prefix = "?", separator = "&") { "$it=$REDACTED" }
     }
 
     private fun stripQueryFragmentFallback(

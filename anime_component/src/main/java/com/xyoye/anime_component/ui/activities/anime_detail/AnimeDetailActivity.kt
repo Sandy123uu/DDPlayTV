@@ -17,7 +17,6 @@ import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.extension.clamp
 import com.xyoye.common_component.extension.dp
 import com.xyoye.common_component.extension.isNightMode
-import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.extension.loadImage
 import com.xyoye.common_component.extension.opacity
 import com.xyoye.common_component.extension.setTextColorRes
@@ -113,15 +112,11 @@ class AnimeDetailActivity : BaseActivity<AnimeDetailViewModel, ActivityAnimeDeta
             }.also { it.attach() }
 
         tvFocusCoordinator?.detach()
-        tvFocusCoordinator = null
-        if (isTelevisionUiMode()) {
-            tvFocusCoordinator =
-                TabLayoutViewPager2DpadFocusCoordinator(
-                    tabLayout = dataBinding.tabLayout,
-                    viewPager = dataBinding.viewpager,
-                    isEnabled = { isTelevisionUiMode() && !dataBinding.tabLayout.isInTouchMode },
-                ).also { it.attach() }
-        }
+        tvFocusCoordinator =
+            TabLayoutViewPager2DpadFocusCoordinator.attachIfTelevision(
+                tabLayout = dataBinding.tabLayout,
+                viewPager = dataBinding.viewpager,
+            )
     }
 
     override fun onDestroy() {

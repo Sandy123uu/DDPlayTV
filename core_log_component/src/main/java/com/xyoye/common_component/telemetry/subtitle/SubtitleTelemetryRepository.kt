@@ -85,4 +85,3 @@ class SubtitleTelemetryRepository(
         private const val DEFAULT_MAX_SAMPLES = 240
     }
 }
-

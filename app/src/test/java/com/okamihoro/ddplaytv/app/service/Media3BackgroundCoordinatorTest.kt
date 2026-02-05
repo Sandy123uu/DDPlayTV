@@ -38,14 +38,14 @@ class Media3BackgroundCoordinatorTest {
                     listOf(
                         Media3Capability.PLAY,
                         Media3Capability.BACKGROUND,
-                        Media3Capability.PIP
+                        Media3Capability.PIP,
                     ),
                 backgroundModes =
                     listOf(
                         Media3BackgroundMode.NOTIFICATION,
-                        Media3BackgroundMode.PIP
+                        Media3BackgroundMode.PIP,
                     ),
-                sessionCommands = listOf("REMOTE_HEARTBEAT")
+                sessionCommands = listOf("REMOTE_HEARTBEAT"),
             )
 
         coordinator.sync(contract, isTelevisionUiMode = false)
@@ -54,16 +54,16 @@ class Media3BackgroundCoordinatorTest {
             setOf(
                 "REMOTE_HEARTBEAT",
                 Media3BackgroundCoordinator.COMMAND_BACKGROUND_RESUME,
-                Media3BackgroundCoordinator.COMMAND_ENTER_PIP
+                Media3BackgroundCoordinator.COMMAND_ENTER_PIP,
             ),
-            bridge.commandEvents.single()
+            bridge.commandEvents.single(),
         )
         assertEquals(
             setOf(
                 Media3BackgroundMode.NOTIFICATION,
-                Media3BackgroundMode.PIP
+                Media3BackgroundMode.PIP,
             ),
-            bridge.backgroundEvents.single()
+            bridge.backgroundEvents.single(),
         )
     }
 
@@ -76,7 +76,7 @@ class Media3BackgroundCoordinatorTest {
                 sessionId = "session-2",
                 capabilities = listOf(Media3Capability.BACKGROUND),
                 backgroundModes = listOf(Media3BackgroundMode.NOTIFICATION),
-                sessionCommands = emptyList()
+                sessionCommands = emptyList(),
             )
 
         coordinator.sync(baseline, isTelevisionUiMode = false)
@@ -85,20 +85,20 @@ class Media3BackgroundCoordinatorTest {
         val updated =
             baseline.copy(
                 backgroundModes = listOf(Media3BackgroundMode.NOTIFICATION, Media3BackgroundMode.PIP),
-                capabilities = listOf(Media3Capability.BACKGROUND, Media3Capability.PIP)
+                capabilities = listOf(Media3Capability.BACKGROUND, Media3Capability.PIP),
             )
         coordinator.sync(updated, isTelevisionUiMode = false)
 
         assertEquals(
             setOf(Media3BackgroundMode.NOTIFICATION, Media3BackgroundMode.PIP),
-            bridge.backgroundEvents.single()
+            bridge.backgroundEvents.single(),
         )
         assertEquals(
             setOf(
                 Media3BackgroundCoordinator.COMMAND_BACKGROUND_RESUME,
-                Media3BackgroundCoordinator.COMMAND_ENTER_PIP
+                Media3BackgroundCoordinator.COMMAND_ENTER_PIP,
             ),
-            bridge.commandEvents.single()
+            bridge.commandEvents.single(),
         )
 
         bridge.reset()

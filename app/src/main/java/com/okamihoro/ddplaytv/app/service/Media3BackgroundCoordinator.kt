@@ -31,18 +31,19 @@ class Media3BackgroundCoordinator(
             return
         }
 
-        val commands = buildSet {
-            addAll(contract.sessionCommands)
-            if (contract.capabilities.contains(Media3Capability.BACKGROUND)) {
-                add(COMMAND_BACKGROUND_RESUME)
+        val commands =
+            buildSet {
+                addAll(contract.sessionCommands)
+                if (contract.capabilities.contains(Media3Capability.BACKGROUND)) {
+                    add(COMMAND_BACKGROUND_RESUME)
+                }
+                if (
+                    contract.capabilities.contains(Media3Capability.PIP) &&
+                    contract.backgroundModes.contains(Media3BackgroundMode.PIP)
+                ) {
+                    add(COMMAND_ENTER_PIP)
+                }
             }
-            if (
-                contract.capabilities.contains(Media3Capability.PIP) &&
-                contract.backgroundModes.contains(Media3BackgroundMode.PIP)
-            ) {
-                add(COMMAND_ENTER_PIP)
-            }
-        }
 
         val modes = contract.backgroundModes.toSet()
         emitCommands(commands)

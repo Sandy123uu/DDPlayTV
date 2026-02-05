@@ -85,4 +85,3 @@ class TelemetryEventMapperTest {
         assertEquals(mapOf("bufferingRatio" to 0.12), metricsInput)
     }
 }
-

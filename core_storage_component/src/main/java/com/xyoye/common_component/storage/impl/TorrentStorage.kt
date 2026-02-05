@@ -2,13 +2,13 @@ package com.xyoye.common_component.storage.impl
 
 import android.net.Uri
 import com.xunlei.downloadlib.parameter.TorrentFileInfo
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.storage.AbstractStorage
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.file.helper.PlayTaskManager
 import com.xyoye.common_component.storage.file.helper.TorrentBean
 import com.xyoye.common_component.storage.file.impl.TorrentStorageFile
 import com.xyoye.common_component.utils.ErrorReportHelper
-import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.utils.thunder.ThunderManager
 import com.xyoye.data_component.bean.LocalDanmuBean
 import com.xyoye.data_component.entity.MediaLibraryEntity
@@ -109,11 +109,12 @@ class TorrentStorage(
                 torrent.mSubFileInfo?.find {
                     it.mFileIndex == history.torrentIndex
                 } ?: run {
+                    val sanitizedTorrentPath = SensitiveDataSanitizer.sanitizePath(torrentPath)
                     ErrorReportHelper.postException(
                         "File not found in torrent",
                         "TorrentStorage",
                         RuntimeException(
-                            "Torrent index ${history.torrentIndex} not found in torrent: ${SensitiveDataSanitizer.sanitizePath(torrentPath)}",
+                            "Torrent index ${history.torrentIndex} not found in torrent: $sanitizedTorrentPath",
                         ),
                     )
                     return null

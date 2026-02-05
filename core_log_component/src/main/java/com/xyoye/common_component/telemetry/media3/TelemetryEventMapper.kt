@@ -47,4 +47,3 @@ class TelemetryEventMapper(
 
     private fun cohortValue(cohort: Media3ToggleCohort?): String = cohort?.name ?: "UNKNOWN"
 }
-

@@ -12,7 +12,6 @@ import com.xyoye.anime_component.ui.adapter.HomeBannerAdapter
 import com.xyoye.anime_component.ui.fragment.home_page.HomePageFragment
 import com.xyoye.common_component.base.BaseFragment
 import com.xyoye.common_component.config.RouteTable
-import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.focus.TabLayoutViewPager2DpadFocusCoordinator
 import com.xyoye.common_component.utils.dp2px
 import com.xyoye.data_component.data.BangumiAnimeData
@@ -99,15 +98,11 @@ class HomeFragment : BaseFragment<HomeFragmentViewModel, FragmentHomeBinding>() 
                 }
 
             tvFocusCoordinator?.detach()
-            tvFocusCoordinator = null
-            if (mAttachActivity.isTelevisionUiMode()) {
-                tvFocusCoordinator =
-                    TabLayoutViewPager2DpadFocusCoordinator(
-                        tabLayout = dataBinding.tabLayout,
-                        viewPager = dataBinding.viewpager,
-                        isEnabled = { mAttachActivity.isTelevisionUiMode() && !dataBinding.tabLayout.isInTouchMode },
-                    ).also { it.attach() }
-            }
+            tvFocusCoordinator =
+                TabLayoutViewPager2DpadFocusCoordinator.attachIfTelevision(
+                    tabLayout = dataBinding.tabLayout,
+                    viewPager = dataBinding.viewpager,
+                )
 
             dataBinding.viewpager.post {
                 dataBinding.viewpager.currentItem = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1

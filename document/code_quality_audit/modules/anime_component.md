@@ -56,7 +56,7 @@
 |---|---|---|---|---|---|---|---|---|---|
 | ANIME-T001 | ANIME-F001 | 抽取统一的“Result 失败处理 + 上下文上报 + toast”助手，减少 ViewModel 样板与口径漂移 | 以 `ErrorReportHelper.postCatchedExceptionWithContext(...)` 为核心：在 `:core_log_component` 或 `:core_ui_component` 提供可复用封装（含脱敏策略），并逐步替换 `anime_component` 内重复代码 | 1) anime_component 内失败分支代码显著收敛（同类逻辑不再复制粘贴）；2) 上报字段包含必要上下文且不输出敏感信息；3) 行为不变（toast/loading 时机一致）；4) 全仓编译通过 | Medium | Medium | P2 | 待分配（Feature/UI/Log） | Draft |
 | ANIME-T002 | ANIME-F002 | 将搜索历史/播放历史等持久化细节从 ViewModel 迁移到 repository/usecase 层 | 建立 `AnimeSearchHistoryRepository` / `MagnetSearchHistoryRepository` / `EpisodeHistoryRepository`（落点建议 `:core_database_component`），ViewModel 仅调用抽象 API | 1) ViewModel 不再直接调用 `DatabaseManager.instance.get*Dao()`；2) repository 的返回类型与现有 LiveData/Flow 对齐；3) 线程调度统一（IO/Main）；4) 功能回归：搜索历史新增/删除/查询、剧集历史补全正常 | Medium | Medium | P2 | 待分配（Feature/DB） | Draft |
-| ANIME-T003 | ANIME-F003 | 抽取 TV Tab 焦点协调与输入策略为可复用组件，统一 DPAD 行为 | 基于 `TabLayoutViewPager2DpadFocusCoordinator`：在 `:core_ui_component` 增加 helper（例如 `TabLayoutViewPager2DpadFocusCoordinator.attachIfTelevision(...)` / `applyDpadEditTextPolicy(...)`），并在 Home/Search/Detail 等页面复用 | 1) 仅 TV UI mode 生效（`isTelevisionUiMode()` 分流）；2) DPAD 导航路径无死角，默认焦点明确；3) BACK/MENU 语义与页面一致；4) 相关页面回归通过 | Medium | Small | P1 | 待分配（UI） | Draft |
+| ANIME-T003 | ANIME-F003 | 抽取 TV Tab 焦点协调与输入策略为可复用组件，统一 DPAD 行为 | 基于 `TabLayoutViewPager2DpadFocusCoordinator`：在 `:core_ui_component` 增加 helper（例如 `TabLayoutViewPager2DpadFocusCoordinator.attachIfTelevision(...)` / `applyDpadEditTextPolicy(...)` / `bindDpadDownToTabFocus(...)`），并在 Home/Search/Detail 等页面复用 | 1) 仅 TV UI mode 生效（`isTelevisionUiMode()` 分流）；2) DPAD 导航路径无死角，默认焦点明确；3) BACK/MENU 语义与页面一致；4) 相关页面回归通过 | Medium | Small | P1 | AI（Codex） | Done |
 
 ## 5) 风险与回归关注点
 

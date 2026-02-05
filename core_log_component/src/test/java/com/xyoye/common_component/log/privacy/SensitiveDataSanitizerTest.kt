@@ -57,4 +57,3 @@ class SensitiveDataSanitizerTest {
         assertTrue(safe.contains("https://h.com/p"))
     }
 }
-

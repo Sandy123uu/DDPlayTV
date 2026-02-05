@@ -94,4 +94,3 @@ class SubtitleTelemetryRepositoryTest {
             assertEquals(9.0, snapshot.cpuPeakPct!!, 0.0001)
         }
 }
-

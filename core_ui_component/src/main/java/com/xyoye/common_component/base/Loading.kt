@@ -8,4 +8,3 @@ object Loading {
     const val HIDE_LOADING_FAILED = -2
     const val HIDE_LOADING_SUCCESS = -3
 }
-

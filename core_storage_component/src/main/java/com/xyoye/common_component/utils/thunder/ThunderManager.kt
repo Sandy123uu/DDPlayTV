@@ -249,11 +249,12 @@ class ThunderManager private constructor() {
             // 启动下载任务
             val taskId = createPlayTask(torrent, index)
             if (taskId == INVALID_ID) {
+                val sanitizedTorrentPath = SensitiveDataSanitizer.sanitizePath(torrent.torrentPath)
                 ErrorReportHelper.postException(
                     "Failed to create play task",
                     "ThunderManager",
                     RuntimeException(
-                        "createPlayTask returned INVALID_ID for torrent: ${SensitiveDataSanitizer.sanitizePath(torrent.torrentPath)}, index: $index",
+                        "createPlayTask returned INVALID_ID for torrent: $sanitizedTorrentPath, index: $index",
                     ),
                 )
                 return null

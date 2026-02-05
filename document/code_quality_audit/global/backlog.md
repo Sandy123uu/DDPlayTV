@@ -23,7 +23,7 @@
 | G-T0012 | Done | AI（Codex） | 建立统一脱敏工具与默认策略，并替换关键链路调用点（网络/播放器/缓存/下载） | G-F0005 | :core_log_component,:core_network_component,:player_component,:repository:thunder,:repository:video_cache | CORE_NETWORK-T003,CORE_LOG-T004,PLAYER-T001,REPO_THUNDER-T004,REPO_VIDEO_CACHE-T002 |
 | G-T0013 | Done | AI（Codex） | 建立错误上报脱敏规则并改造登录/用户资料相关上报，避免泄露个人信息 | G-F0007 | :user_component | USER-T002 |
 | G-T0014 | Done | AI（Codex） | 开启 Room schema 导出并建立迁移校验门禁（至少覆盖主库版本演进） | G-F0010 | :core_database_component | CORE_DATABASE-T005 |
-| G-T0015 | Draft | 待分配（UI） | 抽取 TV Tab 焦点协调与输入策略为可复用组件，统一 DPAD 行为 | G-F0018 | :anime_component | ANIME-T003 |
+| G-T0015 | Done | AI（Codex） | 抽取 TV Tab 焦点协调与输入策略为可复用组件，统一 DPAD 行为 | G-F0018 | :anime_component | ANIME-T003 |
 | G-T0016 | Draft | AI（Codex） | 收敛 Bugly 上报门面：统一由 `BuglyReporter` 触达 `CrashReport`，并规范 `ErrorReportHelper` 职责与注释 | G-F0019 | :core_log_component | CORE_LOG-T003 |
 | G-T0017 | Draft | AI（Codex） | 收敛可写 `LiveData` 暴露：对外只读 + 统一发送入口 | G-F0015 | :core_contract_component | CORE_CONTRACT-T002 |
 | G-T0018 | Draft | 待分配（Runtime） | 收敛异常处理口径：移除 `printStackTrace()`，统一使用 `ErrorReportHelper` + `LogFacade` 记录必要信息 | G-F0020 | :core_system_component | CORE_SYSTEM-T003 |

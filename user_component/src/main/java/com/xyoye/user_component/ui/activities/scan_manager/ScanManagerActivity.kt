@@ -46,14 +46,11 @@ class ScanManagerActivity : BaseActivity<ScanManagerViewModel, ActivityScanManag
             tab.text = pageAdapter.getItemTitle(position)
         }.attach()
 
-        if (isTelevisionUiMode()) {
-            tvFocusCoordinator =
-                TabLayoutViewPager2DpadFocusCoordinator(
-                    tabLayout = dataBinding.tabLayout,
-                    viewPager = dataBinding.viewpager,
-                    isEnabled = { isTelevisionUiMode() && !dataBinding.tabLayout.isInTouchMode },
-                ).also { it.attach() }
-        }
+        tvFocusCoordinator =
+            TabLayoutViewPager2DpadFocusCoordinator.attachIfTelevision(
+                tabLayout = dataBinding.tabLayout,
+                viewPager = dataBinding.viewpager,
+            )
 
         dataBinding.viewpager.registerOnPageChangeCallback(
             object : ViewPager2.OnPageChangeCallback() {

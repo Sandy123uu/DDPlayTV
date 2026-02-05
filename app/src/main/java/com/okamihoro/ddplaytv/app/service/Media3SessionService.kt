@@ -39,7 +39,7 @@ class Media3SessionService : LifecycleService() {
             backgroundModesState = backgroundModesState,
             sessionCommandsState = sessionCommandsState,
             coordinator = coordinator,
-            isTelevisionUiMode = isTelevisionUiMode
+            isTelevisionUiMode = isTelevisionUiMode,
         )
 
     override fun onBind(intent: Intent): IBinder {
@@ -62,7 +62,7 @@ class Media3SessionService : LifecycleService() {
         private val backgroundModesState: MutableStateFlow<Set<Media3BackgroundMode>>,
         private val sessionCommandsState: MutableStateFlow<Set<String>>,
         private val coordinator: Media3BackgroundCoordinator,
-        private val isTelevisionUiMode: Boolean,
+        private val isTelevisionUiMode: Boolean
     ) : Binder(),
         Media3SessionClient {
         override fun updateSession(
