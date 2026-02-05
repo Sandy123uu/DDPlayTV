@@ -229,11 +229,11 @@ class DatabaseManager private constructor() {
                 }
             }
 
-        val instance = DatabaseManager.holder.database
+        val instance = Holder.instance.database
     }
 
-    private object DatabaseManager {
-        val holder = DatabaseManager()
+    private object Holder {
+        val instance = DatabaseManager()
     }
 
     private var database =
