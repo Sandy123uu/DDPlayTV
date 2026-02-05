@@ -20,7 +20,7 @@
 - [x] 1.13 关闭 `G-T0013`：错误上报脱敏 + 登录/用户资料上报改造（避免泄露个人信息）
 - [x] 1.14 关闭 `G-T0014`：开启 Room schema 导出 + 迁移校验门禁
 - [x] 1.15 关闭 `G-T0015`：抽取 TV Tab 焦点协调与输入策略组件，统一 DPAD 行为
-- [ ] 1.16 关闭 `G-T0016`：收敛 Bugly 上报门面（`BuglyReporter` 统一触达 `CrashReport`）
+- [x] 1.16 关闭 `G-T0016`：收敛 Bugly 上报门面（`BuglyReporter` 统一触达 `CrashReport`）
 - [ ] 1.17 关闭 `G-T0017`：收敛可写 `LiveData` 暴露（对外只读 + 统一发送入口）
 - [ ] 1.18 关闭 `G-T0018`：`core_system_component` 移除 `printStackTrace()`，统一异常处理口径
 - [ ] 1.19 关闭 `G-T0019`：引入 `LoadingHost`（或等价）并替换强制 cast
