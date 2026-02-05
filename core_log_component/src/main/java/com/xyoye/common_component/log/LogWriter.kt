@@ -76,7 +76,7 @@ class LogWriter(
     private fun shouldEmit(
         level: LogLevel,
         threshold: LogLevel
-    ): Boolean = levelPriority(level) >= levelPriority(threshold)
+    ): Boolean = level.isAtLeast(threshold)
 
     private fun shouldWriteFile(runtime: LogRuntimeState): Boolean {
         if (!runtime.activePolicy.enableDebugFile) return false
@@ -102,14 +102,6 @@ class LogWriter(
         // Android logcat tag 上限 23 字符，超长时截断
         return if (tag.length <= 23) tag else tag.take(23)
     }
-
-    private fun levelPriority(level: LogLevel): Int =
-        when (level) {
-            LogLevel.DEBUG -> 0
-            LogLevel.INFO -> 1
-            LogLevel.WARN -> 2
-            LogLevel.ERROR -> 3
-        }
 
     private fun handleFileError(error: Throwable) {
         consecutiveFileErrors += 1

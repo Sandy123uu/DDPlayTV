@@ -49,7 +49,7 @@
 - [ ] 2.13 关闭 `G-T0039`：引入数据库访问 Provider，替换跨模块直连 `DatabaseManager.instance`
 - [ ] 2.14 关闭 `G-T0040`：打通“写入层磁盘错误→全局状态”链路（`LogSystem` 一致）
 - [ ] 2.15 关闭 `G-T0041`：抽取 PlayHistory/MediaLibrary repository/usecase，收敛 DAO 访问
-- [ ] 2.16 关闭 `G-T0042`：`LogLevel` 优先级/比较逻辑单一实现
+- [x] 2.16 关闭 `G-T0042`：`LogLevel` 优先级/比较逻辑单一实现
 - [ ] 2.17 关闭 `G-T0043`：抽取 PreferenceDataStore/映射抽象（减少 drift）
 - [ ] 2.18 关闭 `G-T0044`：抽取壳层 Fragment 装载/切换逻辑（减少重复实现）
 - [ ] 2.19 关闭 `G-T0045`：抽取投屏协议与 server 公共能力到 core 层
