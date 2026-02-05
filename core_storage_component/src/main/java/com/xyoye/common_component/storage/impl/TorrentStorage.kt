@@ -8,6 +8,7 @@ import com.xyoye.common_component.storage.file.helper.PlayTaskManager
 import com.xyoye.common_component.storage.file.helper.TorrentBean
 import com.xyoye.common_component.storage.file.impl.TorrentStorageFile
 import com.xyoye.common_component.utils.ErrorReportHelper
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.utils.thunder.ThunderManager
 import com.xyoye.data_component.bean.LocalDanmuBean
 import com.xyoye.data_component.entity.MediaLibraryEntity
@@ -49,7 +50,7 @@ class TorrentStorage(
                 ErrorReportHelper.postException(
                     "Torrent file has no sub files",
                     "TorrentStorage",
-                    RuntimeException("Torrent path: ${torrent.torrentPath}"),
+                    RuntimeException("Torrent path: ${SensitiveDataSanitizer.sanitizePath(torrent.torrentPath)}"),
                 )
                 return emptyList()
             }
@@ -81,7 +82,7 @@ class TorrentStorage(
                 e,
                 "TorrentStorage",
                 "getRootFile",
-                "媒体库URL: ${library.url}",
+                "媒体库URL: ${SensitiveDataSanitizer.sanitizeUrl(library.url)}",
             )
             throw e
         }
@@ -111,7 +112,9 @@ class TorrentStorage(
                     ErrorReportHelper.postException(
                         "File not found in torrent",
                         "TorrentStorage",
-                        RuntimeException("Torrent index ${history.torrentIndex} not found in torrent: $torrentPath"),
+                        RuntimeException(
+                            "Torrent index ${history.torrentIndex} not found in torrent: ${SensitiveDataSanitizer.sanitizePath(torrentPath)}",
+                        ),
                     )
                     return null
                 }
@@ -124,7 +127,7 @@ class TorrentStorage(
                 e,
                 "TorrentStorage",
                 "historyFile",
-                "种子路径: ${history.torrentPath}, 索引: ${history.torrentIndex}",
+                "种子路径: ${SensitiveDataSanitizer.sanitizePath(history.torrentPath)}, 索引: ${history.torrentIndex}",
             )
             null
         }
@@ -180,7 +183,7 @@ class TorrentStorage(
                 e,
                 "TorrentStorage",
                 "torrentPath",
-                "URL: $url",
+                "URL: ${SensitiveDataSanitizer.sanitizeUrl(url)}",
             )
             null
         }
@@ -193,7 +196,9 @@ class TorrentStorage(
                 ErrorReportHelper.postException(
                     "Failed to get torrent path",
                     "TorrentStorage",
-                    RuntimeException("torrentPath returned null for path: ${directoryInfo.mSubPath}"),
+                    RuntimeException(
+                        "torrentPath returned null for path: ${SensitiveDataSanitizer.sanitizeUrl(directoryInfo.mSubPath)}",
+                    ),
                 )
                 return null
             }

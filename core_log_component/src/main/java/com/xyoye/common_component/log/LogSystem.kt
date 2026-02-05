@@ -148,6 +148,8 @@ object LogSystem {
         stateRef.set(state)
         writer?.updateRuntimeState(state)
         SubtitleTelemetryLogger.updateFromRuntime(state)
+        // TCP 日志输出门禁：仅在“调试会话 + 显式授权”下允许运行
+        TcpLogServerManager.applyFromStorage()
         return state
     }
 

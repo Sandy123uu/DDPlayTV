@@ -7,6 +7,7 @@ import com.danikula.videocache.source.Source
 import com.danikula.videocache.sourcestorage.SourceInfoStorage
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.utils.ErrorReportHelper
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -73,10 +74,10 @@ class OkHttpUrlSource : Source {
                 e,
                 "OkHttpUrlSource",
                 "open",
-                "Error opening connection for ${sourceInfo.url} with offset $offset",
+                "Error opening connection for ${safeUrl(sourceInfo.url)} with offset $offset",
             )
             throw ProxyCacheException(
-                "Error opening connection for " + sourceInfo.url + " with offset " + offset,
+                "Error opening connection for " + safeUrl(sourceInfo.url) + " with offset " + offset,
                 e,
             )
         }
@@ -91,7 +92,7 @@ class OkHttpUrlSource : Source {
 
     override fun read(buffer: ByteArray?): Int {
         if (inputStream == null) {
-            throw ProxyCacheException("Error reading data from ${sourceInfo.url}: connection is absent!")
+            throw ProxyCacheException("Error reading data from ${safeUrl(sourceInfo.url)}: connection is absent!")
         }
         return try {
             inputStream!!.read(buffer, 0, buffer!!.size)
@@ -100,10 +101,10 @@ class OkHttpUrlSource : Source {
                 e,
                 "OkHttpUrlSource",
                 "read",
-                "Reading source ${sourceInfo.url} is interrupted",
+                "Reading source ${safeUrl(sourceInfo.url)} is interrupted",
             )
             throw InterruptedProxyCacheException(
-                "Reading source ${sourceInfo.url} is interrupted",
+                "Reading source ${safeUrl(sourceInfo.url)} is interrupted",
                 e,
             )
         } catch (e: IOException) {
@@ -111,9 +112,9 @@ class OkHttpUrlSource : Source {
                 e,
                 "OkHttpUrlSource",
                 "read",
-                "Error reading data from ${sourceInfo.url}",
+                "Error reading data from ${safeUrl(sourceInfo.url)}",
             )
-            throw ProxyCacheException("Error reading data from ${sourceInfo.url}", e)
+            throw ProxyCacheException("Error reading data from ${safeUrl(sourceInfo.url)}", e)
         }
     }
 
@@ -123,12 +124,12 @@ class OkHttpUrlSource : Source {
 
     @Throws(ProxyCacheException::class)
     private fun fetchContentInfo() {
-        LogFacade.d(LogModule.PLAYER, TAG, "Read content info from ${sourceInfo.url}")
+        LogFacade.d(LogModule.PLAYER, TAG, "Read content info from ${safeUrl(sourceInfo.url)}")
         try {
             val response = openConnection(0, 10000, true)
             if (response.isSuccessful.not()) {
                 ProxyCacheUtils.close(response.body?.byteStream())
-                throw ProxyCacheException("Fail to fetchContentInfo: ${sourceInfo.url}")
+                throw ProxyCacheException("Fail to fetchContentInfo: ${safeUrl(sourceInfo.url)}")
             }
 
             val length = response.body?.contentLength() ?: DEFAULT_CONTENT_LENGTH
@@ -142,12 +143,12 @@ class OkHttpUrlSource : Source {
                 e,
                 "OkHttpUrlSource",
                 "fetchContentInfo",
-                "Error fetching info from ${sourceInfo.url}",
+                "Error fetching info from ${safeUrl(sourceInfo.url)}",
             )
             LogFacade.e(
                 LogModule.PLAYER,
                 TAG,
-                "Error fetching info from ${sourceInfo.url}",
+                "Error fetching info from ${safeUrl(sourceInfo.url)}",
                 throwable = e,
             )
         }
@@ -176,7 +177,7 @@ class OkHttpUrlSource : Source {
             LogFacade.d(
                 LogModule.PLAYER,
                 TAG,
-                "Open connection " + (if (offset > 0) " with offset $offset" else "") + " to " + url,
+                "Open connection " + (if (offset > 0) " with offset $offset" else "") + " to " + safeUrl(url),
             )
             val requestBuilder =
                 Request
@@ -243,6 +244,9 @@ class OkHttpUrlSource : Source {
     override fun getUrl(): String = sourceInfo.url
 
     override fun cloneNew(): Source = OkHttpUrlSource(this)
+
+    private fun safeUrl(url: String?): String =
+        SensitiveDataSanitizer.sanitizeUrl(url, SensitiveDataSanitizer.UrlMode.SAFE)
 
     override fun toString(): String = "OkHttpUrlSource{sourceInfo='$sourceInfo}"
 }

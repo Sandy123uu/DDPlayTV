@@ -1,6 +1,7 @@
 package com.xyoye.common_component.utils
 
 import com.tencent.bugly.crashreport.CrashReport
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.core_log_component.BuildConfig
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -25,11 +26,13 @@ object ErrorReportHelper {
         extraInfo: String = ""
     ) {
         try {
+            val safeTag = SensitiveDataSanitizer.sanitizeFreeText(tag)
+            val safeExtraInfo = SensitiveDataSanitizer.sanitizeFreeText(extraInfo)
             // 过滤掉 CancellationException，这是协程正常取消的标志，不应当作错误上报
             if (throwable is CancellationException) {
                 // 在调试模式下仍然打印信息，便于本地调试
                 if (BuildConfig.DEBUG) {
-                    println("[$tag] CancellationException ignored: $extraInfo")
+                    println("[$safeTag] CancellationException ignored: $safeExtraInfo")
                 }
                 return
             }
@@ -39,7 +42,7 @@ object ErrorReportHelper {
 
             // 在调试模式下仍然打印堆栈信息，便于本地调试
             if (BuildConfig.DEBUG) {
-                println("[$tag] Exception reported: $extraInfo")
+                println("[$safeTag] Exception reported: $safeExtraInfo")
                 throwable.printStackTrace()
             }
         } catch (e: Exception) {
@@ -62,11 +65,13 @@ object ErrorReportHelper {
         cause: Throwable? = null
     ) {
         try {
+            val safeTag = SensitiveDataSanitizer.sanitizeFreeText(tag)
+            val safeMessage = SensitiveDataSanitizer.sanitizeFreeText(message)
             val exception =
                 if (cause != null) {
-                    RuntimeException("[$tag] $message", cause)
+                    RuntimeException("[$safeTag] $safeMessage", cause)
                 } else {
-                    RuntimeException("[$tag] $message")
+                    RuntimeException("[$safeTag] $safeMessage")
                 }
 
             // 遵循 CLAUDE.md 约定：统一使用 CrashReport.postCatchedException()
@@ -74,7 +79,7 @@ object ErrorReportHelper {
 
             // 在调试模式下打印信息
             if (BuildConfig.DEBUG) {
-                println("[$tag] Custom exception reported: $message")
+                println("[$safeTag] Custom exception reported: $safeMessage")
                 exception.printStackTrace()
             }
         } catch (e: Exception) {

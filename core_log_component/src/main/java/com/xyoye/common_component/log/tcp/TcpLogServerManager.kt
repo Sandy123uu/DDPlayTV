@@ -13,6 +13,7 @@ object TcpLogServerManager {
     const val DEFAULT_PORT = 17010
 
     private const val DEFAULT_RING_BUFFER_SIZE = 200
+    private const val DEBUG_SESSION_REQUIRED_ERROR = "TCP 日志仅在调试会话中可用"
 
     private val lock = Any()
     private val bufferLock = Any()
@@ -26,11 +27,20 @@ object TcpLogServerManager {
 
     fun applyFromStorage(): TcpLogServerState {
         val enabled = LogConfig.isTcpLogServerEnabled()
+        val debugSessionEnabled = LogConfig.isDebugSessionEnabled()
         val storedPort = LogConfig.getTcpLogServerPort()
         val normalizedPort = normalizePort(storedPort)
         if (storedPort != normalizedPort) {
             LogConfig.putTcpLogServerPort(normalizedPort)
         }
+        if (!debugSessionEnabled) {
+            if (enabled) {
+                lastError = DEBUG_SESSION_REQUIRED_ERROR
+            }
+            stop()
+            return snapshot()
+        }
+        lastError = null
         return if (enabled) {
             start(normalizedPort)
         } else {
@@ -45,6 +55,13 @@ object TcpLogServerManager {
         val normalizedPort = normalizePort(port)
         LogConfig.putTcpLogServerEnabled(enabled)
         LogConfig.putTcpLogServerPort(normalizedPort)
+        val debugSessionEnabled = LogConfig.isDebugSessionEnabled()
+        if (enabled && !debugSessionEnabled) {
+            lastError = DEBUG_SESSION_REQUIRED_ERROR
+            stop()
+            return snapshot()
+        }
+        lastError = null
         return if (enabled) {
             start(normalizedPort)
         } else {

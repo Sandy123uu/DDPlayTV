@@ -4,6 +4,7 @@ import com.xyoye.common_component.log.model.LogEvent
 import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.log.model.LogTag
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,6 +41,32 @@ class LogFormatterTest {
         assertTrue(line.contains("ctx_errorCode=E001"))
         assertTrue(line.contains("throwable=java.lang.IllegalStateException"))
         assertTrue(line.contains("msg=\"renderer failed retrying\""))
+    }
+
+    @Test
+    fun formatRedactsSensitiveData() {
+        val event =
+            LogEvent(
+                level = LogLevel.INFO,
+                module = LogModule.NETWORK,
+                tag = LogTag(LogModule.NETWORK, "Http"),
+                message = "open https://example.com/a.m3u8?token=abc Authorization: Bearer secret",
+                context =
+                    mapOf(
+                        "token" to "abc",
+                        "cookie" to "SESSDATA=abc; bili_jct=def",
+                        "url" to "https://example.com/a.m3u8?access_token=aaa#frag",
+                    ),
+            )
+
+        val line = formatter.format(event)
+
+        assertFalse(line.contains("Bearer secret"))
+        assertFalse(line.contains("SESSDATA=abc"))
+        assertFalse(line.contains("access_token=aaa"))
+        assertFalse(line.contains("?token=abc"))
+        assertTrue(line.contains("https://example.com/a.m3u8"))
+        assertTrue(line.contains("token=<redacted>") || line.contains("token=<redacted>".lowercase()))
     }
 
     @Test

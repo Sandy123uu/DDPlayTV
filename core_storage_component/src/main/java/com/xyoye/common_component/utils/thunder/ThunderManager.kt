@@ -9,6 +9,7 @@ import com.xyoye.common_component.base.app.BaseApplication
 import com.xyoye.common_component.extension.toMd5String
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.storage.file.helper.TorrentBean
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.MagnetUtils
@@ -195,7 +196,7 @@ class ThunderManager private constructor() {
                 ErrorReportHelper.postException(
                     "Invalid magnet link format",
                     "ThunderManager",
-                    RuntimeException("Magnet link hash extraction failed: $magnet"),
+                    RuntimeException("Magnet link hash extraction failed: ${SensitiveDataSanitizer.sanitizeMagnet(magnet)}"),
                 )
                 return null
             }
@@ -212,7 +213,9 @@ class ThunderManager private constructor() {
                 ErrorReportHelper.postException(
                     "Failed to create torrent download task",
                     "ThunderManager",
-                    RuntimeException("XLTaskHelper.addMagnetTask returned INVALID_ID for magnet: $magnet"),
+                    RuntimeException(
+                        "XLTaskHelper.addMagnetTask returned INVALID_ID for magnet: ${SensitiveDataSanitizer.sanitizeMagnet(magnet)}",
+                    ),
                 )
                 return null
             }
@@ -223,7 +226,7 @@ class ThunderManager private constructor() {
                 e,
                 "ThunderManager",
                 "downloadTorrentFile",
-                "磁链: $magnet",
+                "磁链: ${SensitiveDataSanitizer.sanitizeMagnet(magnet)}",
             )
             null
         }
@@ -249,7 +252,9 @@ class ThunderManager private constructor() {
                 ErrorReportHelper.postException(
                     "Failed to create play task",
                     "ThunderManager",
-                    RuntimeException("createPlayTask returned INVALID_ID for torrent: ${torrent.torrentPath}, index: $index"),
+                    RuntimeException(
+                        "createPlayTask returned INVALID_ID for torrent: ${SensitiveDataSanitizer.sanitizePath(torrent.torrentPath)}, index: $index",
+                    ),
                 )
                 return null
             }
@@ -267,7 +272,7 @@ class ThunderManager private constructor() {
                 e,
                 "ThunderManager",
                 "generatePlayUrl",
-                "种子路径: ${torrent.torrentPath}, 文件索引: $index",
+                "种子路径: ${SensitiveDataSanitizer.sanitizePath(torrent.torrentPath)}, 文件索引: $index",
             )
             null
         }

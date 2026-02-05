@@ -1,5 +1,6 @@
 package com.xyoye.common_component.network.request
 
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.data_component.data.CommonJsonData
 import com.xyoye.data_component.data.CommonJsonModel
@@ -53,11 +54,12 @@ class Request {
 
                 return@withContext Result.success(result)
             } catch (e: Exception) {
+                val safeParams = SensitiveDataSanitizer.sanitizeParams(requestParams)
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
                     "Request",
                     "doGet",
-                    "请求参数: $requestParams",
+                    "请求参数: $safeParams",
                 )
                 return@withContext when (e) {
                     is PassThroughException -> Result.failure(e)
@@ -82,11 +84,13 @@ class Request {
 
                 return@withContext Result.success(result)
             } catch (e: Exception) {
+                val safeParams = SensitiveDataSanitizer.sanitizeParams(requestParams)
+                val safeJson = requestJson?.let { SensitiveDataSanitizer.sanitizeFreeText(it) }
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
                     "Request",
                     "doPost",
-                    "请求参数: $requestParams, JSON: $requestJson",
+                    "请求参数: $safeParams, JSON: ${safeJson ?: "<null>"}",
                 )
                 return@withContext when (e) {
                     is PassThroughException -> Result.failure(e)
@@ -106,11 +110,13 @@ class Request {
             requestJson?.toRequestBody(mediaType)
                 ?: requestParams.toRequestBody(mediaType)
         } catch (e: Exception) {
+            val safeParams = SensitiveDataSanitizer.sanitizeParams(requestParams)
+            val safeJson = requestJson?.let { SensitiveDataSanitizer.sanitizeFreeText(it) }
             ErrorReportHelper.postCatchedExceptionWithContext(
                 e,
                 "Request",
                 "requestBody",
-                "请求参数: $requestParams, JSON: $requestJson",
+                "请求参数: $safeParams, JSON: ${safeJson ?: "<null>"}",
             )
             throw e
         }
