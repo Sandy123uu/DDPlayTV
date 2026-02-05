@@ -71,7 +71,7 @@
 | G-T0055 | Draft | 待分配（System/User） | 明确登录态单一事实源：用 UserSessionManager 统一 token/登录态更新与观察 | G-F0044 | :user_component | USER-T004 |
 | G-T0056 | Draft | 待分配（Infra/DB） | 统一 MD5/hex 工具：复用 `CacheKeyMapper`（或抽取 `HashUtils`），移除 `ManualMigration#md5Hex` 重复实现 | G-F0052 | :core_database_component | CORE_DATABASE-T004 |
 | G-T0057 | Draft | 待分配（Runtime） | 统一 MMKV 初始化策略：明确“Startup 初始化”与“BaseApplication 初始化”的职责边界，避免重复与时序不一致 | G-F0057 | :core_system_component | CORE_SYSTEM-T004 |
-| G-T0058 | Draft | AI（Codex） | 统一 Service 包结构（service/services）：提升 discoverability 并减少迁移成本 | G-F0060 | :core_contract_component | CORE_CONTRACT-T003 |
+| G-T0058 | Done | AI（Codex） | 统一 Service 包结构（service/services）：提升 discoverability 并减少迁移成本 | G-F0060 | :core_contract_component | CORE_CONTRACT-T003 |
 | G-T0059 | Draft | 待分配（Network/Player） | 统一 Telemetry repository 的模块归属与包命名，避免“core_network 包名却在 feature 模块” | G-F0012 | :player_component | PLAYER-T004 |
 | G-T0060 | Draft | 待分配（Build/Repo） | 统一 prebuilt AAR wrapper 的 Gradle 封装方式，减少脚本重复与漂移 | G-F0064 | :repository:danmaku | REPO_DANMAKU-T002 |
 | G-T0061 | Draft | 待分配（Infra/Storage/Log） | 统一异常处理与脱敏：移除 `printStackTrace()`，统一到 `LogFacade`/`ErrorReportHelper` 并建立敏感字段脱敏规则 | G-F0043 | :core_storage_component | CORE_STORAGE-T004 |

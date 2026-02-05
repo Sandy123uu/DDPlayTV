@@ -12,7 +12,7 @@ import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.media3.Media3SessionStore
 import com.xyoye.common_component.network.repository.ResourceRepository
-import com.xyoye.common_component.service.Media3CapabilityProvider
+import com.xyoye.common_component.services.Media3CapabilityProvider
 import com.xyoye.common_component.source.base.BaseVideoSource
 import com.xyoye.common_component.source.media3.Media3LaunchParams
 import com.xyoye.common_component.utils.DanmuUtils

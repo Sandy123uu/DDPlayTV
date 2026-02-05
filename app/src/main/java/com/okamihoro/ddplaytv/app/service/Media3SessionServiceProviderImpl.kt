@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.xyoye.common_component.config.RouteTable
-import com.xyoye.common_component.service.Media3SessionServiceProvider
+import com.xyoye.common_component.services.Media3SessionServiceProvider
 
 @Route(
     path = RouteTable.App.Media3SessionServiceProvider,

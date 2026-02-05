@@ -65,7 +65,7 @@
 - [ ] 2.29 关闭 `G-T0055`：登录态单一事实源（UserSessionManager 统一 token/状态）
 - [ ] 2.30 关闭 `G-T0056`：统一 MD5/hex 工具（移除重复实现）
 - [ ] 2.31 关闭 `G-T0057`：统一 MMKV 初始化策略（Startup vs BaseApplication）
-- [ ] 2.32 关闭 `G-T0058`：统一 Service 包结构（service/services）
+- [x] 2.32 关闭 `G-T0058`：统一 Service 包结构（service/services）
 - [ ] 2.33 关闭 `G-T0059`：统一 Telemetry repository 的模块归属与包命名
 - [ ] 2.34 关闭 `G-T0060`：统一 prebuilt AAR wrapper 的 Gradle 封装方式
 - [ ] 2.35 关闭 `G-T0061`：`core_storage_component` 统一异常处理与脱敏（移除 `printStackTrace()`）

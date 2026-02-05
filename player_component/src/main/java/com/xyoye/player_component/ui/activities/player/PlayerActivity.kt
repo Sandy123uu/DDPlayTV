@@ -40,7 +40,7 @@ import com.xyoye.common_component.playback.addon.PlaybackUrlRecoverableAddon
 import com.xyoye.common_component.receiver.HeadsetBroadcastReceiver
 import com.xyoye.common_component.receiver.PlayerReceiverListener
 import com.xyoye.common_component.receiver.ScreenBroadcastReceiver
-import com.xyoye.common_component.service.Media3SessionServiceProvider
+import com.xyoye.common_component.services.Media3SessionServiceProvider
 import com.xyoye.common_component.source.VideoSourceManager
 import com.xyoye.common_component.source.base.BaseVideoSource
 import com.xyoye.common_component.source.factory.StorageVideoSourceFactory

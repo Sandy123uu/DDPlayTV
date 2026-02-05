@@ -1,4 +1,4 @@
-package com.xyoye.common_component.service
+package com.xyoye.common_component.services
 
 import com.alibaba.android.arouter.facade.template.IProvider
 import com.xyoye.data_component.data.media3.CapabilityCommandResponseData
