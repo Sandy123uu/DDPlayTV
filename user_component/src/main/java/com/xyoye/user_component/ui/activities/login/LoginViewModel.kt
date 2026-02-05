@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.extension.toastError
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.network.repository.UserRepository
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.SecurityHelper
@@ -31,6 +32,7 @@ class LoginViewModel : BaseViewModel() {
                 return
             }
 
+            val accountFingerprint = SensitiveDataSanitizer.fingerprint(account.orEmpty())
             val appId = SecurityHelper.getInstance().appId
             val unixTimestamp = System.currentTimeMillis() / 1000
             val hashInfo = appId + password + unixTimestamp + account
@@ -56,7 +58,7 @@ class LoginViewModel : BaseViewModel() {
                                 it,
                                 "LoginViewModel",
                                 "login",
-                                "Login network request failed for user: $account",
+                                "Login network request failed (user_fp=$accountFingerprint)",
                             )
                         }
                         result.exceptionOrNull()?.message?.toastError()
@@ -91,7 +93,7 @@ class LoginViewModel : BaseViewModel() {
                         e,
                         "LoginViewModel",
                         "login",
-                        "Unexpected error during login process for user: $account",
+                        "Unexpected error during login process (user_fp=$accountFingerprint)",
                     )
                     ToastCenter.showError("登录过程中发生错误，请稍后再试")
                 }

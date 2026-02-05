@@ -224,6 +224,11 @@ object SensitiveDataSanitizer {
         return value
     }
 
+    fun sanitizeValueForKey(
+        key: String,
+        value: String
+    ): String = sanitizeValueByKey(key, value)
+
     fun fingerprint(raw: String): String {
         if (raw.isBlank()) return "00000000"
         val bytes = raw.toByteArray(Charsets.UTF_8)

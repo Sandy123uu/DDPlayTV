@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.extension.toastError
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.network.repository.UserRepository
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.UserInfoHelper
@@ -28,7 +29,7 @@ class UserInfoViewModel : BaseViewModel() {
                 e,
                 "UserInfoViewModel",
                 "applyLoginData",
-                "Failed to apply login data for user: ${loginData.userName}",
+                "Failed to apply login data (user_fp=${SensitiveDataSanitizer.fingerprint(loginData.userName.orEmpty())})",
             )
         }
     }
@@ -41,13 +42,15 @@ class UserInfoViewModel : BaseViewModel() {
                 hideLoading()
 
                 if (result.isFailure) {
+                    val userFingerprint = SensitiveDataSanitizer.fingerprint(UserInfoHelper.mLoginData?.userName.orEmpty())
+                    val screenNameFingerprint = SensitiveDataSanitizer.fingerprint(screenName)
                     val exception = result.exceptionOrNull()
                     exception?.let {
                         ErrorReportHelper.postCatchedExceptionWithContext(
                             it,
                             "UserInfoViewModel",
                             "updateScreenName",
-                            "Update screen name network request failed for user: ${UserInfoHelper.mLoginData?.userName}, new name: $screenName",
+                            "Update screen name network request failed (user_fp=$userFingerprint, new_name_fp=$screenNameFingerprint)",
                         )
                     }
                     result.exceptionOrNull()?.message?.toastError()
@@ -60,11 +63,13 @@ class UserInfoViewModel : BaseViewModel() {
                 ToastCenter.showSuccess("修改昵称成功")
             } catch (e: Exception) {
                 hideLoading()
+                val userFingerprint = SensitiveDataSanitizer.fingerprint(UserInfoHelper.mLoginData?.userName.orEmpty())
+                val screenNameFingerprint = SensitiveDataSanitizer.fingerprint(screenName)
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
                     "UserInfoViewModel",
                     "updateScreenName",
-                    "Unexpected error during screen name update for user: ${UserInfoHelper.mLoginData?.userName}",
+                    "Unexpected error during screen name update (user_fp=$userFingerprint, new_name_fp=$screenNameFingerprint)",
                 )
                 ToastCenter.showError("修改昵称过程中发生错误，请稍后再试")
             }
@@ -82,13 +87,14 @@ class UserInfoViewModel : BaseViewModel() {
                 hideLoading()
 
                 if (result.isFailure) {
+                    val userFingerprint = SensitiveDataSanitizer.fingerprint(UserInfoHelper.mLoginData?.userName.orEmpty())
                     val exception = result.exceptionOrNull()
                     exception?.let {
                         ErrorReportHelper.postCatchedExceptionWithContext(
                             it,
                             "UserInfoViewModel",
                             "updatePassword",
-                            "Update password network request failed for user: ${UserInfoHelper.mLoginData?.userName}",
+                            "Update password network request failed (user_fp=$userFingerprint)",
                         )
                     }
                     result.exceptionOrNull()?.message?.toastError()
@@ -101,11 +107,12 @@ class UserInfoViewModel : BaseViewModel() {
                 ToastCenter.showSuccess("修改密码成功")
             } catch (e: Exception) {
                 hideLoading()
+                val userFingerprint = SensitiveDataSanitizer.fingerprint(UserInfoHelper.mLoginData?.userName.orEmpty())
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
                     "UserInfoViewModel",
                     "updatePassword",
-                    "Unexpected error during password update for user: ${UserInfoHelper.mLoginData?.userName}",
+                    "Unexpected error during password update (user_fp=$userFingerprint)",
                 )
                 ToastCenter.showError("修改密码过程中发生错误，请稍后再试")
             }

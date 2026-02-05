@@ -2,6 +2,7 @@ package com.xyoye.common_component.log
 
 import android.content.Context
 import com.tencent.bugly.crashreport.CrashReport
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 
 /**
  * Bugly 访问门面：避免业务/平台代码直接依赖 CrashReport，便于后续替换或收敛实现。
@@ -24,7 +25,10 @@ object BuglyReporter {
         key: String,
         value: String
     ) {
-        CrashReport.putUserData(context.applicationContext, key, value)
+        val safeKey = key.trim()
+        if (safeKey.isEmpty()) return
+        val safeValue = SensitiveDataSanitizer.sanitizeValueForKey(safeKey, value)
+        CrashReport.putUserData(context.applicationContext, safeKey, safeValue)
     }
 
     fun setUserSceneTag(

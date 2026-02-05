@@ -102,18 +102,19 @@ object ErrorReportHelper {
         methodName: String,
         extraInfo: String = ""
     ) {
+        val safeExtraInfo = SensitiveDataSanitizer.sanitizeFreeText(extraInfo)
         // 过滤掉 CancellationException，这是协程正常取消的标志，不应当作错误上报
         if (throwable is CancellationException) {
             if (BuildConfig.DEBUG) {
-                println("[$className.$methodName] CancellationException ignored: $extraInfo")
+                println("[$className.$methodName] CancellationException ignored: $safeExtraInfo")
             }
             return
         }
 
         val contextInfo = "Class: $className, Method: $methodName"
         val fullInfo =
-            if (extraInfo.isNotEmpty()) {
-                "$contextInfo, Extra: $extraInfo"
+            if (safeExtraInfo.isNotEmpty()) {
+                "$contextInfo, Extra: $safeExtraInfo"
             } else {
                 contextInfo
             }
