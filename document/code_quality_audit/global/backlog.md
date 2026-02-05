@@ -30,7 +30,7 @@
 | G-T0019 | Done | AI（Codex） | 明确 Fragment 宿主契约：引入 `LoadingHost`（或等价接口）并替换强制 cast，避免隐藏崩溃点 | G-F0011 | :core_ui_component | CORE_UI-T003 |
 | G-T0020 | Done | AI（Codex） | 移除投屏 Sender 整条链路：删除旧实现与全端 stub，清理入口/路由/服务暴露 | G-F0021 | :storage_component | STORAGE-T001 |
 | G-T0021 | Done | AI（Codex） | 清理 `printStackTrace()` 并补齐异常上报上下文（引擎/会话/源类型） | G-F0016 | :player_component | PLAYER-T005 |
-| G-T0022 | Draft | 待分配（Runtime/Storage） | 用安全方案替换 `EntropyUtils` 的对称加密（至少支持随机 IV/带认证），并为投屏 UDP 消息引入版本/兼容策略 | G-F0003 | :core_system_component | CORE_SYSTEM-T001 |
+| G-T0022 | Done | AI（Codex） | 用安全方案替换 `EntropyUtils` 的对称加密（至少支持随机 IV/带认证），并为投屏 UDP 消息引入版本/兼容策略 | G-F0003 | :core_system_component,:storage_component,:core_storage_component,:local_component | CORE_SYSTEM-T001 |
 | G-T0023 | Draft | 待分配（Log/Feature） | 移除 `printStackTrace()` 并统一异常上报上下文与脱敏策略（URL/token/password/路径） | G-F0006 | :storage_component | STORAGE-T002 |
 | G-T0024 | Draft | 待分配（Infra/Network） | 统一 TLS 安全默认：移除默认路径中的 `hostnameVerifier { _, _ -> true }`，并为“特殊场景”提供可控开关（用户显式；Release 允许） | G-F0001 | :core_network_component | CORE_NETWORK-T001 |
 | G-T0025 | Draft | 待分配（Infra/DB/Log） | 统一手动迁移异常可观测性：替换 `printStackTrace()` 为结构化日志/异常上报，并补充必要上下文 | G-F0014 | :core_database_component | CORE_DATABASE-T003 |

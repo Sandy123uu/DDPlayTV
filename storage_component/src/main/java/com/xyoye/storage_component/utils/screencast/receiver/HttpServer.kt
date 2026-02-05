@@ -62,19 +62,24 @@ class HttpServer(
         if (authorization.startsWith("Bearer ").not()) {
             return false
         }
-        try {
-            return password == authorization.substring("Bearer ".length).aesDecode()
-        } catch (e: Exception) {
+        val receiverPassword = password
+        return runCatching {
+            receiverPassword ==
+                authorization
+                    .substring("Bearer ".length)
+                    .aesDecode(
+                        key = receiverPassword,
+                        allowLegacyDefaultKeyFallback = true,
+                    )
+        }.onFailure {
             // 上报身份验证异常
             ErrorReportHelper.postCatchedExceptionWithContext(
-                e,
+                it,
                 "HttpServer",
                 "authentication",
-                "投屏接收身份验证时发生异常，authorization长度=${authorization?.length ?: 0}",
+                "投屏接收身份验证时发生异常，authorization长度=${authorization.length}",
             )
-            e.printStackTrace()
-        }
-        return false
+        }.getOrDefault(false)
     }
 
     private fun unauthorizedResponse(): Response {

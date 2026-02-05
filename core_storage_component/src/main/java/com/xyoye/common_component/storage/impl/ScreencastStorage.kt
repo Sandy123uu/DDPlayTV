@@ -2,8 +2,6 @@ package com.xyoye.common_component.storage.impl
 
 import android.net.Uri
 import com.xyoye.common_component.database.DatabaseManager
-import com.xyoye.common_component.extension.aesEncode
-import com.xyoye.common_component.extension.authorizationValue
 import com.xyoye.common_component.network.repository.ResourceRepository
 import com.xyoye.common_component.network.repository.ScreencastRepository
 import com.xyoye.common_component.storage.AbstractStorage
@@ -137,7 +135,7 @@ class ScreencastStorage(
         val result =
             ScreencastRepository.init(
                 "http://${library.screencastAddress}:${library.port}",
-                library.password?.aesEncode()?.authorizationValue(),
+                library.password,
             )
         if (result.isFailure) {
             val exception = result.exceptionOrNull()

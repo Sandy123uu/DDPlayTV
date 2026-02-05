@@ -3,6 +3,7 @@ package com.xyoye.storage_component.utils.screencast.receiver
 import android.os.Build
 import android.provider.Settings
 import android.text.TextUtils
+import android.util.Base64
 import com.xyoye.common_component.base.app.BaseApplication
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
@@ -89,7 +90,6 @@ object UdpServer {
                 "initMulticastSocket",
                 "组播Socket初始化失败，host=${ScreencastConstants.Multicast.host}",
             )
-            e.printStackTrace()
         }
 
         return multicastSocket != null
@@ -112,18 +112,43 @@ object UdpServer {
                 )
             val msg = JsonHelper.toJson(udpDeviceBean) ?: return
 
-            // 组播内容加密
-            val entropyMsg = EntropyUtils.aesEncode(ScreencastConstants.Multicast.secret, msg)
-            if (TextUtils.isEmpty(entropyMsg)) {
-                return
+            val v2Msg =
+                EntropyUtils.aesEncode(
+                    ScreencastConstants.Multicast.secret,
+                    msg,
+                    Base64.NO_WRAP,
+                    version = EntropyUtils.AES_VERSION_GCM_V2,
+                ) ?: return
+            LogFacade.d(LogModule.STORAGE, UdpServer::class.java.simpleName, v2Msg)
+
+            val v2Data = v2Msg.toByteArray()
+            val v2Packet =
+                DatagramPacket(
+                    v2Data,
+                    v2Data.size,
+                    multicastAddress,
+                    ScreencastConstants.Multicast.port,
+                )
+            multicastSocket?.send(v2Packet)
+
+            val legacyMsg =
+                EntropyUtils.aesEncode(
+                    ScreencastConstants.Multicast.secret,
+                    msg,
+                    Base64.NO_WRAP,
+                    version = EntropyUtils.AES_VERSION_LEGACY_CBC_V1,
+                )
+            if (!legacyMsg.isNullOrEmpty()) {
+                val legacyData = legacyMsg.toByteArray()
+                val legacyPacket =
+                    DatagramPacket(
+                        legacyData,
+                        legacyData.size,
+                        multicastAddress,
+                        ScreencastConstants.Multicast.port,
+                    )
+                multicastSocket?.send(legacyPacket)
             }
-            LogFacade.d(LogModule.STORAGE, UdpServer::class.java.simpleName, entropyMsg!!)
-
-            val data = entropyMsg.toByteArray()
-
-            val sendPacket =
-                DatagramPacket(data, data.size, multicastAddress, ScreencastConstants.Multicast.port)
-            multicastSocket?.send(sendPacket)
 
             multicastCount++
         } catch (e: Exception) {
@@ -134,7 +159,6 @@ object UdpServer {
                 "sendMulticast",
                 "发送组播消息失败，httpPort=$httpPort, multicastCount=$multicastCount",
             )
-            e.printStackTrace()
         }
     }
 

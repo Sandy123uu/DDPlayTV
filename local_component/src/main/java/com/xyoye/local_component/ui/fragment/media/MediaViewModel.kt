@@ -5,8 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.bilibili.BilibiliPlaybackPreferencesStore
 import com.xyoye.common_component.database.DatabaseManager
-import com.xyoye.common_component.extension.aesEncode
-import com.xyoye.common_component.extension.authorizationValue
 import com.xyoye.common_component.extension.toastError
 import com.xyoye.common_component.network.repository.ScreencastRepository
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanAuthStore
@@ -119,7 +117,7 @@ class MediaViewModel : BaseViewModel() {
                 val result =
                     ScreencastRepository.init(
                         "http://${receiver.screencastAddress}:${receiver.port}",
-                        receiver.password?.aesEncode()?.authorizationValue(),
+                        receiver.password,
                     )
                 hideLoading()
 

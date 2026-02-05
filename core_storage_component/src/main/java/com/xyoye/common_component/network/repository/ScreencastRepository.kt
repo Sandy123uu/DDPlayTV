@@ -1,9 +1,12 @@
 package com.xyoye.common_component.network.repository
 
+import android.util.Base64
 import com.xyoye.common_component.network.Retrofit
 import com.xyoye.common_component.network.request.NetworkException
 import com.xyoye.common_component.storage.helper.ScreencastConstants
+import com.xyoye.common_component.utils.EntropyUtils
 import com.xyoye.common_component.utils.JsonHelper
+import com.xyoye.data_component.data.CommonJsonData
 import com.xyoye.data_component.data.screeencast.ScreencastData
 
 /**
@@ -16,7 +19,27 @@ object ScreencastRepository : BaseRepository() {
      */
     suspend fun init(
         url: String,
-        authorization: String?
+        password: String?,
+    ): Result<retrofit2.Response<CommonJsonData>> {
+        val normalizedPassword = password?.takeIf { it.isNotBlank() }
+        val v2Authorization = normalizedPassword?.let { buildV2Authorization(it) }
+        val v2Result = initWithAuthorization(url, v2Authorization)
+        if (v2Result.isSuccess) {
+            return v2Result
+        }
+
+        val exception = v2Result.exceptionOrNull() as? NetworkException
+        if (exception?.code != 401 || normalizedPassword == null) {
+            return v2Result
+        }
+
+        val legacyAuthorization = buildLegacyAuthorization(normalizedPassword) ?: return v2Result
+        return initWithAuthorization(url, legacyAuthorization)
+    }
+
+    private suspend fun initWithAuthorization(
+        url: String,
+        authorization: String?,
     ) = request()
         .doGet {
             Retrofit.screencastService.init(url, authorization, ScreencastConstants.version)
@@ -44,6 +67,29 @@ object ScreencastRepository : BaseRepository() {
                     "\n投屏端: $localVersion，接收端: $remoteVersion"
             return@run Result.failure(NetworkException.formException(IllegalStateException(message)))
         }
+
+    private fun buildV2Authorization(password: String): String? {
+        val token =
+            EntropyUtils.aesEncode(
+                key = password,
+                content = password,
+                base64Flag = Base64.NO_WRAP,
+                version = EntropyUtils.AES_VERSION_GCM_V2,
+            ) ?: return null
+        return "Bearer $token"
+    }
+
+    private fun buildLegacyAuthorization(password: String): String? {
+        val token =
+            EntropyUtils.aesEncode(
+                key = null,
+                content = password,
+                base64Flag = Base64.NO_WRAP,
+                version = EntropyUtils.AES_VERSION_LEGACY_CBC_V1,
+                allowLegacyDefaultKeyFallback = true,
+            ) ?: return null
+        return "Bearer $token"
+    }
 
     /**
      * 投屏播放
