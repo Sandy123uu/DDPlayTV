@@ -9,6 +9,8 @@ import com.xyoye.common_component.extension.toastError
 import com.xyoye.common_component.network.repository.ScreencastRepository
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanAuthStore
 import com.xyoye.common_component.storage.cloud115.auth.Cloud115AuthStore
+import com.xyoye.common_component.storage.credential.MediaLibraryCredentialResolver
+import com.xyoye.common_component.storage.credential.MediaLibraryCredentialStore
 import com.xyoye.common_component.storage.open115.auth.Open115AuthStore
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.getFileName
@@ -96,6 +98,9 @@ class MediaViewModel : BaseViewModel() {
                 if (data.mediaType == MediaType.CLOUD_115_STORAGE) {
                     Cloud115AuthStore.clear(Cloud115AuthStore.storageKey(data))
                 }
+                if (data.id > 0) {
+                    MediaLibraryCredentialStore.clear(data.id)
+                }
                 DatabaseManager.instance
                     .getMediaLibraryDao()
                     .delete(data.url, data.mediaType)
@@ -115,10 +120,11 @@ class MediaViewModel : BaseViewModel() {
         viewModelScope.launch {
             try {
                 showLoading()
+                val resolvedReceiver = MediaLibraryCredentialResolver.resolve(receiver)
                 val result =
                     ScreencastRepository.init(
-                        "http://${receiver.screencastAddress}:${receiver.port}",
-                        receiver.password,
+                        "http://${resolvedReceiver.screencastAddress}:${resolvedReceiver.port}",
+                        resolvedReceiver.password,
                     )
                 hideLoading()
 
@@ -128,8 +134,8 @@ class MediaViewModel : BaseViewModel() {
                         exception ?: RuntimeException("Unknown screencast connection error"),
                         "MediaViewModel",
                         "checkScreenDeviceRunning",
-                        "address" to receiver.screencastAddress,
-                        "port" to receiver.port,
+                        "address" to resolvedReceiver.screencastAddress,
+                        "port" to resolvedReceiver.port,
                     )
                     exception?.message?.toastError()
                     return@launch

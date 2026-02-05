@@ -6,6 +6,7 @@ import androidx.lifecycle.lifecycleScope
 import com.xyoye.common_component.config.PlayerActions
 import com.xyoye.common_component.database.DatabaseManager
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanAuthStore
+import com.xyoye.common_component.storage.credential.MediaLibraryCredentialStore
 import com.xyoye.common_component.weight.BottomActionDialog
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.common_component.weight.dialog.CommonDialog
@@ -133,7 +134,12 @@ class BaiduPanStorageEditDialog(
                             }
 
                             if (deleteLibrary) {
-                                storedLibrary?.let { dao.delete(it.url, it.mediaType) }
+                                storedLibrary?.let {
+                                    if (it.id > 0) {
+                                        MediaLibraryCredentialStore.clear(it.id)
+                                    }
+                                    dao.delete(it.url, it.mediaType)
+                                }
                             }
                         }
 

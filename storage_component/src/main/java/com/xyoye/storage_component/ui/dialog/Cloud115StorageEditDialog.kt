@@ -12,6 +12,7 @@ import com.xyoye.common_component.storage.cloud115.auth.Cloud115AuthStore
 import com.xyoye.common_component.storage.cloud115.auth.Cloud115TokenParser
 import com.xyoye.common_component.storage.cloud115.auth.Cloud115TokenValidator
 import com.xyoye.common_component.storage.cloud115.net.Cloud115Headers
+import com.xyoye.common_component.storage.credential.MediaLibraryCredentialStore
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.weight.BottomActionDialog
 import com.xyoye.common_component.weight.ToastCenter
@@ -289,7 +290,12 @@ class Cloud115StorageEditDialog(
                                 }
 
                                 if (deleteLibrary) {
-                                    storedLibrary?.let { dao.delete(it.url, it.mediaType) }
+                                    storedLibrary?.let {
+                                        if (it.id > 0) {
+                                            MediaLibraryCredentialStore.clear(it.id)
+                                        }
+                                        dao.delete(it.url, it.mediaType)
+                                    }
                                 }
 
                                 PlayerActions.sendExitPlayer(activity, libraryId)

@@ -10,6 +10,7 @@ import com.xyoye.common_component.database.DatabaseManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.storage.StorageFactory
 import com.xyoye.common_component.storage.cloud115.auth.Cloud115AuthStore
+import com.xyoye.common_component.storage.credential.MediaLibraryCredentialStore
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.entity.MediaLibraryEntity
 import com.xyoye.data_component.enums.MediaType
@@ -111,16 +112,32 @@ class StoragePlusViewModel : BaseViewModel() {
                 return@launch
             }
 
+            val pendingPassword = upsertLibrary.password?.takeIf { it.isNotBlank() }
+            val pendingRemoteSecret = upsertLibrary.remoteSecret?.takeIf { it.isNotBlank() }
+            upsertLibrary.password = null
+            upsertLibrary.remoteSecret = null
+
             upsertLibrary.id = oldLibraryId ?: upsertLibrary.id
-            DatabaseManager.instance.getMediaLibraryDao().insert(upsertLibrary)
+            val dao = DatabaseManager.instance.getMediaLibraryDao()
+            dao.insert(upsertLibrary)
             val savedLibrary =
-                DatabaseManager.instance
-                    .getMediaLibraryDao()
-                    .getByUrl(upsertLibrary.url, upsertLibrary.mediaType)
+                dao.getByUrl(upsertLibrary.url, upsertLibrary.mediaType)
                     ?: upsertLibrary
             if (savedLibrary.id != 0) {
                 editingLibraryId = savedLibrary.id
             }
+
+            val savedLibraryId = savedLibrary.id
+            if (savedLibraryId > 0) {
+                val passwordSaved = MediaLibraryCredentialStore.writePassword(savedLibraryId, pendingPassword)
+                val secretSaved = MediaLibraryCredentialStore.writeRemoteSecret(savedLibraryId, pendingRemoteSecret)
+                if (showToast && (pendingPassword != null && !passwordSaved || pendingRemoteSecret != null && !secretSaved)) {
+                    withContext(Dispatchers.Main) {
+                        ToastCenter.showWarning("安全存储不可用：凭据不会被保存")
+                    }
+                }
+            }
+
             withContext(Dispatchers.Main) {
                 _storageSavedLiveData.value = savedLibrary
             }

@@ -156,6 +156,33 @@ data class MediaLibraryEntity(
 
                 else -> url
             }
+
+    override fun toString(): String {
+        val maskedPassword = if (password.isNullOrBlank()) null else "***"
+        val maskedRemoteSecret = if (remoteSecret.isNullOrBlank()) null else "***"
+        return "MediaLibraryEntity(" +
+            "id=$id, " +
+            "displayName=$displayName, " +
+            "url=$url, " +
+            "mediaType=$mediaType, " +
+            "account=$account, " +
+            "password=$maskedPassword, " +
+            "isAnonymous=$isAnonymous, " +
+            "port=$port, " +
+            "describe=$describe, " +
+            "isActiveFTP=$isActiveFTP, " +
+            "ftpAddress=$ftpAddress, " +
+            "ftpEncoding=$ftpEncoding, " +
+            "smbV2=$smbV2, " +
+            "smbSharePath=$smbSharePath, " +
+            "remoteSecret=$maskedRemoteSecret, " +
+            "webDavStrict=$webDavStrict, " +
+            "webDavAllowInsecureTls=$webDavAllowInsecureTls, " +
+            "screencastAddress=$screencastAddress, " +
+            "remoteAnimeGrouping=$remoteAnimeGrouping, " +
+            "playerTypeOverride=$playerTypeOverride" +
+            ")"
+    }
 }
 
 private fun maskCloud115UserId(userId: String): String {

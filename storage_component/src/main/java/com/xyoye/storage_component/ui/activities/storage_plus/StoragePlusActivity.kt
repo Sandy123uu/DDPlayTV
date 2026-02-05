@@ -5,6 +5,7 @@ import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.launcher.ARouter
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
+import com.xyoye.common_component.storage.credential.MediaLibraryCredentialResolver
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.entity.MediaLibraryEntity
 import com.xyoye.data_component.enums.MediaType
@@ -81,23 +82,24 @@ class StoragePlusActivity : BaseActivity<StoragePlusViewModel, ActivityStoragePl
     }
 
     private fun showDialog() {
+        val resolvedEditData = editData?.let { MediaLibraryCredentialResolver.resolve(it) }
         val dialog =
             when (mediaType) {
-                MediaType.EXTERNAL_STORAGE -> ExternalStorageEditDialog(this, editData)
-                MediaType.REMOTE_STORAGE -> RemoteStorageEditDialog(this, editData)
-                MediaType.FTP_SERVER -> FTPStorageEditDialog(this, editData)
-                MediaType.WEBDAV_SERVER -> WebDavStorageEditDialog(this, editData)
-                MediaType.SMB_SERVER -> SmbStorageEditDialog(this, editData)
+                MediaType.EXTERNAL_STORAGE -> ExternalStorageEditDialog(this, resolvedEditData)
+                MediaType.REMOTE_STORAGE -> RemoteStorageEditDialog(this, resolvedEditData)
+                MediaType.FTP_SERVER -> FTPStorageEditDialog(this, resolvedEditData)
+                MediaType.WEBDAV_SERVER -> WebDavStorageEditDialog(this, resolvedEditData)
+                MediaType.SMB_SERVER -> SmbStorageEditDialog(this, resolvedEditData)
                 MediaType.SCREEN_CAST -> {
                     ToastCenter.showWarning("电视端不支持发起投屏发送")
                     finish()
                     null
                 }
-                MediaType.ALSIT_STORAGE -> AlistStorageEditDialog(this, editData)
-                MediaType.BAIDU_PAN_STORAGE -> BaiduPanStorageEditDialog(this, editData)
-                MediaType.OPEN_115_STORAGE -> Open115StorageEditDialog(this, editData)
-                MediaType.CLOUD_115_STORAGE -> Cloud115StorageEditDialog(this, editData)
-                MediaType.BILIBILI_STORAGE -> BilibiliStorageEditDialog(this, editData)
+                MediaType.ALSIT_STORAGE -> AlistStorageEditDialog(this, resolvedEditData)
+                MediaType.BAIDU_PAN_STORAGE -> BaiduPanStorageEditDialog(this, resolvedEditData)
+                MediaType.OPEN_115_STORAGE -> Open115StorageEditDialog(this, resolvedEditData)
+                MediaType.CLOUD_115_STORAGE -> Cloud115StorageEditDialog(this, resolvedEditData)
+                MediaType.BILIBILI_STORAGE -> BilibiliStorageEditDialog(this, resolvedEditData)
                 else -> {
                     finish()
                     null

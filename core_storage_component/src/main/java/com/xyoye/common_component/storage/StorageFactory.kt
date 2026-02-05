@@ -1,5 +1,6 @@
 package com.xyoye.common_component.storage
 
+import com.xyoye.common_component.storage.credential.MediaLibraryCredentialResolver
 import com.xyoye.common_component.storage.impl.AlistStorage
 import com.xyoye.common_component.storage.impl.BaiduPanStorage
 import com.xyoye.common_component.storage.impl.BilibiliStorage
@@ -25,16 +26,16 @@ object StorageFactory {
     fun createStorage(library: MediaLibraryEntity): Storage? =
         when (library.mediaType) {
             MediaType.EXTERNAL_STORAGE -> DocumentFileStorage(library)
-            MediaType.WEBDAV_SERVER -> WebDavStorage(library)
-            MediaType.SMB_SERVER -> SmbStorage(library)
-            MediaType.FTP_SERVER -> FtpStorage(library)
+            MediaType.WEBDAV_SERVER -> WebDavStorage(MediaLibraryCredentialResolver.resolve(library))
+            MediaType.SMB_SERVER -> SmbStorage(MediaLibraryCredentialResolver.resolve(library))
+            MediaType.FTP_SERVER -> FtpStorage(MediaLibraryCredentialResolver.resolve(library))
             MediaType.LOCAL_STORAGE -> VideoStorage(library)
-            MediaType.REMOTE_STORAGE -> RemoteStorage(library)
+            MediaType.REMOTE_STORAGE -> RemoteStorage(MediaLibraryCredentialResolver.resolve(library))
             MediaType.MAGNET_LINK -> TorrentStorage(library)
             MediaType.STREAM_LINK -> LinkStorage(library)
             MediaType.OTHER_STORAGE -> LinkStorage(library)
-            MediaType.SCREEN_CAST -> ScreencastStorage(library)
-            MediaType.ALSIT_STORAGE -> AlistStorage(library)
+            MediaType.SCREEN_CAST -> ScreencastStorage(MediaLibraryCredentialResolver.resolve(library))
+            MediaType.ALSIT_STORAGE -> AlistStorage(MediaLibraryCredentialResolver.resolve(library))
             MediaType.BAIDU_PAN_STORAGE -> BaiduPanStorage(library)
             MediaType.OPEN_115_STORAGE -> Open115Storage(library)
             MediaType.CLOUD_115_STORAGE -> Cloud115Storage(library)

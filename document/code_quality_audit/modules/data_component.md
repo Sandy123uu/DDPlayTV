@@ -54,7 +54,7 @@
 | ID | 关联 Finding | 目标 | 范围 | 验收标准 | Impact | Effort | P | 负责人 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|
 | DATA-T001 | DATA-F001 | 将遥测聚合/事件构建逻辑迁出 Base：`data_component` 仅保留数据类型与契约 payload | 迁移 `data_component/.../SubtitleTelemetryRepository.kt`、`data_component/.../TelemetryEventMapper.kt`、`data_component/.../Loading.kt` 到合适模块（建议 `:core_log_component` / `:core_ui_component`），并更新 `player_component` 等调用方 | 1) `:data_component` 不再包含“Repository/Mapper/可变并发状态”类；2) 调用方功能等价（字幕/Media3 遥测仍可用）；3) `./gradlew verifyModuleDependencies` 通过；4) 相关单测（若迁移）在新模块可运行 | High | Medium | P1 | AI（Codex） | Done |
-| DATA-T002 | DATA-F002 | 为媒体库远程凭据建立统一的安全存储策略，避免 DB 明文落盘 | 围绕 `MediaLibraryEntity` 的 `password/remoteSecret`：设计迁移方案（DB 字段废弃/置空 + 安全存储 keyed by libraryId），并在存储实现层收敛读写入口 | 1) 不再在 Room 中持久化明文凭据（或对字段加密后再落盘）；2) 有可回滚/可升级的数据迁移策略；3) 全端登录/挂载流程回归通过；4) 明确禁止日志输出完整凭据对象（必要时提供 redaction helper） | High | Large | P2 | 待分配（Base/Storage） | Draft |
+| DATA-T002 | DATA-F002 | 为媒体库远程凭据建立统一的安全存储策略，避免 DB 明文落盘 | 围绕 `MediaLibraryEntity` 的 `password/remoteSecret`：设计迁移方案（DB 字段废弃/置空 + 安全存储 keyed by libraryId），并在存储实现层收敛读写入口 | 1) 不再在 Room 中持久化明文凭据（或对字段加密后再落盘）；2) 有可回滚/可升级的数据迁移策略；3) 全端登录/挂载流程回归通过；4) 明确禁止日志输出完整凭据对象（必要时提供 redaction helper） | High | Large | P2 | AI（Codex） | Done |
 | DATA-T003 | DATA-F003 | 收敛 media3/字幕遥测相关包结构，提升可发现性与复用一致性 | 以 `com.xyoye.data_component.media3` 为根：将 `data/media3`、`entity/media3`、`media3/mapper`、字幕遥测相关 bean 逐步归并为明确子包（例如 `media3.dto`/`media3.entity`/`media3.telemetry`） | 1) 新包结构有明确规则并写入 `document/code_quality_audit/config/audit_dimensions.md` 或模块报告备注；2) 迁移按批次进行，单批次可编译通过；3) 迁移后全仓检索路径清晰（同类类型不再散落） | Low | Medium | P3 | 待分配（Base） | Draft |
 
 ## 5) 风险与回归关注点
