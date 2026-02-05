@@ -3,6 +3,8 @@ package com.xyoye.common_component.bilibili.auth
 import com.squareup.moshi.Types
 import com.tencent.mmkv.MMKV
 import com.xyoye.common_component.extension.toMd5String
+import com.xyoye.common_component.log.LogFacade
+import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.utils.JsonHelper
 import com.xyoye.data_component.data.bilibili.BilibiliPersistedCookie
 import okhttp3.Cookie
@@ -20,6 +22,7 @@ class BilibiliCookieJarStore(
     private val storageKey: String
 ) : CookieJar {
     private val lock = Any()
+    private val tag = "bilibili_cookie_jar"
 
     private val kv: MMKV by lazy {
         MMKV.mmkvWithID("bilibili_cookie_jar_${storageKey.toMd5String()}")
@@ -221,14 +224,57 @@ class BilibiliCookieJarStore(
         }
 
     private fun readAll(): Map<String, List<BilibiliPersistedCookie>> {
-        val raw = kv.decodeString(KEY_ALL).orEmpty()
-        if (raw.isEmpty()) return emptyMap()
-        return runCatching { adapter.fromJson(raw) }.getOrNull().orEmpty()
+        val stored = kv.decodeString(KEY_ALL)?.takeIf { it.isNotBlank() } ?: return emptyMap()
+        val json =
+            decodeCookieJsonOrNull(stored)
+                ?: return emptyMap()
+        return runCatching { adapter.fromJson(json) }.getOrNull().orEmpty()
     }
 
     private fun writeAll(all: Map<String, List<BilibiliPersistedCookie>>) {
-        val raw = adapter.toJson(all)
-        kv.encode(KEY_ALL, raw)
+        val json = adapter.toJson(all)
+        val encrypted = BilibiliAuthCrypto.crypto.encrypt(json)
+        if (encrypted != null) {
+            kv.encode(KEY_ALL, encrypted)
+            return
+        }
+
+        kv.removeValueForKey(KEY_ALL)
+        LogFacade.w(
+            module = LogModule.NETWORK,
+            tag = tag,
+            message = "encrypt failed, clear cookie jar storageKey=$storageKey",
+        )
+    }
+
+    private fun decodeCookieJsonOrNull(stored: String): String? {
+        val crypto = BilibiliAuthCrypto.crypto
+        if (crypto.isEncrypted(stored)) {
+            val decrypted = crypto.decrypt(stored)
+            if (decrypted == null) {
+                kv.removeValueForKey(KEY_ALL)
+                LogFacade.w(
+                    module = LogModule.NETWORK,
+                    tag = tag,
+                    message = "decrypt failed, clear cookie jar storageKey=$storageKey",
+                )
+            }
+            return decrypted
+        }
+
+        // legacy plain → migrate to encrypted
+        val encrypted = crypto.encrypt(stored)
+        if (encrypted != null) {
+            kv.encode(KEY_ALL, encrypted)
+        } else {
+            kv.removeValueForKey(KEY_ALL)
+            LogFacade.w(
+                module = LogModule.NETWORK,
+                tag = tag,
+                message = "encrypt failed, clear legacy plain cookie jar storageKey=$storageKey",
+            )
+        }
+        return stored
     }
 
     private fun Cookie.toPersistedCookie(): BilibiliPersistedCookie =

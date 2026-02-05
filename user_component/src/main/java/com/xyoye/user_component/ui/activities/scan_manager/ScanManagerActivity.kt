@@ -9,7 +9,6 @@ import com.alibaba.android.arouter.facade.annotation.Route
 import com.google.android.material.tabs.TabLayoutMediator
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
-import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.focus.TabLayoutViewPager2DpadFocusCoordinator
 import com.xyoye.user_component.BR
 import com.xyoye.user_component.R

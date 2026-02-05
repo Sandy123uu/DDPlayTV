@@ -19,7 +19,7 @@ object ScreencastRepository : BaseRepository() {
      */
     suspend fun init(
         url: String,
-        password: String?,
+        password: String?
     ): Result<retrofit2.Response<CommonJsonData>> {
         val normalizedPassword = password?.takeIf { it.isNotBlank() }
         val v2Authorization = normalizedPassword?.let { buildV2Authorization(it) }
@@ -39,7 +39,7 @@ object ScreencastRepository : BaseRepository() {
 
     private suspend fun initWithAuthorization(
         url: String,
-        authorization: String?,
+        authorization: String?
     ) = request()
         .doGet {
             Retrofit.screencastService.init(url, authorization, ScreencastConstants.version)

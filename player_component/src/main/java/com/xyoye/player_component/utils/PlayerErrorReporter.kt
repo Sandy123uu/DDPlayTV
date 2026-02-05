@@ -1,7 +1,7 @@
 package com.xyoye.player_component.utils
 
-import com.xyoye.common_component.media3.Media3SessionStore
 import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
+import com.xyoye.common_component.media3.Media3SessionStore
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.player.info.PlayerInitializer
 
@@ -17,7 +17,7 @@ object PlayerErrorReporter {
             throwable,
             className,
             methodName,
-            enrich(extraInfo)
+            enrich(extraInfo),
         )
     }
 

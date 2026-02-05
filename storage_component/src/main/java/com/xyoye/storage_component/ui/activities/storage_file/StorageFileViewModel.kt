@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 
 class StorageFileViewModel : BaseViewModel() {
     val playLiveData = MutableLiveData<Any>()
+
     // val locateLastPlayLiveData = MutableLiveData<PlayHistoryEntity>()
     val bilibiliRiskVerifyLiveData = MutableLiveData<BilibiliRiskVerifyPayload>()
     private val downloadValidator = DownloadValidator()

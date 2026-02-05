@@ -8,8 +8,8 @@ import java.io.FileInputStream
 import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.Cipher
-import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
@@ -86,7 +86,7 @@ object EntropyUtils {
         content: String,
         base64Flag: Int = Base64.DEFAULT,
         version: Int = AES_VERSION_GCM_V2,
-        allowLegacyDefaultKeyFallback: Boolean = false,
+        allowLegacyDefaultKeyFallback: Boolean = false
     ): String? {
         val normalizedKey =
             when {
@@ -125,7 +125,7 @@ object EntropyUtils {
         key: String?,
         content: String,
         base64Flag: Int = Base64.DEFAULT,
-        allowLegacyDefaultKeyFallback: Boolean = false,
+        allowLegacyDefaultKeyFallback: Boolean = false
     ): String? {
         val decoded =
             runCatching { Base64.decode(content, base64Flag) }
@@ -203,7 +203,7 @@ object EntropyUtils {
 
     private fun encodeV2(
         key: String,
-        content: String,
+        content: String
     ): ByteArray {
         val secretKey = createV2AesKey(key)
         val iv =
@@ -227,7 +227,7 @@ object EntropyUtils {
 
     private fun decodeV2(
         key: String,
-        payload: ByteArray,
+        payload: ByteArray
     ): String {
         if (payload.size < v2HeaderSizeBytes) {
             throw IllegalArgumentException("Invalid v2 payload length: ${payload.size}")
@@ -252,7 +252,7 @@ object EntropyUtils {
 
     private fun encodeLegacyCbc(
         key: String,
-        content: String,
+        content: String
     ): ByteArray {
         val secretKey = createLegacyAesKey(key)
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
@@ -262,7 +262,7 @@ object EntropyUtils {
 
     private fun decodeLegacyCbc(
         key: String,
-        cipherText: ByteArray,
+        cipherText: ByteArray
     ): String {
         val secretKey = createLegacyAesKey(key)
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")

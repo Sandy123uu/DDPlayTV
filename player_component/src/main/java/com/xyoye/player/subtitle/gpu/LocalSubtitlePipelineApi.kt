@@ -5,6 +5,7 @@ import com.xyoye.common_component.subtitle.pipeline.FallbackCommand
 import com.xyoye.common_component.subtitle.pipeline.PipelineInitRequest
 import com.xyoye.common_component.subtitle.pipeline.PipelineStatusResponse
 import com.xyoye.common_component.subtitle.pipeline.SubtitlePipelineApi
+import com.xyoye.common_component.telemetry.subtitle.SubtitleTelemetryRepository
 import com.xyoye.data_component.bean.subtitle.FallbackEvent
 import com.xyoye.data_component.bean.subtitle.SubtitleOutputTarget
 import com.xyoye.data_component.bean.subtitle.SubtitlePipelineState
@@ -12,7 +13,6 @@ import com.xyoye.data_component.bean.subtitle.TelemetrySample
 import com.xyoye.data_component.bean.subtitle.TelemetrySnapshot
 import com.xyoye.data_component.enums.SubtitlePipelineMode
 import com.xyoye.data_component.enums.SubtitlePipelineStatus
-import com.xyoye.common_component.telemetry.subtitle.SubtitleTelemetryRepository
 
 /**
  * In-process implementation of SubtitlePipelineApi to back the GPU renderer.

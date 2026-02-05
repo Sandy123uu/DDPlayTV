@@ -245,8 +245,7 @@ class OkHttpUrlSource : Source {
 
     override fun cloneNew(): Source = OkHttpUrlSource(this)
 
-    private fun safeUrl(url: String?): String =
-        SensitiveDataSanitizer.sanitizeUrl(url, SensitiveDataSanitizer.UrlMode.SAFE)
+    private fun safeUrl(url: String?): String = SensitiveDataSanitizer.sanitizeUrl(url, SensitiveDataSanitizer.UrlMode.SAFE)
 
     override fun toString(): String = "OkHttpUrlSource{sourceInfo='$sourceInfo}"
 }

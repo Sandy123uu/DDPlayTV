@@ -170,7 +170,11 @@ class VlcProxyServer private constructor() : NanoHTTPD(randomPort()) {
         if (hasLoggedUnsafeFallback) return
         hasLoggedUnsafeFallback = true
 
-        val urlHash = request.url.toString().hashCode().toString()
+        val urlHash =
+            request.url
+                .toString()
+                .hashCode()
+                .toString()
         LogFacade.w(
             LogModule.PLAYER,
             logTag,

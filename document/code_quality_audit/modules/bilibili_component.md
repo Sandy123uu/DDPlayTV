@@ -54,7 +54,7 @@
 | ID | 关联 Finding | 目标 | 范围 | 验收标准 | Impact | Effort | P | 负责人 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|
 | BILIBILI-T001 | BILIBILI-F001 | 去硬编码：将 `APP_KEY/APP_SEC` 改为“构建期注入/本地配置”，并提供可控回退策略（避免与发行物强绑定） | `core_system_component`（扩展 BuildConfig 注入 + 本地存储读取入口）；`bilibili_component`（`BilibiliTvClient` 改造为配置读取 + 校验） | 1) 仓库源码中不再出现明文 `APP_SEC`；2) 未配置时给出明确错误与降级策略（例如禁用 TV 登录/提示）；3) 配置到位时登录/播放签名链路可回归 | High | Medium | P1 | AI（Codex） | Done |
-| BILIBILI-T002 | BILIBILI-F002 | 为 Cookie/Token 引入加密存储：落地统一的密钥管理与数据迁移，避免明文落盘 | `core_system_component`（抽取通用 `EncryptedStore`/`Crypto`，可参考 `DeveloperCredentialStore`）；`bilibili_component`（替换 `MMKV.mmkvWithID` 明文存储、迁移旧数据） | 1) Cookie/Token 落盘为密文（不可直接 grep 出明文）；2) 旧数据可迁移且不强制用户重新登录（可接受可控场景下的回退）；3) 登录/播放/心跳/直播弹幕等关键流程不回退 | High | Large | P2 | 待分配（Security/System/Bilibili） | Draft |
+| BILIBILI-T002 | BILIBILI-F002 | 为 Cookie/Token 引入加密存储：落地统一的密钥管理与数据迁移，避免明文落盘 | `core_system_component`（抽取通用 `EncryptedStore`/`Crypto`，可参考 `DeveloperCredentialStore`）；`bilibili_component`（替换 `MMKV.mmkvWithID` 明文存储、迁移旧数据） | 1) Cookie/Token 落盘为密文（不可直接 grep 出明文）；2) 旧数据可迁移且不强制用户重新登录（可接受可控场景下的回退）；3) 登录/播放/心跳/直播弹幕等关键流程不回退 | High | Large | P2 | AI（Codex） | Done |
 | BILIBILI-T003 | BILIBILI-F003 | 拆分 `BilibiliRepository`：按子域抽取组件并引入单测/契约化接口，提高可维护性 | `bilibili_component`（新增 `AuthRepository/RiskRepository/PlaybackRepository/HistoryRepository/LiveRepository` 等）；对外保留 facade 以降低调用方改动 | 1) 对外 API 基本不变（或提供 deprecate 迁移期）；2) 关键签名/存储/URL 脱敏具备单测覆盖；3) 全仓编译通过 | Medium | Large | P2 | 待分配（Bilibili） | Draft |
 
 ## 5) 风险与回归关注点

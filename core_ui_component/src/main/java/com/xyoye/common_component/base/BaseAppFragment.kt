@@ -29,12 +29,12 @@ abstract class BaseAppFragment<V : ViewDataBinding> : Fragment() {
         mAttachActivity =
             context as? AppCompatActivity
                 ?: throw IllegalStateException(
-                    "${this::class.java.name} must be attached to an AppCompatActivity, but was: ${context::class.java.name}"
+                    "${this::class.java.name} must be attached to an AppCompatActivity, but was: ${context::class.java.name}",
                 )
         loadingHost =
             context as? LoadingHost
                 ?: throw IllegalStateException(
-                    "${this::class.java.name} host activity must implement LoadingHost, but was: ${context::class.java.name}"
+                    "${this::class.java.name} host activity must implement LoadingHost, but was: ${context::class.java.name}",
                 )
     }
 

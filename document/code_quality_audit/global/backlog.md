@@ -40,7 +40,7 @@
 
 | G-ID | 状态 | 负责人 | 目标 | 关联 G-F | 涉及模块 | 来源任务 |
 |---|---|---|---|---|---|---|
-| G-T0027 | Draft | 待分配（Security/System/Bilibili） | 为 Cookie/Token 引入加密存储：落地统一的密钥管理与数据迁移，避免明文落盘 | G-F0028 | :bilibili_component | BILIBILI-T002 |
+| G-T0027 | Done | AI（Codex） | 为 Cookie/Token 引入加密存储：落地统一的密钥管理与数据迁移，避免明文落盘 | G-F0028 | :bilibili_component | BILIBILI-T002 |
 | G-T0028 | Draft | 待分配（Base/Storage） | 为媒体库远程凭据建立统一的安全存储策略，避免 DB 明文落盘 | G-F0029 | :data_component | DATA-T002 |
 | G-T0029 | Draft | 待分配（App） | 以显式结果/能力开关替代 “禁用功能即 throw”，降低误调用崩溃风险 | G-F0040 | :app | APP-T002 |
 | G-T0030 | Draft | 待分配（UI） | 定位并修复 DiffUtil 异常根因：约束数据模型或改造 diff 机制，降低回退刷新与上报噪音 | G-F0036 | :core_ui_component | CORE_UI-T002 |

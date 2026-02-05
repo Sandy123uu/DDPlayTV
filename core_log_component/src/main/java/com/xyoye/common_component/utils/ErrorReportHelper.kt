@@ -34,6 +34,7 @@ object ErrorReportHelper {
         try {
             val safeTag = SensitiveDataSanitizer.sanitizeFreeText(tag).trim()
             val safeExtraInfo = SensitiveDataSanitizer.sanitizeFreeText(extraInfo).trim()
+
             // 过滤掉 CancellationException，这是协程正常取消的标志，不应当作错误上报
             if (throwable is CancellationException) {
                 if (BuildConfig.DEBUG) {
@@ -46,7 +47,7 @@ object ErrorReportHelper {
                                 if (safeTag.isNotBlank()) put("tag", safeTag.take(BUGLY_VALUE_LIMIT))
                                 if (safeExtraInfo.isNotBlank()) put("extra", safeExtraInfo.take(BUGLY_VALUE_LIMIT))
                             },
-                        throwable = throwable
+                        throwable = throwable,
                     )
                 }
                 return
@@ -70,7 +71,7 @@ object ErrorReportHelper {
                             if (safeTag.isNotBlank()) put("tag", safeTag.take(BUGLY_VALUE_LIMIT))
                             if (safeExtraInfo.isNotBlank()) put("extra", safeExtraInfo.take(BUGLY_VALUE_LIMIT))
                         },
-                    throwable = throwable
+                    throwable = throwable,
                 )
             }
         } catch (e: Exception) {
@@ -119,7 +120,7 @@ object ErrorReportHelper {
                             if (safeTag.isNotBlank()) put("tag", safeTag.take(BUGLY_VALUE_LIMIT))
                             if (safeMessage.isNotBlank()) put("message", safeMessage.take(BUGLY_VALUE_LIMIT))
                         },
-                    throwable = exception
+                    throwable = exception,
                 )
             }
         } catch (e: Exception) {
@@ -180,7 +181,7 @@ object ErrorReportHelper {
                     append(
                         safeParams.entries.joinToString(separator = ", ") { (k, v) ->
                             "$k=$v"
-                        }
+                        },
                     )
                 }
                 if (safeMessage.isNotBlank()) {
@@ -226,7 +227,7 @@ object ErrorReportHelper {
             throwable,
             className,
             methodName,
-            fullExtraInfo
+            fullExtraInfo,
         )
     }
 }

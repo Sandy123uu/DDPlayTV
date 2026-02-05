@@ -1,6 +1,8 @@
 package com.xyoye.common_component.bilibili.auth
 
 import com.tencent.mmkv.MMKV
+import com.xyoye.common_component.log.LogFacade
+import com.xyoye.common_component.log.model.LogModule
 
 /**
  * Bilibili 登录态存储（按媒体库 storageKey 隔离）。
@@ -13,6 +15,7 @@ import com.tencent.mmkv.MMKV
  */
 object BilibiliAuthStore {
     private const val MMKV_ID = "bilibili_auth_store"
+    private const val TAG = "bilibili_auth_store"
 
     // Web 端扫码登录成功返回，用于 Cookie 刷新链路
     private const val KEY_WEB_REFRESH_TOKEN = "refresh_token"
@@ -38,10 +41,10 @@ object BilibiliAuthStore {
 
     fun read(storageKey: String): AuthState {
         val kv = mmkv()
-        val webRefreshToken = kv.decodeString(namespacedKey(storageKey, KEY_WEB_REFRESH_TOKEN))
-        val appAccessToken = kv.decodeString(namespacedKey(storageKey, KEY_APP_ACCESS_TOKEN))
-        val appRefreshToken = kv.decodeString(namespacedKey(storageKey, KEY_APP_REFRESH_TOKEN))
-        val csrf = kv.decodeString(namespacedKey(storageKey, KEY_CSRF))
+        val webRefreshToken = readSensitiveString(kv, storageKey, KEY_WEB_REFRESH_TOKEN)
+        val appAccessToken = readSensitiveString(kv, storageKey, KEY_APP_ACCESS_TOKEN)
+        val appRefreshToken = readSensitiveString(kv, storageKey, KEY_APP_REFRESH_TOKEN)
+        val csrf = readSensitiveString(kv, storageKey, KEY_CSRF)
         val mid = kv.decodeLong(namespacedKey(storageKey, KEY_MID), -1L).takeIf { it > 0 }
         val updatedAt = kv.decodeLong(namespacedKey(storageKey, KEY_UPDATED_AT), 0L)
         return AuthState(
@@ -64,10 +67,10 @@ object BilibiliAuthStore {
         updatedAt: Long = System.currentTimeMillis()
     ) {
         val kv = mmkv()
-        webRefreshToken?.let { kv.encode(namespacedKey(storageKey, KEY_WEB_REFRESH_TOKEN), it) }
-        appAccessToken?.let { kv.encode(namespacedKey(storageKey, KEY_APP_ACCESS_TOKEN), it) }
-        appRefreshToken?.let { kv.encode(namespacedKey(storageKey, KEY_APP_REFRESH_TOKEN), it) }
-        csrf?.let { kv.encode(namespacedKey(storageKey, KEY_CSRF), it) }
+        writeSensitiveString(kv, storageKey, KEY_WEB_REFRESH_TOKEN, webRefreshToken)
+        writeSensitiveString(kv, storageKey, KEY_APP_ACCESS_TOKEN, appAccessToken)
+        writeSensitiveString(kv, storageKey, KEY_APP_REFRESH_TOKEN, appRefreshToken)
+        writeSensitiveString(kv, storageKey, KEY_CSRF, csrf)
         mid?.let { kv.encode(namespacedKey(storageKey, KEY_MID), it) }
         kv.encode(namespacedKey(storageKey, KEY_UPDATED_AT), updatedAt)
     }
@@ -119,6 +122,66 @@ object BilibiliAuthStore {
         storageKey: String,
         fieldKey: String
     ): String = "$storageKey.$fieldKey"
+
+    private fun readSensitiveString(
+        kv: MMKV,
+        storageKey: String,
+        fieldKey: String
+    ): String? {
+        val key = namespacedKey(storageKey, fieldKey)
+        val raw = kv.decodeString(key)?.takeIf { it.isNotBlank() } ?: return null
+
+        val crypto = BilibiliAuthCrypto.crypto
+        if (crypto.isEncrypted(raw)) {
+            val decrypted = crypto.decrypt(raw)
+            if (decrypted == null) {
+                kv.removeValueForKey(key)
+                LogFacade.w(
+                    module = LogModule.NETWORK,
+                    tag = TAG,
+                    message = "decrypt failed, clear key storageKey=$storageKey field=$fieldKey",
+                )
+            }
+            return decrypted
+        }
+
+        // legacy plain → migrate to encrypted
+        val encrypted = crypto.encrypt(raw)
+        if (encrypted != null) {
+            kv.encode(key, encrypted)
+        } else {
+            kv.removeValueForKey(key)
+            LogFacade.w(
+                module = LogModule.NETWORK,
+                tag = TAG,
+                message = "encrypt failed, clear legacy plain storageKey=$storageKey field=$fieldKey",
+            )
+        }
+        return raw
+    }
+
+    private fun writeSensitiveString(
+        kv: MMKV,
+        storageKey: String,
+        fieldKey: String,
+        value: String?
+    ) {
+        if (value == null) return
+
+        val key = namespacedKey(storageKey, fieldKey)
+        val encrypted = BilibiliAuthCrypto.crypto.encrypt(value)
+        if (encrypted != null) {
+            kv.encode(key, encrypted)
+            return
+        }
+
+        kv.removeValueForKey(key)
+        LogFacade.w(
+            module = LogModule.NETWORK,
+            tag = TAG,
+            message = "encrypt failed, clear key storageKey=$storageKey field=$fieldKey",
+        )
+    }
 
     private fun extractCookie(
         cookieHeader: String,
