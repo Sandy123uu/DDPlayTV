@@ -10,23 +10,22 @@ import android.view.WindowManager
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.animation.LinearInterpolator
-import com.gyf.immersionbar.ImmersionBar
 import com.okamihoro.ddplaytv.R
 import com.okamihoro.ddplaytv.databinding.ActivitySplashBinding
 import com.okamihoro.ddplaytv.utils.image_anim.path.TextPathAnimView
 import com.xyoye.common_component.base.BaseAppCompatActivity
 import com.xyoye.common_component.config.AppConfig
+import com.xyoye.common_component.utils.StatusBarStyle
 
 @SuppressLint("CustomSplashScreen")
 abstract class BaseSplashActivity : BaseAppCompatActivity<ActivitySplashBinding>() {
     override fun getLayoutId() = R.layout.activity_splash
 
     override fun initStatusBar() {
-        ImmersionBar
-            .with(this)
-            .transparentBar()
-            .statusBarDarkFont(false)
-            .init()
+        StatusBarStyle.applyTransparent(
+            activity = this,
+            darkFont = false,
+        )
     }
 
     override fun initView() {

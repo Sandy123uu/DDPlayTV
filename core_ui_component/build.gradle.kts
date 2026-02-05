@@ -26,8 +26,8 @@ dependencies {
     // Avoid leaking :data_component transitively; consumers should declare it explicitly when used.
     implementation(project(":data_component"))
 
-    // Feature modules reference ImmersionBar types directly; keep as API surface for now.
-    api(project(":repository:immersion_bar"))
+    // Encapsulate ImmersionBar; do not leak 3p types to feature modules.
+    implementation(project(":repository:immersion_bar"))
 
     api(Dependencies.Kotlin.coroutines_core)
     api(Dependencies.Kotlin.coroutines_android)

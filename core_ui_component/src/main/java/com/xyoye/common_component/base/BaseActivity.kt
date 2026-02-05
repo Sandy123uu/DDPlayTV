@@ -3,8 +3,8 @@ package com.xyoye.common_component.base
 import android.os.Bundle
 import androidx.databinding.ViewDataBinding
 import androidx.lifecycle.ViewModelProvider
-import com.gyf.immersionbar.ImmersionBar
 import com.xyoye.common_component.extension.isNightMode
+import com.xyoye.common_component.utils.StatusBarStyle
 import com.xyoye.core_ui_component.R
 
 /**
@@ -32,14 +32,11 @@ abstract class BaseActivity<VM : BaseViewModel, V : ViewDataBinding> : BaseAppCo
     }
 
     override fun initStatusBar() {
-        ImmersionBar
-            .with(this)
-            .fitsSystemWindows(true)
-            .statusBarDarkFont(isNightMode().not())
-            .statusBarColor(R.color.status_bar_color)
-            .navigationBarDarkIcon(isNightMode().not())
-            .navigationBarColor(R.color.status_bar_color)
-            .init()
+        StatusBarStyle.applyDefault(
+            activity = this,
+            backgroundColorRes = R.color.status_bar_color,
+            darkFont = isNightMode().not(),
+        )
     }
 
     open fun observeLoadingDialog() {

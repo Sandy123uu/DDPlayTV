@@ -1,7 +1,6 @@
 package com.xyoye.common_component.log
 
 import com.xyoye.common_component.log.model.LogEvent
-import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogPolicy
 import com.xyoye.common_component.log.model.SamplingRule
 import java.util.concurrent.ThreadLocalRandom

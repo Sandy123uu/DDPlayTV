@@ -18,8 +18,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.launcher.ARouter
-import com.gyf.immersionbar.BarHide
-import com.gyf.immersionbar.ImmersionBar
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.bridge.PlayTaskBridge
 import com.xyoye.common_component.config.DanmuConfig
@@ -45,6 +43,7 @@ import com.xyoye.common_component.source.VideoSourceManager
 import com.xyoye.common_component.source.base.BaseVideoSource
 import com.xyoye.common_component.source.factory.StorageVideoSourceFactory
 import com.xyoye.common_component.source.media.StorageVideoSource
+import com.xyoye.common_component.utils.StatusBarStyle
 import com.xyoye.common_component.utils.danmu.StorageDanmuMatcher
 import com.xyoye.common_component.utils.screencast.ScreencastHandler
 import com.xyoye.common_component.weight.ToastCenter
@@ -186,11 +185,7 @@ class PlayerActivity :
     override fun getLayoutId() = R.layout.activity_player
 
     override fun initStatusBar() {
-        ImmersionBar
-            .with(this)
-            .fullScreen(true)
-            .hideBar(BarHide.FLAG_HIDE_BAR)
-            .init()
+        StatusBarStyle.applyFullscreenHideAllBars(this)
     }
 
     override fun initView() {

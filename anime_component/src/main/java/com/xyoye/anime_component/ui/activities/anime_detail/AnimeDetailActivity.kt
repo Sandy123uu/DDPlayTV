@@ -6,7 +6,6 @@ import com.alibaba.android.arouter.facade.annotation.Autowired
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.launcher.ARouter
 import com.google.android.material.tabs.TabLayoutMediator
-import com.gyf.immersionbar.ImmersionBar
 import com.xyoye.anime_component.BR
 import com.xyoye.anime_component.R
 import com.xyoye.anime_component.databinding.ActivityAnimeDetailBinding
@@ -22,6 +21,7 @@ import com.xyoye.common_component.extension.opacity
 import com.xyoye.common_component.extension.setTextColorRes
 import com.xyoye.common_component.extension.toResColor
 import com.xyoye.common_component.focus.TabLayoutViewPager2DpadFocusCoordinator
+import com.xyoye.common_component.utils.StatusBarStyle
 import com.xyoye.data_component.bean.AnimeArgument
 import com.xyoye.data_component.bean.ColorRange
 import com.xyoye.data_component.enums.AnimeDetailTab
@@ -69,11 +69,10 @@ class AnimeDetailActivity : BaseActivity<AnimeDetailViewModel, ActivityAnimeDeta
     override fun getLayoutId() = R.layout.activity_anime_detail
 
     override fun initStatusBar() {
-        ImmersionBar
-            .with(this)
-            .transparentBar()
-            .statusBarDarkFont(false)
-            .init()
+        StatusBarStyle.applyTransparent(
+            activity = this,
+            darkFont = false,
+        )
     }
 
     override fun initView() {
@@ -193,11 +192,11 @@ class AnimeDetailActivity : BaseActivity<AnimeDetailViewModel, ActivityAnimeDeta
         // 状态栏文字颜色
         // tips: MIUI深色模式下状态栏字体颜色不 受此控制
         val isDarkFont = percent > 0.5f && !isNightMode()
-        ImmersionBar
-            .with(this)
-            .statusBarColorInt(pageColorRange.start.opacity(percent))
-            .statusBarDarkFont(isDarkFont)
-            .init()
+        StatusBarStyle.applyStatusBarColorInt(
+            activity = this,
+            statusBarColor = pageColorRange.start.opacity(percent),
+            darkFont = isDarkFont,
+        )
     }
 
     /**

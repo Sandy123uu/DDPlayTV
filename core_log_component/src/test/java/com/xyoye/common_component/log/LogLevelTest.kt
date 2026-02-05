@@ -21,4 +21,3 @@ class LogLevelTest {
         assertFalse(LogLevel.WARN.isAtLeast(LogLevel.ERROR))
     }
 }
-
