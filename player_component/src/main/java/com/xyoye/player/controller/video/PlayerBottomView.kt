@@ -17,7 +17,6 @@ import com.xyoye.common_component.extension.toResColor
 import com.xyoye.common_component.extension.toResDrawable
 import com.xyoye.common_component.focus.applyDpadFocusable
 import com.xyoye.common_component.focus.requestDefaultFocus
-import com.xyoye.data_component.bean.SendDanmuBean
 import com.xyoye.data_component.enums.PlayState
 import com.xyoye.data_component.enums.SettingViewType
 import com.xyoye.data_component.enums.TrackType
@@ -43,8 +42,6 @@ class PlayerBottomView(
     private lateinit var mControlWrapper: ControlWrapper
     private var controlsInputEnabled = false
     private var actionHandler: ((PlayerAction) -> Unit)? = null
-
-    private var sendDanmuBlock: ((SendDanmuBean) -> Unit)? = null
 
     private var switchVideoSourceBlock: ((Int) -> Unit)? = null
 
@@ -78,35 +75,6 @@ class PlayerBottomView(
             }
             actionHandler?.invoke(PlayerAction.ToggleDanmu) ?: mControlWrapper.toggleDanmuVisible()
             syncDanmuToggleState()
-        }
-
-        /*
-        viewBinding.sendDanmuTv.setOnClickListener {
-            if (!UserConfig.isUserLoggedIn()) {
-                ToastCenter.showWarning(R.string.tips_login_required.toResString())
-                return@setOnClickListener
-            }
-
-            if (!mControlWrapper.allowSendDanmu()) {
-                ToastCenter.showOriginalToast("当前弹幕不支持发送弹幕")
-                return@setOnClickListener
-            }
-
-            mControlWrapper.hideController()
-            mControlWrapper.pause()
-            SendDanmuDialog(mControlWrapper.getCurrentPosition(), context) {
-                //添加弹幕到view
-                mControlWrapper.addDanmuToView(it)
-
-                //添加弹幕到文件和服务器
-                sendDanmuBlock?.invoke(it)
-            }.show()
-        }
-         */
-        viewBinding.sendDanmuTv.apply {
-            isVisible = false
-            isEnabled = false
-            setOnClickListener(null)
         }
 
         viewBinding.ivNextSource.setOnClickListener {
@@ -327,10 +295,6 @@ class PlayerBottomView(
             (duration * viewBinding.playSeekBar.progress) / viewBinding.playSeekBar.max
         mControlWrapper.seekTo(newPosition)
         mControlWrapper.startFadeOut()
-    }
-
-    fun setSendDanmuBlock(block: (SendDanmuBean) -> Unit) {
-        sendDanmuBlock = block
     }
 
     fun setSwitchVideoSourceBlock(block: (Int) -> Unit) {

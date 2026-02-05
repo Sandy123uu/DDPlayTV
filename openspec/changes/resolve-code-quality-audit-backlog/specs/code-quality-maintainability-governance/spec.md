@@ -41,7 +41,7 @@
 - **GIVEN** “发送弹幕”能力被确认废弃
 - **WHEN** 完成治理落地并执行全仓构建
 - **THEN** `player_component` 不再依赖 `:repository:panel_switch`
-- **AND** 全仓检索 `com.effective.android.panel` 无命中
+- **AND** 全仓检索 `com[.]effective[.]android[.]panel` 无命中
 
 #### Scenario: 移除投屏 Sender 链路后不再暴露不可达服务
 

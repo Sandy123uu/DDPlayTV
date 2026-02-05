@@ -164,7 +164,6 @@ dependencies {
     implementation(project(":core_contract_component"))
     implementation(project(":data_component"))
 
-    implementation(project(":repository:panel_switch"))
     implementation(project(":repository:danmaku"))
     implementation(project(":repository:video_cache"))
 

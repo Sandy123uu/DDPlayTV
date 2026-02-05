@@ -596,13 +596,6 @@ class PlayerActivity :
                 "start title=${source.getVideoTitle()} type=${source.getMediaType()} position=${source.getCurrentPosition()} speed=${PlayerConfig.getNewVideoSpeed()}",
             )
         }
-        /*
-        //发送弹幕
-        videoController.observerSendDanmu {
-            LogFacade.d(LogModule.PLAYER, TAG_DANMAKU, "send request text=${it.text}")
-            viewModel.sendDanmu(source.getDanmu(), it)
-        }
-         */
 
         videoController.setSwitchVideoSourceBlock {
             LogFacade.i(LogModule.PLAYER, TAG_SOURCE, "switch request index=$it title=${source.getVideoTitle()}")

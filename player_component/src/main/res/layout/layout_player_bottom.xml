@@ -141,29 +141,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@id/play_iv" />
 
-        <!-- TV build disables danmaku sending; keep the view hidden to avoid focus traps. -->
-        <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/send_danmu_tv"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:background="@drawable/background_send_danmu_bt"
-            android:drawablePadding="4dp"
-            android:enabled="false"
-            android:focusable="false"
-            android:gravity="center"
-            android:nextFocusUp="@id/video_title_tv"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="6dp"
-            android:text="@string/send_danmu"
-            android:textColor="@color/text_white_immutable"
-            android:textSize="12sp"
-            android:visibility="gone"
-            app:drawableStartCompat="@drawable/ic_send_damu"
-            app:layout_constraintBottom_toBottomOf="@id/play_iv"
-            app:layout_constraintStart_toEndOf="@id/video_list_iv"
-            app:layout_constraintTop_toTopOf="@id/play_iv" />
-
         <androidx.appcompat.widget.AppCompatCheckBox
             android:id="@+id/danmu_control_iv"
             android:layout_width="wrap_content"
