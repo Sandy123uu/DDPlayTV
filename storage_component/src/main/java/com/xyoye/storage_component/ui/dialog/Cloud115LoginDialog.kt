@@ -6,7 +6,7 @@ import android.graphics.BitmapFactory
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import com.xyoye.common_component.extension.toResColor
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.storage.cloud115.net.Cloud115Headers
 import com.xyoye.common_component.utils.QrCodeHelper
@@ -324,7 +324,7 @@ class Cloud115LoginDialog(
                 }
 
                 val body =
-                    Retrofit.cloud115Service.qrcodeImage(
+                    RetrofitManager.cloud115Service.qrcodeImage(
                         baseUrl = Api.CLOUD_115_QRCODE_API,
                         uid = uid,
                     )
@@ -340,7 +340,7 @@ class Cloud115LoginDialog(
         withContext(Dispatchers.IO) {
             runCatching {
                 val response =
-                    Retrofit.cloud115Service.qrcodeToken(
+                    RetrofitManager.cloud115Service.qrcodeToken(
                         baseUrl = Api.CLOUD_115_QRCODE_API,
                     )
 
@@ -360,7 +360,7 @@ class Cloud115LoginDialog(
         withContext(Dispatchers.IO) {
             runCatching {
                 val response =
-                    Retrofit.cloud115Service.qrcodeStatus(
+                    RetrofitManager.cloud115Service.qrcodeStatus(
                         baseUrl = Api.CLOUD_115_QRCODE_API,
                         uid = uid,
                         time = time,
@@ -383,7 +383,7 @@ class Cloud115LoginDialog(
         withContext(Dispatchers.IO) {
             runCatching {
                 val response =
-                    Retrofit.cloud115Service.qrcodeLogin(
+                    RetrofitManager.cloud115Service.qrcodeLogin(
                         baseUrl = Api.CLOUD_115_PASSPORT_API,
                         app = app,
                         account = uid,

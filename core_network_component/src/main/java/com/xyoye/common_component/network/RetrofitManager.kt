@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit
  * Created by xyoye on 2020/4/14.
  */
 
-class Retrofit private constructor() {
+class RetrofitManager private constructor() {
     companion object {
         val danDanService: DanDanService by lazy { Holder.instance.danDanService }
         val extendedService: ExtendedService by lazy { Holder.instance.extendedService }
@@ -56,7 +56,7 @@ class Retrofit private constructor() {
     }
 
     private object Holder {
-        val instance = Retrofit()
+        val instance = RetrofitManager()
     }
 
     private val danDanClient: OkHttpClient by lazy {

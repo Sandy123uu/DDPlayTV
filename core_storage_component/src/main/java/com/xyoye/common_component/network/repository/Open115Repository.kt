@@ -2,7 +2,7 @@ package com.xyoye.common_component.network.repository
 
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.network.request.PassThroughException
 import com.xyoye.common_component.storage.open115.auth.Open115AuthStore
@@ -30,7 +30,7 @@ class Open115Repository(
 
     suspend fun userInfo(): Result<Open115UserInfoResponse> =
         requestProApi(reason = "userInfo") { accessToken ->
-            Retrofit.open115Service.userInfo(
+            RetrofitManager.open115Service.userInfo(
                 baseUrl = Api.OPEN_115_PRO_API,
                 authorization = Open115Headers.bearer(accessToken),
             )
@@ -48,7 +48,7 @@ class Open115Repository(
             reason = "listFiles",
             extraInfo = "cid=$cid limit=$limit offset=$offset",
         ) { accessToken ->
-            Retrofit.open115Service.listFiles(
+            RetrofitManager.open115Service.listFiles(
                 baseUrl = Api.OPEN_115_PRO_API,
                 authorization = Open115Headers.bearer(accessToken),
                 cid = cid,
@@ -72,7 +72,7 @@ class Open115Repository(
             reason = "searchFiles",
             extraInfo = "keywordLength=${searchValue.length} cid=$cid limit=${limit ?: -1} offset=${offset ?: -1}",
         ) { accessToken ->
-            Retrofit.open115Service.searchFiles(
+            RetrofitManager.open115Service.searchFiles(
                 baseUrl = Api.OPEN_115_PRO_API,
                 authorization = Open115Headers.bearer(accessToken),
                 searchValue = searchValue,
@@ -92,7 +92,7 @@ class Open115Repository(
             reason = "downUrl",
             extraInfo = "pickCodeLength=${pickCode.length} uaLength=${userAgent.length}",
         ) { accessToken ->
-            Retrofit.open115Service.downUrl(
+            RetrofitManager.open115Service.downUrl(
                 baseUrl = Api.OPEN_115_PRO_API,
                 authorization = Open115Headers.bearer(accessToken),
                 userAgent = userAgent,
@@ -105,7 +105,7 @@ class Open115Repository(
             reason = "folderGetInfo",
             extraInfo = "fileId=$fileId",
         ) { accessToken ->
-            Retrofit.open115Service.folderGetInfo(
+            RetrofitManager.open115Service.folderGetInfo(
                 baseUrl = Api.OPEN_115_PRO_API,
                 authorization = Open115Headers.bearer(accessToken),
                 fileId = fileId,
@@ -184,7 +184,7 @@ class Open115Repository(
                     }
 
                     val response =
-                        Retrofit.open115Service.userInfo(
+                        RetrofitManager.open115Service.userInfo(
                             baseUrl = Api.OPEN_115_PRO_API,
                             authorization = Open115Headers.bearer(trimmed),
                         )
@@ -224,7 +224,7 @@ class Open115Repository(
                     }
 
                     val response =
-                        Retrofit.open115Service.refreshToken(
+                        RetrofitManager.open115Service.refreshToken(
                             baseUrl = Api.OPEN_115_PASSPORT_API,
                             refreshToken = trimmed,
                         )

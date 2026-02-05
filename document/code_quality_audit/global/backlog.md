@@ -78,7 +78,7 @@
 | G-T0062 | Draft | 待分配（Player/Storage/Network） | 统一本地代理能力：抽取通用 Proxy 服务（headers/range/tls 策略一致），减少 `HttpPlayServer`/`VlcProxyServer` 逻辑重复 | G-F0055 | :core_storage_component | CORE_STORAGE-T005 |
 | G-T0063 | Draft | 待分配（Player） | 若继续使用 PanelSwitchHelper：补齐生命周期释放/资源回收，避免潜在泄漏 | G-F0048 | :repository:panel_switch | REPO_PANEL_SWITCH-T003 |
 | G-T0064 | Done | AI（Codex） | 迁移存储凭证到安全存储：DB 中不再保存明文 `password/remoteSecret`（改为引用/加密存储） | G-F0027 | :core_storage_component | CORE_STORAGE-T003 |
-| G-T0065 | Draft | 待分配（Infra/Network） | 重命名自定义 `Retrofit` 包装类（或对 `retrofit2.Retrofit` 使用别名 import），降低阅读歧义 | G-F0065 | :core_network_component | CORE_NETWORK-T006 |
+| G-T0065 | Done | AI（Codex） | 重命名自定义 `Retrofit` 包装类（或对 `retrofit2.Retrofit` 使用别名 import），降低阅读歧义 | G-F0065 | :core_network_component | CORE_NETWORK-T006 |
 | G-T0066 | Done | AI（Codex） | 重构 `DatabaseManager` holder 命名与结构，降低阅读歧义 | G-F0059 | :core_database_component | CORE_DATABASE-T002 |
 
 ## P3

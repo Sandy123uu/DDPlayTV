@@ -1,7 +1,7 @@
 package com.xyoye.common_component.network.repository
 
 import android.util.Base64
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.request.NetworkException
 import com.xyoye.common_component.storage.helper.ScreencastConstants
 import com.xyoye.common_component.utils.EntropyUtils
@@ -42,7 +42,7 @@ object ScreencastRepository : BaseRepository() {
         authorization: String?
     ) = request()
         .doGet {
-            Retrofit.screencastService.init(url, authorization, ScreencastConstants.version)
+            RetrofitManager.screencastService.init(url, authorization, ScreencastConstants.version)
         }.run {
             // 数据错误，外部处理
             val response = getOrNull() ?: return@run this
@@ -101,6 +101,6 @@ object ScreencastRepository : BaseRepository() {
     ) = request()
         .json(JsonHelper.toJson(data).orEmpty())
         .doPost {
-            Retrofit.screencastService.play(url, authorization, it)
+            RetrofitManager.screencastService.play(url, authorization, it)
         }
 }

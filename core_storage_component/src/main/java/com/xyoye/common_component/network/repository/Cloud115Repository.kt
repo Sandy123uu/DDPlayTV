@@ -3,7 +3,7 @@ package com.xyoye.common_component.network.repository
 import com.squareup.moshi.Json
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.storage.cloud115.auth.Cloud115AuthStore
 import com.xyoye.common_component.storage.cloud115.auth.Cloud115NotConfiguredException
@@ -39,7 +39,7 @@ class Cloud115Repository(
     suspend fun qrcodeToken(): Result<Cloud115QRCodeTokenResp> =
         requestQrCodeApi(reason = "qrcodeToken") {
             val response =
-                Retrofit.cloud115Service.qrcodeToken(
+                RetrofitManager.cloud115Service.qrcodeToken(
                     baseUrl = Api.CLOUD_115_QRCODE_API,
                 )
 
@@ -60,7 +60,7 @@ class Cloud115Repository(
             extraInfo = "uidLength=${uid.length} time=$time signLength=${sign.length}",
         ) {
             val response =
-                Retrofit.cloud115Service.qrcodeStatus(
+                RetrofitManager.cloud115Service.qrcodeStatus(
                     baseUrl = Api.CLOUD_115_QRCODE_API,
                     uid = uid,
                     time = time,
@@ -84,7 +84,7 @@ class Cloud115Repository(
             extraInfo = "uidLength=${uid.length} app=$app",
         ) {
             val response =
-                Retrofit.cloud115Service.qrcodeLogin(
+                RetrofitManager.cloud115Service.qrcodeLogin(
                     baseUrl = Api.CLOUD_115_PASSPORT_API,
                     app = app,
                     account = uid,
@@ -157,7 +157,7 @@ class Cloud115Repository(
             extraInfo = "cid=$cid limit=$limit offset=$offset order=$order asc=${asc ?: -1} showDir=$showDir",
         ) { cookie ->
             val response =
-                Retrofit.cloud115Service.listFiles(
+                RetrofitManager.cloud115Service.listFiles(
                     baseUrl = Api.CLOUD_115_WEB_API,
                     cookie = cookie,
                     userAgent = Cloud115Headers.USER_AGENT,
@@ -194,7 +194,7 @@ class Cloud115Repository(
             extraInfo = "keywordLength=${searchValue.length} cid=$cid offset=${offset ?: -1} limit=${limit ?: -1} order=$order asc=${asc ?: -1}",
         ) { cookie ->
             val response =
-                Retrofit.cloud115Service.searchFiles(
+                RetrofitManager.cloud115Service.searchFiles(
                     baseUrl = Api.CLOUD_115_WEB_API,
                     cookie = cookie,
                     userAgent = Cloud115Headers.USER_AGENT,
@@ -222,7 +222,7 @@ class Cloud115Repository(
             reason = "stat",
             extraInfo = "cid=$cid",
         ) { cookie ->
-            Retrofit.cloud115Service.stat(
+            RetrofitManager.cloud115Service.stat(
                 baseUrl = Api.CLOUD_115_WEB_API,
                 cookie = cookie,
                 userAgent = Cloud115Headers.USER_AGENT,
@@ -245,7 +245,7 @@ class Cloud115Repository(
             val encryptedData = M115Crypto.encode(payload.toByteArray(StandardCharsets.UTF_8), key)
 
             val response =
-                Retrofit.cloud115Service.downloadUrl(
+                RetrofitManager.cloud115Service.downloadUrl(
                     baseUrl = Api.CLOUD_115_PRO_API,
                     cookie = cookie,
                     userAgent = userAgent,
@@ -279,7 +279,7 @@ class Cloud115Repository(
 
         val cookie = requireCookie()
         val response =
-            Retrofit.cloud115Service.cookieStatus(
+            RetrofitManager.cloud115Service.cookieStatus(
                 baseUrl = Api.CLOUD_115_MY,
                 cookie = cookie,
                 ct = "guide",

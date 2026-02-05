@@ -3,7 +3,7 @@ package com.xyoye.common_component.storage.file.helper
 import com.xyoye.common_component.config.PlayerConfig
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.network.helper.AgentInterceptor
 import com.xyoye.common_component.network.helper.OkHttpTlsConfigurer
@@ -113,11 +113,11 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
     }
 
     private val strictService: ExtendedService by lazy {
-        Retrofit.createService(Api.PLACEHOLDER, strictClient, ExtendedService::class.java)
+        RetrofitManager.createService(Api.PLACEHOLDER, strictClient, ExtendedService::class.java)
     }
 
     private val unsafeTrustAllService: ExtendedService by lazy {
-        Retrofit.createService(Api.PLACEHOLDER, unsafeTrustAllClient, ExtendedService::class.java)
+        RetrofitManager.createService(Api.PLACEHOLDER, unsafeTrustAllClient, ExtendedService::class.java)
     }
 
     private fun selectExtendedService(tlsPolicy: UpstreamTlsPolicy): ExtendedService =

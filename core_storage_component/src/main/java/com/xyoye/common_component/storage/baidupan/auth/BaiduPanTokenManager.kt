@@ -1,7 +1,7 @@
 package com.xyoye.common_component.storage.baidupan.auth
 
 import com.xyoye.common_component.config.BaiduPanOpenApiConfig
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.network.request.PassThroughException
 import com.xyoye.common_component.utils.ErrorReportHelper
@@ -58,7 +58,7 @@ class BaiduPanTokenManager(
 
                 runCatching {
                     val response =
-                        Retrofit.baiduPanService.oauthToken(
+                        RetrofitManager.baiduPanService.oauthToken(
                             baseUrl = Api.BAIDU_OAUTH,
                             grantType = "refresh_token",
                             code = null,

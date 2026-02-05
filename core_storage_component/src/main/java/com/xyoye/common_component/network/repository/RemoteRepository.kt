@@ -1,6 +1,6 @@
 package com.xyoye.common_component.network.repository
 
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.storage.impl.RemoteStorage
 
 /**
@@ -15,7 +15,7 @@ object RemoteRepository : BaseRepository() {
         request()
             .param("token", storage.library.remoteSecret)
             .doGet {
-                Retrofit.remoteService.getStorageFiles(storage.rootUri.toString(), it)
+                RetrofitManager.remoteService.getStorageFiles(storage.rootUri.toString(), it)
             }
 
     /**
@@ -27,7 +27,7 @@ object RemoteRepository : BaseRepository() {
     ) = request()
         .param("token", storage.library.remoteSecret)
         .doGet {
-            Retrofit.remoteService.downloadDanmu(storage.rootUri.toString(), videoId, it)
+            RetrofitManager.remoteService.downloadDanmu(storage.rootUri.toString(), videoId, it)
         }
 
     /**
@@ -39,7 +39,7 @@ object RemoteRepository : BaseRepository() {
     ) = request()
         .param("token", storage.library.remoteSecret)
         .doGet {
-            Retrofit.remoteService.getRelatedSubtitles(storage.rootUri.toString(), videoId, it)
+            RetrofitManager.remoteService.getRelatedSubtitles(storage.rootUri.toString(), videoId, it)
         }
 
     /**
@@ -53,6 +53,6 @@ object RemoteRepository : BaseRepository() {
         .param("token", storage.library.remoteSecret)
         .param("fileName", fileName)
         .doGet {
-            Retrofit.remoteService.downloadSubtitle(storage.rootUri.toString(), videoId, it)
+            RetrofitManager.remoteService.downloadSubtitle(storage.rootUri.toString(), videoId, it)
         }
 }

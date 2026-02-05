@@ -72,7 +72,7 @@
 - [ ] 2.36 关闭 `G-T0062`：统一本地代理能力（Proxy 服务抽取，headers/range/tls 一致）
 - [ ] 2.37 关闭 `G-T0063`：PanelSwitchHelper 生命周期释放/资源回收
 - [x] 2.38 关闭 `G-T0064`：迁移存储凭证到安全存储（DB 不再明文）
-- [ ] 2.39 关闭 `G-T0065`：重命名自定义 `Retrofit` 包装类（避免与 `retrofit2.Retrofit` 同名）
+- [x] 2.39 关闭 `G-T0065`：重命名自定义 `Retrofit` 包装类（避免与 `retrofit2.Retrofit` 同名）
 - [x] 2.40 关闭 `G-T0066`：重构 `DatabaseManager` holder 命名与结构
 
 ## 3. P3（回归用例 / 包结构治理）

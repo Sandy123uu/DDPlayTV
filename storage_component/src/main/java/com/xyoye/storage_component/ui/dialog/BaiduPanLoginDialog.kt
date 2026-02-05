@@ -6,7 +6,7 @@ import android.os.SystemClock
 import androidx.core.view.isVisible
 import com.xyoye.common_component.config.BaiduPanOpenApiConfig
 import com.xyoye.common_component.extension.toResColor
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.utils.JsonHelper
 import com.xyoye.common_component.utils.QrCodeHelper
@@ -187,7 +187,7 @@ class BaiduPanLoginDialog(
         withContext(Dispatchers.IO) {
             runCatching {
                 val response =
-                    Retrofit.baiduPanService.oauthDeviceCode(
+                    RetrofitManager.baiduPanService.oauthDeviceCode(
                         baseUrl = Api.BAIDU_OAUTH,
                         responseType = "device_code",
                         clientId = BaiduPanOpenApiConfig.clientId,
@@ -212,7 +212,7 @@ class BaiduPanLoginDialog(
         withContext(Dispatchers.IO) {
             runCatching {
                 val response =
-                    Retrofit.baiduPanService.oauthToken(
+                    RetrofitManager.baiduPanService.oauthToken(
                         baseUrl = Api.BAIDU_OAUTH,
                         grantType = "device_token",
                         code = deviceCode,
@@ -252,7 +252,7 @@ class BaiduPanLoginDialog(
     private suspend fun fetchUinfo(accessToken: String): Result<BaiduPanUinfoResponse> =
         withContext(Dispatchers.IO) {
             runCatching {
-                Retrofit.baiduPanService.xpanUinfo(
+                RetrofitManager.baiduPanService.xpanUinfo(
                     baseUrl = Api.BAIDU_PAN,
                     method = "uinfo",
                     accessToken = accessToken,

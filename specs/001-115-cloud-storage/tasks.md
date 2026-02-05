@@ -38,7 +38,7 @@ description: "Task list for 115 Cloud 存储库在线播放"
 **Purpose**: 115 Cloud 的 API/鉴权/加解密/授权态持久化等基础设施；在完成前不应开始任何 UI/浏览/播放开发
 
 - [X] T005 [P] 新增 115 Cloud API Moshi 模型 `data_component/src/main/java/com/xyoye/data_component/data/cloud115/Cloud115Models.kt`（按 `contracts/115-cloud-openapi.yaml` 覆盖：QRCodeToken/Status/Login、FileList/FileInfo、FileStat(paths)、DownloadResp 等）
-- [X] T006 [P] 新增 Retrofit Service `core_network_component/src/main/java/com/xyoye/common_component/network/service/Cloud115Service.kt` 并在 `core_network_component/src/main/java/com/xyoye/common_component/network/Retrofit.kt` 注册（支持多域名：qrcodeapi/passportapi/my/webapi/proapi）
+- [X] T006 [P] 新增 Retrofit Service `core_network_component/src/main/java/com/xyoye/common_component/network/service/Cloud115Service.kt` 并在 `core_network_component/src/main/java/com/xyoye/common_component/network/RetrofitManager.kt` 注册（支持多域名：qrcodeapi/passportapi/my/webapi/proapi）
 - [X] T007 [P] 新增 115 Cloud Header/脱敏工具 `core_storage_component/src/main/java/com/xyoye/common_component/storage/cloud115/net/Cloud115Headers.kt`（UA 常量、Cookie 拼装、cookie 脱敏工具）
 - [X] T008 [P] 新增 m115 加解密实现 `core_storage_component/src/main/java/com/xyoye/common_component/storage/cloud115/crypto/M115Crypto.kt`（算法参考 MIT 实现；禁止引入 AGPL 代码）
 - [X] T009 [P] 新增 JVM 单测 `core_storage_component/src/test/java/.../M115CryptoTest.kt`：覆盖 encode/decode 循环一致性（多轮随机 padding）、异常输入处理

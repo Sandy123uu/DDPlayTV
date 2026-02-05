@@ -3,7 +3,7 @@ package com.xyoye.common_component.network.repository
 import com.xyoye.common_component.config.BaiduPanOpenApiConfig
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.network.request.PassThroughException
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanAuthStore
@@ -37,7 +37,7 @@ class BaiduPanRepository(
     suspend fun oauthDeviceCode(scope: String = DEFAULT_SCOPE): Result<BaiduPanDeviceCodeResponse> =
         requestOAuth(reason = "oauthDeviceCode", extraInfo = "scope=$scope") {
             ensureConfigured()
-            Retrofit.baiduPanService.oauthDeviceCode(
+            RetrofitManager.baiduPanService.oauthDeviceCode(
                 baseUrl = Api.BAIDU_OAUTH,
                 responseType = "device_code",
                 clientId = BaiduPanOpenApiConfig.clientId,
@@ -51,7 +51,7 @@ class BaiduPanRepository(
             extraInfo = "deviceCodeLength=${deviceCode.length}",
         ) {
             ensureConfigured()
-            Retrofit.baiduPanService.oauthToken(
+            RetrofitManager.baiduPanService.oauthToken(
                 baseUrl = Api.BAIDU_OAUTH,
                 grantType = "device_token",
                 code = deviceCode,
@@ -63,7 +63,7 @@ class BaiduPanRepository(
 
     suspend fun xpanUinfo(vipVersion: String? = "v2"): Result<BaiduPanUinfoResponse> =
         requestXpan(reason = "xpanUinfo", extraInfo = "vipVersion=$vipVersion") { accessToken ->
-            Retrofit.baiduPanService.xpanUinfo(
+            RetrofitManager.baiduPanService.xpanUinfo(
                 baseUrl = Api.BAIDU_PAN,
                 method = "uinfo",
                 accessToken = accessToken,
@@ -94,7 +94,7 @@ class BaiduPanRepository(
             reason = "xpanList",
             extraInfo = "dir=$dir start=${start ?: -1} limit=${limit ?: -1} order=$order desc=${desc ?: false} web=$web",
         ) { accessToken ->
-            Retrofit.baiduPanService.xpanFileList(
+            RetrofitManager.baiduPanService.xpanFileList(
                 baseUrl = Api.BAIDU_PAN,
                 method = "list",
                 accessToken = accessToken,
@@ -118,7 +118,7 @@ class BaiduPanRepository(
             reason = "xpanSearch",
             extraInfo = "dir=$dir keyLength=${key.length} recursion=$recursion category=${category ?: -1} web=$web",
         ) { accessToken ->
-            Retrofit.baiduPanService.xpanFileSearch(
+            RetrofitManager.baiduPanService.xpanFileSearch(
                 baseUrl = Api.BAIDU_PAN,
                 method = "search",
                 accessToken = accessToken,
@@ -155,7 +155,7 @@ class BaiduPanRepository(
             reason = "xpanFileMetas",
             extraInfo = "fsIds=${fsIds.size} dlink=$dlink needMedia=$needMedia detail=$detail",
         ) { accessToken ->
-            Retrofit.baiduPanService.xpanFileMetas(
+            RetrofitManager.baiduPanService.xpanFileMetas(
                 baseUrl = Api.BAIDU_PAN,
                 method = "filemetas",
                 accessToken = accessToken,

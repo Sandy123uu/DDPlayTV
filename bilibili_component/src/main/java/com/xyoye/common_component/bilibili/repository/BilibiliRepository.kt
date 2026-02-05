@@ -19,7 +19,7 @@ import com.xyoye.common_component.bilibili.risk.BilibiliRiskStateStore
 import com.xyoye.common_component.bilibili.ticket.BilibiliTicketSigner
 import com.xyoye.common_component.bilibili.wbi.BilibiliWbiSigner
 import com.xyoye.common_component.extension.toMd5String
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.network.repository.BaseRepository
 import com.xyoye.common_component.network.request.RequestParams
@@ -64,7 +64,7 @@ class BilibiliRepository(
     private val storageKey: String
 ) : BaseRepository() {
     private val service: BilibiliService by lazy {
-        Retrofit.createService(
+        RetrofitManager.createService(
             baseUrl = Api.PLACEHOLDER,
             client = BilibiliOkHttpClientFactory.create(storageKey),
             service = BilibiliService::class.java,

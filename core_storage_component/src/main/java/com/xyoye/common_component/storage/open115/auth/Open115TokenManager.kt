@@ -2,7 +2,7 @@ package com.xyoye.common_component.storage.open115.auth
 
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.network.request.PassThroughException
 import com.xyoye.common_component.storage.open115.net.Open115Headers
@@ -76,7 +76,7 @@ class Open115TokenManager(
                         ),
                     )
                     val response =
-                        Retrofit.open115Service.refreshToken(
+                        RetrofitManager.open115Service.refreshToken(
                             baseUrl = Api.OPEN_115_PASSPORT_API,
                             refreshToken = refreshToken,
                         )

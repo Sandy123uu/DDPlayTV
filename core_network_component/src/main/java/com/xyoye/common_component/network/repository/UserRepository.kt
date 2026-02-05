@@ -1,6 +1,6 @@
 package com.xyoye.common_component.network.repository
 
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 
 /**
  * Created by xyoye on 2024/1/6.
@@ -23,7 +23,7 @@ object UserRepository : BaseRepository() {
         .param("unixTimestamp", timestamp)
         .param("hash", sign)
         .doPost {
-            Retrofit.danDanService.login(it)
+            RetrofitManager.danDanService.login(it)
         }
 
     /**
@@ -32,7 +32,7 @@ object UserRepository : BaseRepository() {
     suspend fun refreshToken() =
         request()
             .doGet {
-                Retrofit.danDanService.refreshToken()
+                RetrofitManager.danDanService.refreshToken()
             }
 
     /**
@@ -55,7 +55,7 @@ object UserRepository : BaseRepository() {
         .param("unixTimestamp", timestamp)
         .param("hash", sign)
         .doPost {
-            Retrofit.danDanService.register(it)
+            RetrofitManager.danDanService.register(it)
         }
 
     /**
@@ -74,7 +74,7 @@ object UserRepository : BaseRepository() {
         .param("unixTimestamp", timestamp)
         .param("hash", sign)
         .doPost {
-            Retrofit.danDanService.resetPassword(it)
+            RetrofitManager.danDanService.resetPassword(it)
         }
 
     /**
@@ -91,7 +91,7 @@ object UserRepository : BaseRepository() {
         .param("unixTimestamp", timestamp)
         .param("hash", sign)
         .doPost {
-            Retrofit.danDanService.retrieveAccount(it)
+            RetrofitManager.danDanService.retrieveAccount(it)
         }
 
     /**
@@ -101,7 +101,7 @@ object UserRepository : BaseRepository() {
         request()
             .param("screenName", screenName)
             .doPost {
-                Retrofit.danDanService.updateScreenName(it)
+                RetrofitManager.danDanService.updateScreenName(it)
             }
 
     /**
@@ -114,7 +114,7 @@ object UserRepository : BaseRepository() {
         .param("oldPassword", oldPassword)
         .param("newPassword", newPassword)
         .doPost {
-            Retrofit.danDanService.updatePassword(it)
+            RetrofitManager.danDanService.updatePassword(it)
         }
 
     /**
@@ -125,6 +125,6 @@ object UserRepository : BaseRepository() {
         appSecret: String
     ) = request()
         .doGet {
-            Retrofit.danDanService.checkAuthenticate(appId, appSecret, 1)
+            RetrofitManager.danDanService.checkAuthenticate(appId, appSecret, 1)
         }
 }
