@@ -104,7 +104,8 @@ class MediaViewModel : BaseViewModel() {
                     e,
                     "MediaViewModel",
                     "deleteStorage",
-                    "Failed to delete storage: ${data.url}",
+                    "mediaType" to data.mediaType.name,
+                    "url" to data.url,
                 )
             }
         }
@@ -127,7 +128,8 @@ class MediaViewModel : BaseViewModel() {
                         exception ?: RuntimeException("Unknown screencast connection error"),
                         "MediaViewModel",
                         "checkScreenDeviceRunning",
-                        "Screencast address: ${receiver.screencastAddress}:${receiver.port}",
+                        "address" to receiver.screencastAddress,
+                        "port" to receiver.port,
                     )
                     exception?.message?.toastError()
                     return@launch

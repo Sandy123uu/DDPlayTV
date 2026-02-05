@@ -44,7 +44,7 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "updatePlayHistory",
-                    "Media type: $mediaType",
+                    "mediaType" to mediaType.name,
                 )
             }
         }
@@ -60,7 +60,8 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "removeHistory",
-                    "History ID: ${history.id}, URL: ${history.url}",
+                    "historyId" to history.id,
+                    "url" to history.url,
                 )
             }
         }
@@ -81,7 +82,7 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "clearHistory",
-                    "Media type: $mediaType",
+                    "mediaType" to mediaType.name,
                 )
             }
         }
@@ -104,7 +105,7 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "changeSortOption",
-                    "Sort option: ${option.javaClass.simpleName}",
+                    "sortOption" to option.javaClass.simpleName,
                 )
             }
         }
@@ -121,7 +122,8 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "unbindDanmu",
-                    "History ID: ${history.id}, URL: ${history.url}",
+                    "historyId" to history.id,
+                    "url" to history.url,
                 )
             }
         }
@@ -138,7 +140,8 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "unbindSubtitle",
-                    "History ID: ${history.id}, URL: ${history.url}",
+                    "historyId" to history.id,
+                    "url" to history.url,
                 )
             }
         }
@@ -155,7 +158,8 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "openHistory",
-                    "History ID: ${history.id}, URL: ${history.url}",
+                    "historyId" to history.id,
+                    "url" to history.url,
                 )
             }
         }
@@ -175,7 +179,7 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "openStreamLink",
-                    "Link: $link",
+                    "url" to link,
                 )
             }
         }
@@ -221,7 +225,8 @@ class PlayHistoryViewModel : BaseViewModel() {
                 e,
                 "PlayHistoryViewModel",
                 "setupHistorySource",
-                "History ID: ${history.id}, Storage ID: ${history.storageId}",
+                "historyId" to history.id,
+                "storageId" to history.storageId,
             )
             ToastCenter.showError("播放失败，找不到播放资源")
             false
@@ -256,7 +261,7 @@ class PlayHistoryViewModel : BaseViewModel() {
                 e,
                 "PlayHistoryViewModel",
                 "setupLinkSource",
-                "Link: $link",
+                "url" to link,
             )
             ToastCenter.showError("播放失败，找不到播放资源")
             false

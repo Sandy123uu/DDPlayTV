@@ -54,7 +54,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                     e,
                     "BindSubtitleSourceFragmentViewModel",
                     "matchSubtitle",
-                    "File: ${storageFile.fileName()}",
+                    "fileName" to storageFile.fileName(),
                 )
             }
         }
@@ -81,7 +81,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                         exception ?: RuntimeException("Unknown subtitle detail error"),
                         "BindSubtitleSourceFragmentViewModel",
                         "detailSearchSubtitle",
-                        "Subtitle ID: ${sourceBean.id}",
+                        "subtitleId" to sourceBean.id,
                     )
                     exception?.message?.toastError()
                     return@launch
@@ -105,7 +105,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                     e,
                     "BindSubtitleSourceFragmentViewModel",
                     "detailSearchSubtitle",
-                    "Unexpected error for subtitle ID: ${sourceBean.id}",
+                    "subtitleId" to sourceBean.id,
                 )
                 e.message?.toastError()
             }
@@ -135,7 +135,8 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                         exception ?: RuntimeException("Unknown download error"),
                         "BindSubtitleSourceFragmentViewModel",
                         "downloadSearchSubtitle",
-                        "File: $name, URL: $sourceUrl",
+                        "fileName" to name,
+                        "url" to sourceUrl,
                     )
                     exception?.message?.toastError()
                     return@launch
@@ -155,7 +156,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                     e,
                     "BindSubtitleSourceFragmentViewModel",
                     "downloadSearchSubtitle",
-                    "Unexpected error downloading subtitle: $fileName",
+                    "fileName" to fileName,
                 )
                 ToastCenter.showError("下载字幕失败")
             }
@@ -184,7 +185,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                 e,
                 "BindSubtitleSourceFragmentViewModel",
                 "unzipSaveSubtitle",
-                "File: $fileName",
+                "fileName" to fileName,
             )
             ToastCenter.showError("解压字幕文件失败，请尝试手动解压")
         }
@@ -212,7 +213,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                 e,
                 "BindSubtitleSourceFragmentViewModel",
                 "saveSubtitle",
-                "File: $fileName",
+                "fileName" to fileName,
             )
             ToastCenter.showError("保存字幕失败")
         }
@@ -227,7 +228,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                     e,
                     "BindSubtitleSourceFragmentViewModel",
                     "unbindSubtitle",
-                    "File: ${storageFile.fileName()}",
+                    "fileName" to storageFile.fileName(),
                 )
             }
         }
@@ -264,7 +265,8 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                     e,
                     "BindSubtitleSourceFragmentViewModel",
                     "databaseSubtitle",
-                    "File path: $filePath, Storage file: ${storageFile.fileName()}",
+                    "path" to filePath,
+                    "fileName" to storageFile.fileName(),
                 )
             }
         }

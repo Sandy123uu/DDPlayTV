@@ -38,10 +38,17 @@ object SensitiveDataSanitizer {
             "x-appsec",
         )
 
-    private val urlRegex = "(?i)\\bhttps?://[^\\s\"']+".toRegex()
+    private val urlRegex = "(?i)\\b[a-z][a-z0-9+.-]*://[^\\s\"']+".toRegex()
     private val magnetRegex = "(?i)\\bmagnet:\\?[^\\s\"']+".toRegex()
 
     private val bearerRegex = "(?i)(authorization\\s*:\\s*bearer\\s+)([^\\s,;]+)".toRegex()
+
+    private val unixPathInTextRegex =
+        "(^|\\s|[=,:\\(\\[\\{\\\"'])(/(?:storage|sdcard|data|mnt)/[^\\s\"']+)"
+            .toRegex()
+    private val windowsPathInTextRegex = "(?i)(^|\\s|[=,:\\(\\[\\{\\\"'])([a-z]:\\\\[^\\s\"']+)".toRegex()
+
+    private val ipv4Regex = "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})".toRegex()
 
     private val jsonKeyValueRegex =
         "(?i)(\"(?:token|access_token|refresh_token|password|passwd|secret|appsecret|app_sec|appsec)\"\\s*:\\s*\")([^\"]+)(\")"
@@ -213,6 +220,19 @@ object SensitiveDataSanitizer {
         }
 
         value =
+            value.replace(unixPathInTextRegex) { match ->
+                val prefix = match.groupValues[1]
+                val path = match.groupValues[2]
+                prefix + sanitizePath(path)
+            }
+        value =
+            value.replace(windowsPathInTextRegex) { match ->
+                val prefix = match.groupValues[1]
+                val path = match.groupValues[2]
+                prefix + sanitizePath(path)
+            }
+
+        value =
             value.replace(urlRegex) { match ->
                 sanitizeUrl(match.value, UrlMode.SAFE)
             }
@@ -247,13 +267,47 @@ object SensitiveDataSanitizer {
         if (trimmedValue.startsWith("magnet:", ignoreCase = true)) {
             return sanitizeMagnet(trimmedValue)
         }
-        if (trimmedValue.startsWith("http://", ignoreCase = true) || trimmedValue.startsWith("https://", ignoreCase = true)) {
+        if (trimmedValue.contains("://")) {
             return sanitizeUrl(trimmedValue, UrlMode.SAFE)
+        }
+        if (
+            normalizedKey.contains("address") ||
+            normalizedKey.contains("host") ||
+            normalizedKey == "ip" ||
+            normalizedKey == "ipv4" ||
+            normalizedKey == "ipv6"
+        ) {
+            return sanitizeHostPort(trimmedValue)
         }
         if (looksLikeLocalPath(trimmedValue)) {
             return sanitizePath(trimmedValue)
         }
         return sanitizeFreeText(trimmedValue)
+    }
+
+    private fun sanitizeHostPort(raw: String): String {
+        val value = raw.trim()
+        if (value.isBlank()) return UNKNOWN
+
+        val lastColon = value.lastIndexOf(':')
+        val hasPort =
+            lastColon in 1 until value.length - 1 &&
+                value.indexOf(':') == lastColon &&
+                value.substring(lastColon + 1).all { it.isDigit() }
+        val host = if (hasPort) value.substring(0, lastColon) else value
+        val portPart = if (hasPort) value.substring(lastColon) else ""
+
+        val maskedHost =
+            ipv4Regex.matchEntire(host)?.let { match ->
+                val a = match.groupValues[1]
+                val b = match.groupValues[2]
+                val c = match.groupValues[3]
+                "$a.$b.$c.*"
+            } ?: run {
+                "<redacted>#${fingerprint(host)}"
+            }
+
+        return maskedHost + portPart
     }
 
     private fun sanitizeQueryKeysOnly(rawQuery: String?): String {

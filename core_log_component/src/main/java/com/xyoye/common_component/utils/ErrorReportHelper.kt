@@ -142,35 +142,57 @@ object ErrorReportHelper {
         methodName: String,
         extraInfo: String = ""
     ) {
-        val safeExtraInfo = SensitiveDataSanitizer.sanitizeFreeText(extraInfo)
-        // 过滤掉 CancellationException，这是协程正常取消的标志，不应当作错误上报
-        if (throwable is CancellationException) {
-            if (BuildConfig.DEBUG) {
-                LogFacade.w(
-                    module = LogModule.CORE,
-                    tag = LOG_TAG,
-                    message = "CancellationException ignored",
-                    context =
-                        buildMap {
-                            put("class", className.take(BUGLY_VALUE_LIMIT))
-                            put("method", methodName.take(BUGLY_VALUE_LIMIT))
-                            if (safeExtraInfo.isNotBlank()) put("extra", safeExtraInfo.take(BUGLY_VALUE_LIMIT))
-                        },
-                    throwable = throwable
-                )
-            }
-            return
-        }
+        postCatchedExceptionWithContext(
+            throwable = throwable,
+            className = className,
+            methodName = methodName,
+            params = emptyMap(),
+            message = extraInfo,
+        )
+    }
 
-        val contextInfo = "Class: $className, Method: $methodName"
-        val fullInfo =
-            if (safeExtraInfo.isNotEmpty()) {
-                "$contextInfo, Extra: $safeExtraInfo"
-            } else {
-                contextInfo
+    fun postCatchedExceptionWithContext(
+        throwable: Throwable,
+        className: String,
+        methodName: String,
+        vararg params: Pair<String, Any?>
+    ) {
+        postCatchedExceptionWithContext(
+            throwable = throwable,
+            className = className,
+            methodName = methodName,
+            params = params.toMap(),
+        )
+    }
+
+    fun postCatchedExceptionWithContext(
+        throwable: Throwable,
+        className: String,
+        methodName: String,
+        params: Map<String, Any?>,
+        message: String = ""
+    ) {
+        val safeParams = SensitiveDataSanitizer.sanitizeParams(params)
+        val safeMessage = SensitiveDataSanitizer.sanitizeFreeText(message).trim()
+        val extra =
+            buildString {
+                if (safeParams.isNotEmpty()) {
+                    append(
+                        safeParams.entries.joinToString(separator = ", ") { (k, v) ->
+                            "$k=$v"
+                        }
+                    )
+                }
+                if (safeMessage.isNotBlank()) {
+                    if (isNotEmpty()) {
+                        append(", ")
+                    }
+                    append(safeMessage)
+                }
             }
 
-        postCatchedException(throwable, "Context", fullInfo)
+        val tag = "$className#$methodName"
+        postCatchedException(throwable, tag, extra)
     }
 
     /**
