@@ -32,7 +32,7 @@
 
 ## 验证建议（ast-grep 快速确证）
 
-- `hostnameVerifier` 默认禁用校验：使用 ast-grep 模式 `$X.hostnameVerifier { _, _ -> true }`（当前全仓 4 处）。
+- `hostnameVerifier` 默认禁用校验：使用 ast-grep 模式 `$X.hostnameVerifier { _, _ -> true }`（当前全仓 1 处；仅 `OkHttpTlsPolicy.UnsafeTrustAll` 内部使用，需显式 opt-in）。
 - `UnsafeOkHttpClient.client` 使用点：模式 `UnsafeOkHttpClient.client`（当前全仓 1 处；已受 `@UnsafeTlsApi` 保护）。
 - `printStackTrace()`：模式 `$X.printStackTrace()`（当前全仓约 82 处，建议先在 infra/storage/player 关键链路收敛）。
 - Bugly `CrashReport.*` 直接调用：模式 `CrashReport.$METHOD($ARGS)`（当前至少 3 处，建议收敛门面后再扩展扫描）。

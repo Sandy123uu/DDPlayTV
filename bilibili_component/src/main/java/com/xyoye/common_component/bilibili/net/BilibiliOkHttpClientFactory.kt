@@ -16,7 +16,6 @@ object BilibiliOkHttpClientFactory {
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(10, TimeUnit.SECONDS)
             .callTimeout(30, TimeUnit.SECONDS)
-            .hostnameVerifier { _, _ -> true }
             .cookieJar(BilibiliCookieJarStore(storageKey))
             .addInterceptor(BilibiliHeaderInterceptor())
             .addInterceptor(DecompressInterceptor())

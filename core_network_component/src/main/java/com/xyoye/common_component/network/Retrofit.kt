@@ -65,7 +65,6 @@ class Retrofit private constructor() {
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(10, TimeUnit.SECONDS)
-            .hostnameVerifier { _, _ -> true }
             .addInterceptor(SignatureInterceptor())
             .addInterceptor(DeveloperCertificateInterceptor())
             .addInterceptor(AgentInterceptor())
@@ -83,7 +82,6 @@ class Retrofit private constructor() {
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(10, TimeUnit.SECONDS)
-            .hostnameVerifier { _, _ -> true }
             .addInterceptor(AgentInterceptor())
             .addInterceptor(DecompressInterceptor())
             .addInterceptor(DynamicBaseUrlInterceptor())

@@ -36,7 +36,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
     private var upstreamHeaders: Map<String, String> = emptyMap()
     private var contentType: String = "application/octet-stream"
     private var contentLength: Long = -1L
-    private var upstreamTlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.LEGACY_INSECURE_HOSTNAME
+    private var upstreamTlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.STRICT
 
     @Volatile
     private var prePlayRangeMinIntervalMs: Long = 1000L
@@ -81,14 +81,6 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         STRICT,
 
         /**
-         * 兼容旧逻辑：仅忽略主机名校验（仍保留证书链校验）。
-         *
-         * 说明：历史上本地代理走 Retrofit.commonClient，默认 `hostnameVerifier { _, _ -> true }`。
-         * 该策略用于保持既有行为，避免本次治理扩大影响面。
-         */
-        LEGACY_INSECURE_HOSTNAME,
-
-        /**
          * 不安全 TLS：信任所有证书 + 忽略主机名校验（必须由用户显式开启）。
          */
         UNSAFE_TRUST_ALL
@@ -99,7 +91,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         val headers: Map<String, String> = emptyMap(),
         val contentType: String = "application/octet-stream",
         val contentLength: Long = -1L,
-        val tlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.LEGACY_INSECURE_HOSTNAME
+        val tlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.STRICT
     )
 
     private val strictClient: OkHttpClient by lazy {
@@ -108,18 +100,6 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(10, TimeUnit.SECONDS)
-            .addInterceptor(AgentInterceptor())
-            .addNetworkInterceptor(RedirectAuthorizationInterceptor())
-            .build()
-    }
-
-    private val legacyInsecureHostnameClient: OkHttpClient by lazy {
-        OkHttpClient
-            .Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(10, TimeUnit.SECONDS)
-            .hostnameVerifier { _, _ -> true }
             .addInterceptor(AgentInterceptor())
             .addNetworkInterceptor(RedirectAuthorizationInterceptor())
             .build()
@@ -136,10 +116,6 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         Retrofit.createService(Api.PLACEHOLDER, strictClient, ExtendedService::class.java)
     }
 
-    private val legacyInsecureHostnameService: ExtendedService by lazy {
-        Retrofit.createService(Api.PLACEHOLDER, legacyInsecureHostnameClient, ExtendedService::class.java)
-    }
-
     private val unsafeTrustAllService: ExtendedService by lazy {
         Retrofit.createService(Api.PLACEHOLDER, unsafeTrustAllClient, ExtendedService::class.java)
     }
@@ -147,7 +123,6 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
     private fun selectExtendedService(tlsPolicy: UpstreamTlsPolicy): ExtendedService =
         when (tlsPolicy) {
             UpstreamTlsPolicy.STRICT -> strictService
-            UpstreamTlsPolicy.LEGACY_INSECURE_HOSTNAME -> legacyInsecureHostnameService
             UpstreamTlsPolicy.UNSAFE_TRUST_ALL -> unsafeTrustAllService
         }
 
@@ -593,7 +568,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         contentLength: Long = -1L,
         prePlayRangeMinIntervalMs: Long = runCatching { PlayerConfig.getMpvProxyRangeMinIntervalMs() }.getOrDefault(1000).toLong(),
         fileName: String = "video",
-        upstreamTlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.LEGACY_INSECURE_HOSTNAME,
+        upstreamTlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.STRICT,
         onRangeUnsupported: (() -> UpstreamSource?)? = null
     ): String {
         this.upstreamUrl = upstreamUrl

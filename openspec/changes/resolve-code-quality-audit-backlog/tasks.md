@@ -28,7 +28,7 @@
 - [x] 1.21 关闭 `G-T0021`：`player_component` 清理 `printStackTrace()` 并补齐异常上报上下文
 - [x] 1.22 关闭 `G-T0022`：替换 `EntropyUtils` 加密实现（随机 IV/带认证）+ UDP 版本/兼容策略
 - [x] 1.23 关闭 `G-T0023`：`storage_component` 移除 `printStackTrace()` + 统一脱敏上下文
-- [ ] 1.24 关闭 `G-T0024`：统一 TLS 安全默认（移除默认 `hostnameVerifier { _, _ -> true }`）
+- [x] 1.24 关闭 `G-T0024`：统一 TLS 安全默认（移除默认 `hostnameVerifier { _, _ -> true }`）
 - [ ] 1.25 关闭 `G-T0025`：手动迁移异常可观测性统一（结构化日志/异常上报）
 - [ ] 1.26 关闭 `G-T0026`：统一错误上报上下文构建与脱敏策略（减少重复样板）
 

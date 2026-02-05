@@ -13,7 +13,7 @@ object LocalProxy {
         prePlayRangeMinIntervalMs: Long,
         fileName: String,
         autoEnabled: Boolean,
-        upstreamTlsPolicy: HttpPlayServer.UpstreamTlsPolicy = HttpPlayServer.UpstreamTlsPolicy.LEGACY_INSECURE_HOSTNAME,
+        upstreamTlsPolicy: HttpPlayServer.UpstreamTlsPolicy = HttpPlayServer.UpstreamTlsPolicy.STRICT,
         onRangeUnsupported: (() -> HttpPlayServer.UpstreamSource?)? = null
     ): String {
         if (upstreamUrl.isBlank()) return upstreamUrl

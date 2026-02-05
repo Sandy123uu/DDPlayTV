@@ -32,7 +32,7 @@
 | G-T0021 | Done | AI（Codex） | 清理 `printStackTrace()` 并补齐异常上报上下文（引擎/会话/源类型） | G-F0016 | :player_component | PLAYER-T005 |
 | G-T0022 | Done | AI（Codex） | 用安全方案替换 `EntropyUtils` 的对称加密（至少支持随机 IV/带认证），并为投屏 UDP 消息引入版本/兼容策略 | G-F0003 | :core_system_component,:storage_component,:core_storage_component,:local_component | CORE_SYSTEM-T001 |
 | G-T0023 | Done | AI（Codex） | 移除 `printStackTrace()` 并统一异常上报上下文与脱敏策略（URL/token/password/路径） | G-F0006 | :storage_component | STORAGE-T002 |
-| G-T0024 | Draft | 待分配（Infra/Network） | 统一 TLS 安全默认：移除默认路径中的 `hostnameVerifier { _, _ -> true }`，并为“特殊场景”提供可控开关（用户显式；Release 允许） | G-F0001 | :core_network_component | CORE_NETWORK-T001 |
+| G-T0024 | Done | AI（Codex） | 统一 TLS 安全默认：移除默认路径中的 `hostnameVerifier { _, _ -> true }`，并为“特殊场景”提供可控开关（用户显式；Release 允许） | G-F0001 | :core_network_component,:bilibili_component,:core_storage_component | CORE_NETWORK-T001 |
 | G-T0025 | Draft | 待分配（Infra/DB/Log） | 统一手动迁移异常可观测性：替换 `printStackTrace()` 为结构化日志/异常上报，并补充必要上下文 | G-F0014 | :core_database_component | CORE_DATABASE-T003 |
 | G-T0026 | Draft | 待分配（Log/Feature） | 统一错误上报上下文的构建与脱敏策略，减少重复样板并降低隐私风险 | G-F0008 | :local_component | LOCAL-T003 |
 
