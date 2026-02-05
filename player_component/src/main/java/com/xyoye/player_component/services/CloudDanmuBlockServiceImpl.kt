@@ -8,6 +8,7 @@ import com.xyoye.common_component.database.DatabaseManager
 import com.xyoye.common_component.network.repository.OtherRepository
 import com.xyoye.common_component.services.CloudDanmuBlockService
 import com.xyoye.data_component.entity.DanmuBlockEntity
+import com.xyoye.player_component.utils.PlayerErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.w3c.dom.Element
@@ -72,7 +73,12 @@ class CloudDanmuBlockServiceImpl : CloudDanmuBlockService {
                 .map { it.trim() }
                 .filter { it.isNotBlank() }
         }.getOrElse {
-            it.printStackTrace()
+            PlayerErrorReporter.report(
+                it,
+                "CloudDanmuBlockServiceImpl",
+                "parseFilterData",
+                "Failed to parse cloud filter data",
+            )
             emptyList()
         }
 

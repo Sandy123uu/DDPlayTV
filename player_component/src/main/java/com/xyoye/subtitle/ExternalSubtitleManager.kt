@@ -7,7 +7,6 @@ import com.xyoye.common_component.base.app.BaseApplication
 import com.xyoye.common_component.enums.SubtitleRendererBackend
 import com.xyoye.common_component.extension.formatFileName
 import com.xyoye.common_component.extension.toMd5String
-import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.PathHelper
 import com.xyoye.common_component.utils.getFileExtension
 import com.xyoye.common_component.weight.ToastCenter
@@ -15,6 +14,7 @@ import com.xyoye.player.subtitle.backend.SubtitleRendererRegistry
 import com.xyoye.subtitle.exception.FatalParsingException
 import com.xyoye.subtitle.format.FormatFactory
 import com.xyoye.subtitle.info.TimedTextObject
+import com.xyoye.player_component.utils.PlayerErrorReporter
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
@@ -152,13 +152,12 @@ class ExternalSubtitleManager(
                 }
             }
         } catch (e: FatalParsingException) {
-            ErrorReportHelper.postCatchedExceptionWithContext(
+            PlayerErrorReporter.report(
                 e,
                 "ExternalSubtitleManager",
                 "parserSource",
                 "Fatal error parsing subtitle file: $subtitlePath",
             )
-            e.printStackTrace()
             ToastCenter.showOriginalToast("解析外挂字幕文件失败")
         }
         return null
@@ -196,7 +195,7 @@ class ExternalSubtitleManager(
                         }
                     }
             } catch (e: Exception) {
-                ErrorReportHelper.postCatchedExceptionWithContext(
+                PlayerErrorReporter.report(
                     e,
                     "ExternalSubtitleManager",
                     "cacheContentUriSubtitle",
@@ -235,7 +234,7 @@ class ExternalSubtitleManager(
             }
             target.absolutePath
         }.onFailure {
-            ErrorReportHelper.postCatchedExceptionWithContext(
+            PlayerErrorReporter.report(
                 it,
                 "ExternalSubtitleManager",
                 "cacheContentUriSubtitle",

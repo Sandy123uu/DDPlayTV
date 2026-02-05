@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import master.flame.danmaku.controller.DanmakuFilters;
 import master.flame.danmaku.danmaku.model.BaseDanmaku;
@@ -28,9 +29,28 @@ public class RegexFilter extends DanmakuFilters.BaseDanmakuFilter<List<String>> 
             String regex = mRegexList.get(i);
 
             try {
+                if (danmaku.text == null) {
+                    continue;
+                }
                 filtered = Pattern.matches(regex, danmaku.text);
+            } catch (PatternSyntaxException e) {
+                LogFacade.INSTANCE.w(
+                        LogModule.PLAYER,
+                        "RegexFilter",
+                        "Invalid regex pattern, removed",
+                        Collections.singletonMap("regex", regex),
+                        e
+                );
+                mRegexList.remove(i);
+                i--;
             } catch (Exception e) {
-                e.printStackTrace();
+                LogFacade.INSTANCE.w(
+                        LogModule.PLAYER,
+                        "RegexFilter",
+                        "Regex match failed",
+                        Collections.emptyMap(),
+                        e
+                );
             }
             if (filtered) {
                 logDebug(danmaku.text.toString());

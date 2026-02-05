@@ -21,7 +21,6 @@ import com.xyoye.common_component.source.base.BaseVideoSource
 import com.xyoye.common_component.source.media.StorageVideoSource
 import com.xyoye.common_component.storage.file.impl.ScreencastStorageFile
 import com.xyoye.common_component.storage.helper.ScreencastConstants
-import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.JsonHelper
 import com.xyoye.common_component.utils.MediaUtils
 import com.xyoye.common_component.utils.PathHelper
@@ -110,13 +109,12 @@ object PlayRecorder {
                 try {
                     generateRenderImage(view)
                 } catch (e: Exception) {
-                    ErrorReportHelper.postCatchedExceptionWithContext(
+                    PlayerErrorReporter.report(
                         e,
                         "PlayRecorder",
                         "recordImage",
                         "Failed to generate render image for key: $key",
                     )
-                    e.printStackTrace()
                     null
                 } ?: return@launch
 
@@ -194,7 +192,7 @@ object PlayRecorder {
                 }
             }, Handler(Looper.getMainLooper()))
         } catch (e: IllegalArgumentException) {
-            ErrorReportHelper.postCatchedExceptionWithContext(
+            PlayerErrorReporter.report(
                 e,
                 "PlayRecorder",
                 "recordSurfaceView",
@@ -202,7 +200,7 @@ object PlayRecorder {
             )
             it.resumeWhenAlive(null)
         } catch (e: Exception) {
-            ErrorReportHelper.postCatchedExceptionWithContext(
+            PlayerErrorReporter.report(
                 e,
                 "PlayRecorder",
                 "recordSurfaceView",
@@ -256,7 +254,7 @@ object PlayRecorder {
                 }
             }, Handler(Looper.getMainLooper()))
         } catch (e: IllegalArgumentException) {
-            ErrorReportHelper.postCatchedExceptionWithContext(
+            PlayerErrorReporter.report(
                 e,
                 "PlayRecorder",
                 "recordTextureView",
@@ -264,7 +262,7 @@ object PlayRecorder {
             )
             it.resumeWhenAlive(null)
         } catch (e: Exception) {
-            ErrorReportHelper.postCatchedExceptionWithContext(
+            PlayerErrorReporter.report(
                 e,
                 "PlayRecorder",
                 "recordTextureView",

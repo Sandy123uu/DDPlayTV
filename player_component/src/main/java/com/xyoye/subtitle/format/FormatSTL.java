@@ -199,7 +199,6 @@ public class FormatSTL implements TimedTextFileFormat {
 
 		} catch (Exception e){
 			//format error
-			e.printStackTrace();
 			throw new FatalParsingException("Format error in the file, migth be due to corrupt data.\n"+e.getMessage());
 		}
 

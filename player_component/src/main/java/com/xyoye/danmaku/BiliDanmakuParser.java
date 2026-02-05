@@ -21,6 +21,8 @@ import static master.flame.danmaku.danmaku.model.IDanmakus.ST_BY_TIME;
 import android.graphics.Color;
 import android.text.TextUtils;
 
+import com.xyoye.player_component.utils.PlayerErrorReporter;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.xml.sax.Attributes;
@@ -65,7 +67,7 @@ public class BiliDanmakuParser extends BaseDanmakuParser {
                 xmlReader.parse(new InputSource(source.data()));
                 return contentHandler.getResult();
             } catch (SAXException | IOException e) {
-                e.printStackTrace();
+                PlayerErrorReporter.report(e, "BiliDanmakuParser", "parse", "Failed to parse danmaku xml");
             }
 
         }
@@ -173,7 +175,7 @@ public class BiliDanmakuParser extends BaseDanmakuParser {
                             textArr[i] = jsonArray.getString(i);
                         }
                     } catch (JSONException e) {
-                        e.printStackTrace();
+                        PlayerErrorReporter.report(e, "BiliDanmakuParser", "characters", "Failed to parse special danmaku json");
                     }
 
                     if (textArr == null || textArr.length < 5 || TextUtils.isEmpty(textArr[4])) {

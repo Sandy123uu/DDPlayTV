@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.lifecycleScope
-import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.MediaUtils
 import com.xyoye.common_component.utils.getScreenHeight
 import com.xyoye.common_component.weight.ToastCenter
@@ -24,6 +23,7 @@ import com.xyoye.player.wrapper.ControlWrapper
 import com.xyoye.player_component.R
 import com.xyoye.player_component.databinding.LayoutSceenShotBinding
 import com.xyoye.player_component.utils.PlayRecorder
+import com.xyoye.player_component.utils.PlayerErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -174,13 +174,12 @@ class ScreenShotView(
         return try {
             PlayRecorder.generateRenderImage(renderView, videoSize)
         } catch (e: Exception) {
-            ErrorReportHelper.postCatchedExceptionWithContext(
+            PlayerErrorReporter.report(
                 e,
                 "ScreenShotView",
                 "generateVideoImage",
                 "Failed to generate video screenshot",
             )
-            e.printStackTrace()
             null
         }
     }
