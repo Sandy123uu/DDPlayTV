@@ -263,7 +263,6 @@ class ScreencastReceiveService :
                 "createHttpServer",
                 "创建投屏接收HTTP服务器失败，port=$port, hasPassword=${password != null}",
             )
-            e.printStackTrace()
             null
         }
 }

@@ -47,7 +47,6 @@ object QrCodeHelper {
                 "createQrCode",
                 (errorContext ?: "生成二维码失败") + "，content长度=${content.length}",
             )
-            e.printStackTrace()
         }
         return null
     }
