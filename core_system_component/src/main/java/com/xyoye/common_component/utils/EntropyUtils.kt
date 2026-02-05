@@ -53,7 +53,6 @@ object EntropyUtils {
                 "EntropyUtils.file2Md5",
                 "计算文件MD5失败: ${file.absolutePath}",
             )
-            e.printStackTrace()
         } finally {
             IOUtils.closeIO(fileInputStream)
         }
@@ -84,7 +83,6 @@ object EntropyUtils {
                 "EntropyUtils.aesEncode",
                 "AES加密失败",
             )
-            e.printStackTrace()
         }
         return null
     }
@@ -113,7 +111,6 @@ object EntropyUtils {
                 "EntropyUtils.aesDecode",
                 "AES解密失败",
             )
-            e.printStackTrace()
         }
         return null
     }

@@ -22,7 +22,7 @@
 - [x] 1.15 关闭 `G-T0015`：抽取 TV Tab 焦点协调与输入策略组件，统一 DPAD 行为
 - [x] 1.16 关闭 `G-T0016`：收敛 Bugly 上报门面（`BuglyReporter` 统一触达 `CrashReport`）
 - [x] 1.17 关闭 `G-T0017`：收敛可写 `LiveData` 暴露（对外只读 + 统一发送入口）
-- [ ] 1.18 关闭 `G-T0018`：`core_system_component` 移除 `printStackTrace()`，统一异常处理口径
+- [x] 1.18 关闭 `G-T0018`：`core_system_component` 移除 `printStackTrace()`，统一异常处理口径
 - [ ] 1.19 关闭 `G-T0019`：引入 `LoadingHost`（或等价）并替换强制 cast
 - [ ] 1.20 关闭 `G-T0020`：移除投屏 Sender 整条链路（删除 stub/注释旧实现与对外暴露入口）
 - [ ] 1.21 关闭 `G-T0021`：`player_component` 清理 `printStackTrace()` 并补齐异常上报上下文

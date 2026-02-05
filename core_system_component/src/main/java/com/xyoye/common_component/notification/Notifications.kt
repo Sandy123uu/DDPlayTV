@@ -34,7 +34,6 @@ object Notifications {
                 "Notifications.setupNotificationChannels",
                 "设置通知渠道失败",
             )
-            e.printStackTrace()
         }
     }
 
