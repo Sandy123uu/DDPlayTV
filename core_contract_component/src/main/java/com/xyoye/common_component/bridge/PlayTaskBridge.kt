@@ -1,5 +1,6 @@
 package com.xyoye.common_component.bridge
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 
 /**
@@ -7,14 +8,15 @@ import androidx.lifecycle.MutableLiveData
  */
 
 object PlayTaskBridge {
-    val taskRemoveLiveData = MutableLiveData<Long>()
+    private val _taskRemoveLiveData = MutableLiveData<Long>()
+    val taskRemoveLiveData: LiveData<Long> = _taskRemoveLiveData
     var taskInfoQuery: ((id: Long) -> String)? = null
 
     fun sendTaskRemoveMsg(taskId: Long) {
         if (taskId == -1L) {
             return
         }
-        taskRemoveLiveData.postValue(taskId)
+        _taskRemoveLiveData.postValue(taskId)
     }
 
     fun getTaskLog(id: Long): String = taskInfoQuery?.invoke(id) ?: ""

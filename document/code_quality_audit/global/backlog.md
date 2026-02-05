@@ -25,7 +25,7 @@
 | G-T0014 | Done | AI（Codex） | 开启 Room schema 导出并建立迁移校验门禁（至少覆盖主库版本演进） | G-F0010 | :core_database_component | CORE_DATABASE-T005 |
 | G-T0015 | Done | AI（Codex） | 抽取 TV Tab 焦点协调与输入策略为可复用组件，统一 DPAD 行为 | G-F0018 | :anime_component | ANIME-T003 |
 | G-T0016 | Done | AI（Codex） | 收敛 Bugly 上报门面：统一由 `BuglyReporter` 触达 `CrashReport`，并规范 `ErrorReportHelper` 职责与注释 | G-F0019 | :core_log_component | CORE_LOG-T003 |
-| G-T0017 | Draft | AI（Codex） | 收敛可写 `LiveData` 暴露：对外只读 + 统一发送入口 | G-F0015 | :core_contract_component | CORE_CONTRACT-T002 |
+| G-T0017 | Done | AI（Codex） | 收敛可写 `LiveData` 暴露：对外只读 + 统一发送入口 | G-F0015 | :core_contract_component | CORE_CONTRACT-T002 |
 | G-T0018 | Draft | 待分配（Runtime） | 收敛异常处理口径：移除 `printStackTrace()`，统一使用 `ErrorReportHelper` + `LogFacade` 记录必要信息 | G-F0020 | :core_system_component | CORE_SYSTEM-T003 |
 | G-T0019 | Draft | 待分配（UI） | 明确 Fragment 宿主契约：引入 `LoadingHost`（或等价接口）并替换强制 cast，避免隐藏崩溃点 | G-F0011 | :core_ui_component | CORE_UI-T003 |
 | G-T0020 | Draft | 待分配（Storage/TV） | 移除投屏 Sender 整条链路：删除旧实现与全端 stub，清理入口/路由/服务暴露 | G-F0021 | :storage_component | STORAGE-T001 |
