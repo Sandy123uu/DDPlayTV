@@ -25,7 +25,6 @@ class DocumentFileDanmuSource(
                 "DocumentFileDanmuSource.getStream",
                 "打开弹幕文档文件流失败: $uri",
             )
-            e.printStackTrace()
             null
         }
     }

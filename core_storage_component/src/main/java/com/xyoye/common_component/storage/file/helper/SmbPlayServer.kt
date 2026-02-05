@@ -99,7 +99,6 @@ class SmbPlayServer private constructor() : NanoHTTPD(randomPort()) {
             // 设置Offset
             inputStream.skip(rangeArray[0])
         } catch (e: IOException) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "SMBPlayServer", "设置偏移量失败: offset=${rangeArray[0]}")
         }
         // 响应内容

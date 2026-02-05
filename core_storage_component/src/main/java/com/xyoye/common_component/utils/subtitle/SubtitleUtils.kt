@@ -56,7 +56,6 @@ object SubtitleUtils {
                 "SubtitleUtils.saveSubtitle",
                 "保存字幕文件失败: $fileName",
             )
-            e.printStackTrace()
             return null
         } finally {
             IOUtils.closeIO(inputStream)
@@ -93,7 +92,6 @@ object SubtitleUtils {
                 "SubtitleUtils.saveAndUnzipFile",
                 "保存并解压字幕文件失败: $fileName",
             )
-            e.printStackTrace()
         } finally {
             IOUtils.closeIO(inputStream)
             IOUtils.closeIO(outputStream)

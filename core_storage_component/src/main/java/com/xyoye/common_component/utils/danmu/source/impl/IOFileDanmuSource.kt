@@ -27,7 +27,6 @@ class IOFileDanmuSource(
                 "IOFileDanmuSource.getStream",
                 "打开弹幕IO文件流失败: $path",
             )
-            e.printStackTrace()
             null
         }
     }

@@ -125,7 +125,6 @@ class ScreencastStorage(
                 directoryName = "screencast",
             )
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "Screencast", "缓存字幕失败: $subtitleFileName")
         }
         return null
@@ -139,10 +138,16 @@ class ScreencastStorage(
             )
         if (result.isFailure) {
             val exception = result.exceptionOrNull()
-            ErrorReportHelper.postCatchedException(
+            ErrorReportHelper.postCatchedExceptionWithContext(
                 exception ?: RuntimeException("Unknown screencast init error"),
-                "Screencast",
-                "初始化投屏服务失败: ${library.screencastAddress}:${library.port}",
+                "ScreencastStorage",
+                "test",
+                params =
+                    mapOf(
+                        "address" to library.screencastAddress,
+                        "port" to library.port,
+                    ),
+                message = "初始化投屏服务失败",
             )
             return false
         }

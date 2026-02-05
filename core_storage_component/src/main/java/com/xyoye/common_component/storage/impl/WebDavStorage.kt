@@ -59,7 +59,6 @@ class WebDavStorage(
         try {
             sardine.get(file.fileUrl())
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "WebDAV", "打开文件失败: ${file.fileUrl()}")
             null
         }
@@ -71,7 +70,6 @@ class WebDavStorage(
                 .filter { isChildFile(file.fileUrl(), it.href) }
                 .map { WebDavStorageFile(it, this) }
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "WebDAV", "获取文件列表失败: ${file.fileUrl()}")
             emptyList()
         }
@@ -158,7 +156,6 @@ class WebDavStorage(
             sardine.list(getRootFile().fileUrl())
             true
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "WebDAV", "连接测试失败: ${library.url}")
             false
         }
@@ -179,7 +176,6 @@ class WebDavStorage(
             val childPath = child.path
             return parentPath != childPath
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "WebDAV", "路径解析失败: parent=$parent, child=$child")
         }
         return false

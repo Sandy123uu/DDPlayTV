@@ -127,7 +127,6 @@ class DanmuFinderImpl(
                 "DanmuFinderImpl.downloadEpisode",
                 "下载弹幕失败: ${episode.animeTitle} - ${episode.episodeTitle}, extra info: $extraInfo",
             )
-            e.printStackTrace()
         }
 
         return null
@@ -235,7 +234,6 @@ class DanmuFinderImpl(
                 "DanmuFinderImpl.downloadRelated",
                 "下载相关弹幕失败: ${episode.animeTitle} - ${episode.episodeTitle}, extra info: $extraInfo",
             )
-            e.printStackTrace()
         }
 
         return null
@@ -262,7 +260,6 @@ class DanmuFinderImpl(
                 "DanmuFinderImpl.saveStream",
                 "保存弹幕流失败: ${episode.animeTitle} - ${episode.episodeTitle}",
             )
-            e.printStackTrace()
         }
         return null
     }

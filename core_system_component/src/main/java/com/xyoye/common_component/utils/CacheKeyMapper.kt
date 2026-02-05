@@ -25,7 +25,5 @@ object CacheKeyMapper {
         return md5Hex(trimmedKey)
     }
 
-    private fun md5Hex(input: String): String {
-        return HashUtils.md5Hex(input)
-    }
+    private fun md5Hex(input: String): String = HashUtils.md5Hex(input)
 }

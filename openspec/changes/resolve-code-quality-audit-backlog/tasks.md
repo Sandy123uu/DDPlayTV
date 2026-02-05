@@ -68,7 +68,7 @@
 - [x] 2.32 关闭 `G-T0058`：统一 Service 包结构（service/services）
 - [ ] 2.33 关闭 `G-T0059`：统一 Telemetry repository 的模块归属与包命名
 - [ ] 2.34 关闭 `G-T0060`：统一 prebuilt AAR wrapper 的 Gradle 封装方式
-- [ ] 2.35 关闭 `G-T0061`：`core_storage_component` 统一异常处理与脱敏（移除 `printStackTrace()`）
+- [x] 2.35 关闭 `G-T0061`：`core_storage_component` 统一异常处理与脱敏（移除 `printStackTrace()`）
 - [ ] 2.36 关闭 `G-T0062`：统一本地代理能力（Proxy 服务抽取，headers/range/tls 一致）
 - [ ] 2.37 关闭 `G-T0063`：PanelSwitchHelper 生命周期释放/资源回收
 - [x] 2.38 关闭 `G-T0064`：迁移存储凭证到安全存储（DB 不再明文）
