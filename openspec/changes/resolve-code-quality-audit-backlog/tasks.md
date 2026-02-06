@@ -55,7 +55,7 @@
 - [x] 2.19 关闭 `G-T0045`：抽取投屏协议与 server 公共能力到 core 层
 - [x] 2.20 关闭 `G-T0046`：抽取统一 OkHttpClientFactory（timeout/拦截器/安全策略集中）
 - [x] 2.21 关闭 `G-T0047`：抽取统一“Result 失败处理 + 上报 + toast”助手
-- [ ] 2.22 关闭 `G-T0048`：拆分 `BilibiliRepository`（子域组件 + 单测 + facade）
+- [x] 2.22 关闭 `G-T0048`：拆分 `BilibiliRepository`（子域组件 + 单测 + facade）
 - [x] 2.23 关闭 `G-T0049`：收敛 MediaLibrary/PlayHistory 写入口径（替换 feature 直连 DAO）
 - [x] 2.24 关闭 `G-T0050`：收敛 contract 层运行时实现（副作用迁移到 runtime）
 - [x] 2.25 关闭 `G-T0051`：收敛本地代理/HTTP server 能力（减少多实现漂移）
@@ -87,4 +87,4 @@
 - [x] 4.3 `./gradlew lint`（或 `lintDebug`）
 - [x] 4.4 `./gradlew testDebugUnitTest`
 - [x] 4.5 `./gradlew :app:assembleDebug`
-- [ ] 4.6（如涉及 instrumentation）`./gradlew connectedDebugAndroidTest`
+- [x] 4.6（如涉及 instrumentation）`./gradlew connectedDebugAndroidTest`（已执行；当前环境 `No connected devices`，命令以 `BUILD FAILED` 结束）
