@@ -1,8 +1,8 @@
 package com.xyoye.data_component.helper
 
 import androidx.room.TypeConverter
-import com.xyoye.data_component.entity.media3.DownloadRequiredAction
-import com.xyoye.data_component.entity.media3.Media3RolloutSource
+import com.xyoye.data_component.media3.entity.DownloadRequiredAction
+import com.xyoye.data_component.media3.entity.Media3RolloutSource
 
 class Media3Converters {
     @TypeConverter

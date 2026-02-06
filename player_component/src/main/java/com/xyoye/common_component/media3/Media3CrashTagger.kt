@@ -5,8 +5,8 @@ import androidx.annotation.VisibleForTesting
 import com.xyoye.common_component.base.app.BaseApplication
 import com.xyoye.common_component.config.Media3ToggleProvider
 import com.xyoye.common_component.log.BuglyReporter
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.RolloutToggleSnapshot
 
 /**
  * Tags Bugly crash reports with Media3 rollout and session metadata so crashes/ANRs

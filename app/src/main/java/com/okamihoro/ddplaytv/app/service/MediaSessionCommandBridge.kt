@@ -1,6 +1,6 @@
 package com.okamihoro.ddplaytv.app.service
 
-import com.xyoye.data_component.entity.media3.Media3BackgroundMode
+import com.xyoye.data_component.media3.entity.Media3BackgroundMode
 
 /**
  * Pluggable bridge that lets the session service update MediaSession/notification wiring

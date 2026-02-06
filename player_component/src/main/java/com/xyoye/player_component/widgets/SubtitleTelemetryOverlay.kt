@@ -8,8 +8,8 @@ import android.view.Gravity
 import android.widget.FrameLayout
 import android.widget.TextView
 import com.xyoye.common_component.log.SubtitleTelemetryLogger
-import com.xyoye.data_component.bean.subtitle.TelemetrySample
-import com.xyoye.data_component.bean.subtitle.TelemetrySnapshot
+import com.xyoye.data_component.media3.telemetry.subtitle.TelemetrySample
+import com.xyoye.data_component.media3.telemetry.subtitle.TelemetrySnapshot
 import com.xyoye.data_component.enums.SubtitleFrameStatus
 import com.xyoye.player_component.R
 

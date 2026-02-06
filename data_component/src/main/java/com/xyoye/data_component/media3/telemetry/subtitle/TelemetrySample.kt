@@ -1,4 +1,4 @@
-package com.xyoye.data_component.bean.subtitle
+package com.xyoye.data_component.media3.telemetry.subtitle
 
 import com.xyoye.data_component.enums.SubtitleFrameStatus
 

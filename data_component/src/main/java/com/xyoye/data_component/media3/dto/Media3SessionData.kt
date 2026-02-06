@@ -1,13 +1,13 @@
-package com.xyoye.data_component.data.media3
+package com.xyoye.data_component.media3.dto
 
 import com.squareup.moshi.JsonClass
-import com.xyoye.data_component.entity.media3.DownloadRequiredAction
-import com.xyoye.data_component.entity.media3.Media3Capability
-import com.xyoye.data_component.entity.media3.Media3PlaybackState
-import com.xyoye.data_component.entity.media3.Media3PlayerEngine
-import com.xyoye.data_component.entity.media3.Media3SourceType
-import com.xyoye.data_component.entity.media3.PlaybackSessionMetrics
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.DownloadRequiredAction
+import com.xyoye.data_component.media3.entity.Media3Capability
+import com.xyoye.data_component.media3.entity.Media3PlaybackState
+import com.xyoye.data_component.media3.entity.Media3PlayerEngine
+import com.xyoye.data_component.media3.entity.Media3SourceType
+import com.xyoye.data_component.media3.entity.PlaybackSessionMetrics
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
 import kotlin.jvm.JvmSuppressWildcards
 
 @JsonClass(generateAdapter = true)

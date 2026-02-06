@@ -1,7 +1,7 @@
 package com.xyoye.player_component.ui
 
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.RolloutToggleSnapshot
 import com.xyoye.player_component.media3.telemetry.Media3TelemetrySink
 
 class NoOpTelemetrySink : Media3TelemetrySink {

@@ -1,7 +1,7 @@
 package com.xyoye.player.subtitle.gpu
 
 import com.xyoye.common_component.log.SubtitleFallbackReporter
-import com.xyoye.data_component.bean.subtitle.SubtitlePipelineState
+import com.xyoye.data_component.media3.telemetry.subtitle.SubtitlePipelineState
 import com.xyoye.data_component.enums.SubtitlePipelineFallbackReason
 import com.xyoye.data_component.enums.SubtitlePipelineMode
 

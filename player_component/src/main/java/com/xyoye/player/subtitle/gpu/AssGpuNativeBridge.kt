@@ -1,7 +1,7 @@
 package com.xyoye.player.subtitle.gpu
 
 import android.view.Surface
-import com.xyoye.data_component.bean.subtitle.SubtitleOutputTarget
+import com.xyoye.data_component.media3.telemetry.subtitle.SubtitleOutputTarget
 
 class AssGpuNativeBridge {
     data class NativeRenderResult(

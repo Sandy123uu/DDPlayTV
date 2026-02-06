@@ -1,6 +1,7 @@
-package com.xyoye.data_component.bean.subtitle
+package com.xyoye.data_component.media3.telemetry.subtitle
 
 import com.xyoye.data_component.enums.SubtitlePipelineMode
+import com.xyoye.data_component.media3.telemetry.subtitle.FallbackEvent
 
 data class TelemetrySnapshot(
     val windowMs: Long? = null,

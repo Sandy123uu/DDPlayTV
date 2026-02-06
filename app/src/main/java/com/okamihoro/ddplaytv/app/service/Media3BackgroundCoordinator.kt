@@ -1,8 +1,8 @@
 package com.okamihoro.ddplaytv.app.service
 
-import com.xyoye.data_component.entity.media3.Media3BackgroundMode
-import com.xyoye.data_component.entity.media3.Media3Capability
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.Media3BackgroundMode
+import com.xyoye.data_component.media3.entity.Media3Capability
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
 
 /**
  * Calculates which MediaSession commands and background modes should be exposed based on the

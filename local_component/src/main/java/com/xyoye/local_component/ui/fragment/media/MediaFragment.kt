@@ -18,7 +18,7 @@ import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.common_component.weight.dialog.CommonDialog
 import com.xyoye.data_component.bean.SheetActionBean
 import com.xyoye.data_component.entity.MediaLibraryEntity
-import com.xyoye.data_component.entity.media3.Media3Capability
+import com.xyoye.data_component.media3.entity.Media3Capability
 import com.xyoye.data_component.enums.MediaType
 import com.xyoye.local_component.BR
 import com.xyoye.local_component.R

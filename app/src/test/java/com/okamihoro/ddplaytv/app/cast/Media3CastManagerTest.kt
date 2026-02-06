@@ -1,12 +1,12 @@
 package com.okamihoro.ddplaytv.app.cast
 
-import com.xyoye.data_component.entity.media3.CastTarget
-import com.xyoye.data_component.entity.media3.CastTargetType
-import com.xyoye.data_component.entity.media3.Media3Capability
-import com.xyoye.data_component.entity.media3.Media3PlayerEngine
-import com.xyoye.data_component.entity.media3.Media3SourceType
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.CastTarget
+import com.xyoye.data_component.media3.entity.CastTargetType
+import com.xyoye.data_component.media3.entity.Media3Capability
+import com.xyoye.data_component.media3.entity.Media3PlayerEngine
+import com.xyoye.data_component.media3.entity.Media3SourceType
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
 import com.xyoye.player_component.media3.fallback.CodecFallbackHandler
 import com.xyoye.player_component.media3.mapper.LegacyCapabilityIssue
 import com.xyoye.player_component.media3.mapper.LegacyCapabilityResult

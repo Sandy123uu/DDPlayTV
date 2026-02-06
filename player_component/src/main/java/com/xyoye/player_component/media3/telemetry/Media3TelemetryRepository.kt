@@ -4,10 +4,10 @@ import com.xyoye.common_component.network.repository.Media3Repository
 import com.xyoye.common_component.telemetry.media3.TelemetryEventMapper
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.core_system_component.BuildConfig
-import com.xyoye.data_component.entity.media3.Media3TelemetryEventType
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
-import com.xyoye.data_component.entity.media3.TelemetryEvent
+import com.xyoye.data_component.media3.entity.Media3TelemetryEventType
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.RolloutToggleSnapshot
+import com.xyoye.data_component.media3.entity.TelemetryEvent
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 

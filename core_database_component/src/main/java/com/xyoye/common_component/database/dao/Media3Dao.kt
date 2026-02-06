@@ -4,8 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.xyoye.data_component.entity.media3.DownloadAssetCheck
-import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
+import com.xyoye.data_component.media3.entity.DownloadAssetCheck
+import com.xyoye.data_component.media3.entity.RolloutToggleSnapshot
 
 @Dao
 interface Media3Dao {

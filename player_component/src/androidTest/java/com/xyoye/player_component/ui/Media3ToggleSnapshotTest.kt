@@ -2,14 +2,14 @@ package com.xyoye.player_component.ui
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.xyoye.common_component.media3.testing.Media3Dependent
-import com.xyoye.data_component.entity.media3.Media3Capability
-import com.xyoye.data_component.entity.media3.Media3PlayerEngine
-import com.xyoye.data_component.entity.media3.Media3RolloutSource
-import com.xyoye.data_component.entity.media3.Media3SessionBundle
-import com.xyoye.data_component.entity.media3.Media3SourceType
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
-import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
+import com.xyoye.data_component.media3.entity.Media3Capability
+import com.xyoye.data_component.media3.entity.Media3PlayerEngine
+import com.xyoye.data_component.media3.entity.Media3RolloutSource
+import com.xyoye.data_component.media3.entity.Media3SessionBundle
+import com.xyoye.data_component.media3.entity.Media3SourceType
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.RolloutToggleSnapshot
 import com.xyoye.player_component.media3.Media3PlayerDelegate
 import com.xyoye.player_component.media3.session.Media3SessionController
 import com.xyoye.player_component.media3.session.RolloutSnapshotManager

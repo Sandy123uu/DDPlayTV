@@ -98,3 +98,12 @@
 - 约束校验：`./gradlew verifyModuleDependencies` / `./gradlew verifyArchitectureGovernance`
 - 日志：`adb logcat` 必须过滤（见 `document/code_quality_audit/runlogs/README.md`）
 
+## 5. DATA-T003 包结构约定（Media3/字幕遥测）
+
+为提升可发现性并减少同类类型散落，`data_component` 中 media3/字幕遥测相关类型采用以下统一命名空间：
+
+- `com.xyoye.data_component.media3.dto`：跨模块传输 DTO（请求/响应）。
+- `com.xyoye.data_component.media3.entity`：Media3 领域实体/枚举（含 Room Entity 与契约模型）。
+- `com.xyoye.data_component.media3.telemetry.subtitle`：字幕遥测数据模型（sample/snapshot/fallback/state/target）。
+
+迁移策略：优先以“单批次可编译通过”为门槛逐步迁移，必要时先保留过渡兼容层，避免一次性大改造成回归风险扩大。

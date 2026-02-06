@@ -3,8 +3,8 @@ package com.xyoye.common_component.media3
 import androidx.annotation.VisibleForTesting
 import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.database.dao.Media3Dao
-import com.xyoye.data_component.entity.media3.DownloadAssetCheck
-import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
+import com.xyoye.data_component.media3.entity.DownloadAssetCheck
+import com.xyoye.data_component.media3.entity.RolloutToggleSnapshot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

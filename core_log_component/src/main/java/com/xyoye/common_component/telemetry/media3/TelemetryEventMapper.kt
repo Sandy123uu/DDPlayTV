@@ -1,9 +1,9 @@
 package com.xyoye.common_component.telemetry.media3
 
-import com.xyoye.data_component.entity.media3.Media3TelemetryEventType
-import com.xyoye.data_component.entity.media3.Media3ToggleCohort
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.TelemetryEvent
+import com.xyoye.data_component.media3.entity.Media3TelemetryEventType
+import com.xyoye.data_component.media3.entity.Media3ToggleCohort
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.TelemetryEvent
 import java.util.UUID
 
 /**

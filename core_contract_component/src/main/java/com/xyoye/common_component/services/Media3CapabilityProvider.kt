@@ -1,12 +1,12 @@
 package com.xyoye.common_component.services
 
 import com.alibaba.android.arouter.facade.template.IProvider
-import com.xyoye.data_component.data.media3.CapabilityCommandResponseData
-import com.xyoye.data_component.entity.media3.Media3Capability
-import com.xyoye.data_component.entity.media3.Media3SessionBundle
-import com.xyoye.data_component.entity.media3.Media3SourceType
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
-import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
+import com.xyoye.data_component.media3.dto.CapabilityCommandResponseData
+import com.xyoye.data_component.media3.entity.Media3Capability
+import com.xyoye.data_component.media3.entity.Media3SessionBundle
+import com.xyoye.data_component.media3.entity.Media3SourceType
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.RolloutToggleSnapshot
 import kotlin.jvm.JvmSuppressWildcards
 
 interface Media3CapabilityProvider : IProvider {

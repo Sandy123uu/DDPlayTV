@@ -7,9 +7,9 @@ import com.xyoye.common_component.subtitle.pipeline.FallbackCommand
 import com.xyoye.common_component.subtitle.pipeline.PipelineInitRequest
 import com.xyoye.common_component.subtitle.pipeline.PipelineStatusResponse
 import com.xyoye.common_component.subtitle.pipeline.SubtitlePipelineApi
-import com.xyoye.data_component.bean.subtitle.SubtitleOutputTarget
-import com.xyoye.data_component.bean.subtitle.SubtitlePipelineState
-import com.xyoye.data_component.bean.subtitle.TelemetrySample
+import com.xyoye.data_component.media3.telemetry.subtitle.SubtitleOutputTarget
+import com.xyoye.data_component.media3.telemetry.subtitle.SubtitlePipelineState
+import com.xyoye.data_component.media3.telemetry.subtitle.TelemetrySample
 import com.xyoye.data_component.enums.SubtitlePipelineFallbackReason
 import com.xyoye.data_component.enums.SubtitlePipelineMode
 import kotlinx.coroutines.CoroutineDispatcher

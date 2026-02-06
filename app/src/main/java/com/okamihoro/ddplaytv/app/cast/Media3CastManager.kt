@@ -1,8 +1,8 @@
 package com.okamihoro.ddplaytv.app.cast
 
-import com.xyoye.data_component.entity.media3.CastTarget
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.CastTarget
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
 import com.xyoye.player_component.media3.fallback.CodecFallbackDecision
 import com.xyoye.player_component.media3.fallback.CodecFallbackHandler
 import com.xyoye.player_component.media3.mapper.LegacyCapabilityResult

@@ -1,7 +1,7 @@
 package com.xyoye.player_component.media3.session
 
 import com.xyoye.common_component.config.Media3ToggleProvider
-import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
+import com.xyoye.data_component.media3.entity.RolloutToggleSnapshot
 import java.util.concurrent.ConcurrentHashMap
 
 /**

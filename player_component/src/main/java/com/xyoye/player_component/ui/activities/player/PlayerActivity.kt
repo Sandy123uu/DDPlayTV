@@ -51,9 +51,9 @@ import com.xyoye.common_component.weight.dialog.CommonDialog
 import com.xyoye.data_component.bean.PlaybackProfile
 import com.xyoye.data_component.bean.PlaybackProfileSource
 import com.xyoye.data_component.bean.VideoTrackBean
-import com.xyoye.data_component.entity.media3.Media3BackgroundMode
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.Media3BackgroundMode
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
 import com.xyoye.data_component.enums.DanmakuLanguage
 import com.xyoye.data_component.enums.MediaType
 import com.xyoye.data_component.enums.PlayerType

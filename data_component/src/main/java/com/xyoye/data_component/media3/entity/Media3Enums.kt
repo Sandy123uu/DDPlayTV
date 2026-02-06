@@ -1,4 +1,4 @@
-package com.xyoye.data_component.entity.media3
+package com.xyoye.data_component.media3.entity
 
 /**
  * Enum types backing the Media3 migration models.

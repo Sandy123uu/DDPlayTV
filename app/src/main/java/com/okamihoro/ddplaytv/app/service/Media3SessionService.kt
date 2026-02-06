@@ -6,9 +6,9 @@ import android.os.IBinder
 import androidx.lifecycle.LifecycleService
 import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.media3.Media3SessionClient
-import com.xyoye.data_component.entity.media3.Media3BackgroundMode
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.Media3BackgroundMode
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

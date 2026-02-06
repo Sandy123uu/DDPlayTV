@@ -1,12 +1,12 @@
 package com.xyoye.common_component.network.service
 
-import com.xyoye.data_component.data.media3.CapabilityCommandRequestData
-import com.xyoye.data_component.data.media3.CapabilityCommandResponseData
-import com.xyoye.data_component.data.media3.DownloadValidationRequestData
-import com.xyoye.data_component.data.media3.DownloadValidationResponseData
-import com.xyoye.data_component.data.media3.PlaybackSessionRequestData
-import com.xyoye.data_component.data.media3.PlaybackSessionResponseData
-import com.xyoye.data_component.entity.media3.TelemetryEvent
+import com.xyoye.data_component.media3.dto.CapabilityCommandRequestData
+import com.xyoye.data_component.media3.dto.CapabilityCommandResponseData
+import com.xyoye.data_component.media3.dto.DownloadValidationRequestData
+import com.xyoye.data_component.media3.dto.DownloadValidationResponseData
+import com.xyoye.data_component.media3.dto.PlaybackSessionRequestData
+import com.xyoye.data_component.media3.dto.PlaybackSessionResponseData
+import com.xyoye.data_component.media3.entity.TelemetryEvent
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET

@@ -19,8 +19,8 @@ import com.xyoye.data_component.entity.MagnetSearchHistoryEntity
 import com.xyoye.data_component.entity.MediaLibraryEntity
 import com.xyoye.data_component.entity.PlayHistoryEntity
 import com.xyoye.data_component.entity.VideoEntity
-import com.xyoye.data_component.entity.media3.DownloadAssetCheck
-import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
+import com.xyoye.data_component.media3.entity.DownloadAssetCheck
+import com.xyoye.data_component.media3.entity.RolloutToggleSnapshot
 
 /**
  * Created by xyoye on 2020/7/29.
