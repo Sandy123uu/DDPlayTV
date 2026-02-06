@@ -26,13 +26,15 @@ dependencies {
     implementation(project(":repository:seven_zip"))
     implementation(project(":repository:thunder"))
 
-    api(files("libs/sardine-1.0.2.jar"))
-    api(files("libs/simple-xml-2.7.1.jar"))
+    implementation(files("libs/sardine-1.0.2.jar"))
+    implementation(files("libs/simple-xml-2.7.1.jar"))
 
+    // Keep NanoHTTPD visible transitively because public classes in this module
+    // (e.g. HttpPlayServer/HttpServer) currently expose NanoHTTPD supertypes.
     api(Dependencies.Github.nano_http)
-    api(Dependencies.Github.smbj)
-    api(Dependencies.Github.dcerpc)
-    api(Dependencies.Apache.commons_net)
+    implementation(Dependencies.Github.smbj)
+    implementation(Dependencies.Github.dcerpc)
+    implementation(Dependencies.Apache.commons_net)
 
     implementation(Dependencies.Tencent.mmkv)
 }

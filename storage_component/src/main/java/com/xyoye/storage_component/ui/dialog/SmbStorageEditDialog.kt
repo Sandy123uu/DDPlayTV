@@ -5,7 +5,7 @@ import android.text.method.PasswordTransformationMethod
 import androidx.core.view.isGone
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
-import com.hierynomus.smbj.SMBClient
+import com.xyoye.common_component.storage.StorageProtocolDefaults
 import com.xyoye.common_component.extension.setTextColorRes
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.entity.MediaLibraryEntity
@@ -41,7 +41,7 @@ class SmbStorageEditDialog(
             )
         // SMB默认端口
         if (serverData.port == 0) {
-            serverData.port = SMBClient.DEFAULT_PORT
+            serverData.port = StorageProtocolDefaults.SMB_DEFAULT_PORT
         }
         setSmbV2(serverData.smbV2)
         setAnonymous(serverData.isAnonymous)
@@ -147,7 +147,7 @@ class SmbStorageEditDialog(
             }
         }
 
-        val port = serverData.port.takeIf { it > 0 } ?: SMBClient.DEFAULT_PORT
+        val port = serverData.port.takeIf { it > 0 } ?: StorageProtocolDefaults.SMB_DEFAULT_PORT
         val displayName = serverData.displayName.ifEmpty { "SMB媒体库" }
         return serverData.copy(
             displayName = displayName,

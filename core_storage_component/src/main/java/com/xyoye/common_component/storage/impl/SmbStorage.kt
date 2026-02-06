@@ -12,6 +12,7 @@ import com.xyoye.common_component.extension.openDirectory
 import com.xyoye.common_component.extension.openFile
 import com.xyoye.common_component.extension.standardFileInfo
 import com.xyoye.common_component.storage.AbstractStorage
+import com.xyoye.common_component.storage.StorageProtocolDefaults
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.file.helper.SmbPlayServer
 import com.xyoye.common_component.storage.file.impl.SmbStorageFile
@@ -175,7 +176,7 @@ class SmbStorage(
         }
 
         try {
-            val port = if (library.port == 0) SMBClient.DEFAULT_PORT else library.port
+            val port = if (library.port == 0) StorageProtocolDefaults.SMB_DEFAULT_PORT else library.port
             val session =
                 mSmbClient
                     .connect(library.url, port)
