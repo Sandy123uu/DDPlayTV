@@ -4,7 +4,6 @@ import com.xyoye.common_component.database.dao.Media3Dao
 import com.xyoye.common_component.media3.Media3CrashTagger
 import com.xyoye.common_component.media3.Media3LocalStore
 import com.xyoye.common_component.media3.testing.Media3Dependent
-import com.xyoye.common_component.network.repository.Media3TelemetrySink
 import com.xyoye.data_component.entity.media3.DownloadAssetCheck
 import com.xyoye.data_component.entity.media3.Media3Capability
 import com.xyoye.data_component.entity.media3.Media3PlayerEngine
@@ -16,6 +15,7 @@ import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
 import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
 import com.xyoye.player_component.media3.session.Media3SessionController
 import com.xyoye.player_component.media3.session.RolloutSnapshotManager
+import com.xyoye.player_component.media3.telemetry.Media3TelemetrySink
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After

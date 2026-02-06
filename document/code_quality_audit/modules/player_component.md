@@ -27,7 +27,7 @@
   - `player_component/src/main/java/com/xyoye/player/kernel/impl/mpv/MpvVideoPlayer.kt` + `MpvVideoPlayer`
   - `player_component/src/main/java/com/xyoye/player/utils/VlcProxyServer.kt` + `VlcProxyServer#getProxyResponse`
 - 依赖边界
-  - 对内（依赖）：`core_ui/system/log/network/database/storage/contract/data` + `repository:danmaku/panel_switch/video_cache`（见 `player_component/build.gradle.kts`）。
+  - 对内（依赖）：`core_ui/system/log/network/database/storage/contract/data` + `repository:danmaku/video_cache`（见 `player_component/build.gradle.kts`）。
   - 对外（被依赖）：作为 feature 模块不应被其它 feature 直接依赖；入口由 `RouteTable.Player.*` 暴露给 `:app`。同时承担“播放器是全局关键路径”的责任（回归成本高）。
   - 边界疑点：
     - 网络诊断/遥测代码（`Media3Diagnostics`、`Media3TelemetryRepository`）在 player 内实现，但与 `:core_log_component/:core_network_component` 的策略高度耦合；若不统一口径，容易出现“日志/遥测包含敏感数据”的隐私风险。
@@ -59,7 +59,7 @@
 | PLAYER-T001 | PLAYER-F001 | 对 Media3 HTTP 诊断日志/遥测进行 URL 脱敏，默认不输出 query/token 等敏感信息 | 增加 URL 脱敏工具（建议落 `:core_log_component` 或 `:core_system_component`）；改造 `Media3Diagnostics#logHttpOpen` 与 `LoggingHttpDataSource` 调用链，确保 log/emit 均使用脱敏后的 URL | 1) 日志与遥测不包含 query/fragment；2) 仍可定位问题（保留 host/path + 可选 hash）；3) 可通过开关控制详细程度；4) 全仓编译通过 | High | Small | P1 | AI（Codex） | Done |
 | PLAYER-T002 | PLAYER-F002 | 将 VLC 代理拉流从 `UnsafeOkHttpClient` 迁移到“默认安全”的 OkHttpClient，并提供可控降级策略 | 在 `:core_network_component` 提供可复用的 OkHttpClientFactory（若已有则复用）；`VlcProxyServer` 使用安全 client；如需信任自签证书，必须受用户显式配置控制（Release 允许） | 1) release 默认不再使用 trust-all client；2) VLC 播放带 headers 的直链可回归；3) 若开启降级策略，入口明确且可审计；4) 全仓编译通过 | High | Medium | P1 | AI（Codex） | Done |
 | PLAYER-T003 | PLAYER-F003 | 收敛本地代理/HTTP server 能力，减少多实现与策略漂移 | 抽取 “proxy + headers + range + 鉴权 + 错误口径” 到 `:core_storage_component`（或新 core 模块）；player/storage/screencast 复用统一实现 | 1) 同类 server 代码显著减少；2) 多引擎（VLC/mpv/Media3）可播放且 Range/headers 行为一致；3) 默认 TLS 与日志策略统一；4) 全仓编译通过 | Medium | Large | P2 | 待分配（Infra/Player/Storage） | Draft |
-| PLAYER-T004 | PLAYER-F004 | 统一 Telemetry repository 的模块归属与包命名，避免“core_network 包名却在 feature 模块” | 方案 A：移动 `Media3TelemetryRepository` 到 `:core_network_component`；方案 B：保留在 player，但改包名为 `com.xyoye.player_component.*` 并通过接口在 core 层暴露；必要时提供 `@Deprecated` 过渡层 | 1) 包与模块语义一致；2) 外部引用不受影响或有清晰迁移路径；3) 不引入依赖环；4) 全仓编译通过 | Medium | Medium | P2 | 待分配（Network/Player） | Draft |
+| PLAYER-T004 | PLAYER-F004 | 统一 Telemetry repository 的模块归属与包命名，避免“core_network 包名却在 feature 模块” | 方案 A：移动 `Media3TelemetryRepository` 到 `:core_network_component`；方案 B：保留在 player，但改包名为 `com.xyoye.player_component.*` 并通过接口在 core 层暴露；必要时提供 `@Deprecated` 过渡层 | 1) 包与模块语义一致；2) 外部引用不受影响或有清晰迁移路径；3) 不引入依赖环；4) 全仓编译通过 | Medium | Medium | P2 | AI（Codex） | Done |
 | PLAYER-T005 | PLAYER-F005 | 清理 `printStackTrace()` 并补齐异常上报上下文（引擎/会话/源类型） | 替换 `PlayerFoundationInitializer/PlayRecorder/VlcVideoPlayer/ExternalSubtitleManager/...` 的 `printStackTrace` 为统一上报；对可能包含 URL/header 的内容做脱敏 | 1) player_component 内无 `printStackTrace()`；2) 异常上报有足够上下文但不泄露敏感信息；3) 关键路径行为不变；4) 全仓编译通过 | Medium | Small | P1 | AI（Codex） | Done |
 
 ## 5) 风险与回归关注点

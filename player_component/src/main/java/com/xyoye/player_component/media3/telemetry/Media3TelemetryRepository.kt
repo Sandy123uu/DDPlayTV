@@ -1,5 +1,6 @@
-package com.xyoye.common_component.network.repository
+package com.xyoye.player_component.media3.telemetry
 
+import com.xyoye.common_component.network.repository.Media3Repository
 import com.xyoye.common_component.telemetry.media3.TelemetryEventMapper
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.core_system_component.BuildConfig
