@@ -9,6 +9,7 @@ import androidx.preference.SwitchPreference
 import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.xyoye.common_component.config.BilibiliTvCredentialStore
 import com.xyoye.common_component.config.DevelopConfig
+import com.xyoye.common_component.config.DeveloperCredentialStore
 import com.xyoye.common_component.log.BuglyReporter
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.LogSystem
@@ -20,6 +21,7 @@ import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.SecurityHelperConfig
 import com.xyoye.common_component.utils.SupervisorScope
 import com.xyoye.common_component.weight.ToastCenter
+import com.xyoye.common_component.weight.dialog.CommonDialog
 import com.xyoye.user_component.R
 import com.xyoye.user_component.ui.dialog.BilibiliTvCredentialDialog
 import kotlinx.coroutines.launch
@@ -44,6 +46,8 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
         private const val KEY_LOG_LEVEL = "developer_log_level"
         private const val KEY_BUGLY_STATUS = "bugly_status"
         private const val KEY_BUGLY_TEST_REPORT = "bugly_test_report"
+        private const val KEY_CREDENTIAL_PLAINTEXT_FALLBACK = "developer_credential_plaintext_fallback"
+        private const val KEY_CREDENTIAL_MIGRATE_PLAINTEXT = "developer_credential_migrate_plaintext"
         private const val KEY_BILIBILI_TV_CREDENTIAL = "bilibili_tv_credential"
         private const val KEY_SUBTITLE_SESSION_STATUS = "subtitle_session_status"
         private const val SUBTITLE_STATUS_PROVIDER =
@@ -80,6 +84,7 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
         initSubtitleDebugPreferences()
         initBuglyStatusPreference()
         initBuglyTestPreference()
+        initDeveloperCredentialPreferences()
         initBilibiliTvCredentialPreference()
     }
 
@@ -306,6 +311,119 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
                 true
             }
         }
+    }
+
+    private fun initDeveloperCredentialPreferences() {
+        initCredentialPlaintextFallbackPreference()
+        initCredentialMigratePreference()
+    }
+
+    private fun initCredentialPlaintextFallbackPreference() {
+        findPreference<SwitchPreference>(KEY_CREDENTIAL_PLAINTEXT_FALLBACK)?.apply {
+            val switchPreference = this
+            isVisible = DeveloperCredentialStore.isPlaintextFallbackSwitchVisible()
+            if (!isVisible) {
+                return@apply
+            }
+
+            isChecked = DeveloperCredentialStore.isPlaintextFallbackEnabled()
+            summary =
+                if (isChecked) {
+                    getString(R.string.developer_credential_plaintext_fallback_summary_on)
+                } else {
+                    getString(R.string.developer_credential_plaintext_fallback_summary_off)
+                }
+            setOnPreferenceChangeListener { _, newValue ->
+                val enabled = newValue as? Boolean ?: return@setOnPreferenceChangeListener false
+                if (enabled) {
+                    CommonDialog
+                        .Builder(requireActivity())
+                        .apply {
+                            content = getString(R.string.developer_credential_plaintext_fallback_confirm_message)
+                            addPositive {
+                                it.dismiss()
+                                applyCredentialPlaintextFallback(enabled = true, preference = switchPreference)
+                            }
+                            addNegative { dialog -> dialog.dismiss() }
+                        }.build()
+                        .show()
+                    return@setOnPreferenceChangeListener false
+                }
+
+                applyCredentialPlaintextFallback(enabled = false, preference = switchPreference)
+                true
+            }
+        }
+    }
+
+    private fun applyCredentialPlaintextFallback(
+        enabled: Boolean,
+        preference: SwitchPreference
+    ) {
+        DeveloperCredentialStore.setPlaintextFallbackEnabled(enabled)
+        val effectiveEnabled = DeveloperCredentialStore.isPlaintextFallbackEnabled()
+        preference.isChecked = effectiveEnabled
+        preference.summary =
+            if (effectiveEnabled) {
+                getString(R.string.developer_credential_plaintext_fallback_summary_on)
+            } else {
+                getString(R.string.developer_credential_plaintext_fallback_summary_off)
+            }
+
+        if (effectiveEnabled) {
+            ToastCenter.showWarning(getString(R.string.developer_credential_plaintext_fallback_toast_enabled))
+        } else {
+            ToastCenter.showSuccess(getString(R.string.developer_credential_plaintext_fallback_toast_disabled))
+        }
+    }
+
+    private fun initCredentialMigratePreference() {
+        findPreference<Preference>(KEY_CREDENTIAL_MIGRATE_PLAINTEXT)?.apply {
+            isVisible = DeveloperCredentialStore.isPlaintextFallbackSwitchVisible()
+            if (!isVisible) {
+                return@apply
+            }
+
+            refreshCredentialMigrateSummary(this)
+            setOnPreferenceClickListener {
+                val migrationResult = DeveloperCredentialStore.migrateLegacyPlaintextCredentials()
+                when {
+                    migrationResult.migratedCount > 0 && migrationResult.failedCount == 0 -> {
+                        ToastCenter.showSuccess(
+                            getString(
+                                R.string.developer_credential_migrate_toast_success,
+                                migrationResult.migratedCount,
+                            ),
+                        )
+                    }
+
+                    migrationResult.migratedCount > 0 -> {
+                        ToastCenter.showWarning(
+                            getString(
+                                R.string.developer_credential_migrate_toast_partial,
+                                migrationResult.migratedCount,
+                                migrationResult.failedCount,
+                            ),
+                        )
+                    }
+
+                    else -> {
+                        ToastCenter.showSuccess(getString(R.string.developer_credential_migrate_toast_no_data))
+                    }
+                }
+                refreshCredentialMigrateSummary(this)
+                true
+            }
+        }
+    }
+
+    private fun refreshCredentialMigrateSummary(preference: Preference) {
+        preference.summary =
+            if (DeveloperCredentialStore.hasLegacyPlaintextCredentials()) {
+                getString(R.string.developer_credential_migrate_summary_pending)
+            } else {
+                getString(R.string.developer_credential_migrate_summary_clean)
+            }
     }
 
     private fun buildBilibiliTvCredentialSummary(): String =

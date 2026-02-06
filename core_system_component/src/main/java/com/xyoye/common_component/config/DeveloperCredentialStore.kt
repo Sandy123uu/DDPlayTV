@@ -3,7 +3,62 @@ package com.xyoye.common_component.config
 import com.xyoye.core_system_component.BuildConfig
 
 object DeveloperCredentialStore {
+    enum class SaveResult {
+        SAVED_ENCRYPTED,
+        SAVED_WITH_PLAINTEXT_FALLBACK,
+        REJECTED_ENCRYPTION_FAILED
+    }
+
+    data class PlaintextMigrationResult(
+        val migratedCount: Int,
+        val failedCount: Int
+    )
+
     fun isBuildCredentialInjected(): Boolean = BuildConfig.DANDAN_DEV_CREDENTIAL_INJECTED
+
+    fun isPlaintextFallbackSwitchVisible(): Boolean = BuildConfig.DEBUG
+
+    fun isPlaintextFallbackEnabled(): Boolean = BuildConfig.DEBUG && DevelopConfig.isCredentialPlaintextFallbackEnabled()
+
+    fun setPlaintextFallbackEnabled(enabled: Boolean) {
+        DevelopConfig.putCredentialPlaintextFallbackEnabled(enabled && BuildConfig.DEBUG)
+    }
+
+    fun hasLegacyPlaintextCredentials(): Boolean =
+        !DevelopConfig.getAppId().isNullOrBlank() ||
+            !DevelopConfig.getAppSecret().isNullOrBlank()
+
+    fun migrateLegacyPlaintextCredentials(): PlaintextMigrationResult {
+        var migratedCount = 0
+        var failedCount = 0
+
+        if (migrateSingleLegacyCredential(
+                legacyPlain = DevelopConfig.getAppId(),
+                saveEncrypted = DevelopConfig::putAppIdEncrypted,
+                clearLegacyPlain = { DevelopConfig.putAppId("") },
+            )
+        ) {
+            migratedCount++
+        } else if (!DevelopConfig.getAppId().isNullOrBlank()) {
+            failedCount++
+        }
+
+        if (migrateSingleLegacyCredential(
+                legacyPlain = DevelopConfig.getAppSecret(),
+                saveEncrypted = DevelopConfig::putAppSecretEncrypted,
+                clearLegacyPlain = { DevelopConfig.putAppSecret("") },
+            )
+        ) {
+            migratedCount++
+        } else if (!DevelopConfig.getAppSecret().isNullOrBlank()) {
+            failedCount++
+        }
+
+        return PlaintextMigrationResult(
+            migratedCount = migratedCount,
+            failedCount = failedCount,
+        )
+    }
 
     fun getAppId(): String? {
         if (isBuildCredentialInjected()) {
@@ -67,6 +122,46 @@ object DeveloperCredentialStore {
         )
     }
 
+    fun putCredentials(
+        appId: String,
+        appSecret: String
+    ): SaveResult {
+        val appIdValue = appId.trim()
+        val appSecretValue = appSecret.trim()
+
+        val appIdEncrypted = appIdValue.takeIf { it.isNotBlank() }?.let(CredentialCrypto::encrypt)
+        val appSecretEncrypted = appSecretValue.takeIf { it.isNotBlank() }?.let(CredentialCrypto::encrypt)
+
+        val hasEncryptFailure =
+            (appIdValue.isNotBlank() && appIdEncrypted == null) ||
+                (appSecretValue.isNotBlank() && appSecretEncrypted == null)
+
+        if (hasEncryptFailure && !isPlaintextFallbackEnabled()) {
+            return SaveResult.REJECTED_ENCRYPTION_FAILED
+        }
+
+        commitCredential(
+            value = appIdValue,
+            encrypted = appIdEncrypted,
+            saveEncrypted = DevelopConfig::putAppIdEncrypted,
+            clearLegacyPlain = { DevelopConfig.putAppId("") },
+            saveLegacyPlain = DevelopConfig::putAppId,
+        )
+        commitCredential(
+            value = appSecretValue,
+            encrypted = appSecretEncrypted,
+            saveEncrypted = DevelopConfig::putAppSecretEncrypted,
+            clearLegacyPlain = { DevelopConfig.putAppSecret("") },
+            saveLegacyPlain = DevelopConfig::putAppSecret,
+        )
+
+        return if (hasEncryptFailure) {
+            SaveResult.SAVED_WITH_PLAINTEXT_FALLBACK
+        } else {
+            SaveResult.SAVED_ENCRYPTED
+        }
+    }
+
     private fun getCredential(
         encrypted: String?,
         legacyPlain: String?,
@@ -104,21 +199,55 @@ object DeveloperCredentialStore {
         clearLegacyPlain: () -> Unit,
         saveLegacyPlain: (String) -> Unit
     ) {
+        val trimmedValue = value.trim()
+        val encrypted = trimmedValue.takeIf { it.isNotBlank() }?.let(CredentialCrypto::encrypt)
+        commitCredential(
+            value = trimmedValue,
+            encrypted = encrypted,
+            saveEncrypted = saveEncrypted,
+            clearLegacyPlain = clearLegacyPlain,
+            saveLegacyPlain = saveLegacyPlain,
+        )
+    }
+
+    private fun commitCredential(
+        value: String,
+        encrypted: String?,
+        saveEncrypted: (String) -> Unit,
+        clearLegacyPlain: () -> Unit,
+        saveLegacyPlain: (String) -> Unit
+    ) {
         if (value.isBlank()) {
             saveEncrypted("")
             clearLegacyPlain()
             return
         }
 
-        val encrypted = CredentialCrypto.encrypt(value)
         if (encrypted != null) {
             saveEncrypted(encrypted)
             clearLegacyPlain()
             return
         }
 
-        // 加密失败：兜底仍然保存明文，避免功能不可用
-        saveLegacyPlain(value)
-        saveEncrypted("")
+        if (isPlaintextFallbackEnabled()) {
+            saveLegacyPlain(value)
+            saveEncrypted("")
+        }
+    }
+
+    private fun migrateSingleLegacyCredential(
+        legacyPlain: String?,
+        saveEncrypted: (String) -> Unit,
+        clearLegacyPlain: () -> Unit
+    ): Boolean {
+        val value = legacyPlain?.trim().orEmpty()
+        if (value.isBlank()) {
+            return false
+        }
+
+        val encrypted = CredentialCrypto.encrypt(value) ?: return false
+        saveEncrypted(encrypted)
+        clearLegacyPlain()
+        return true
     }
 }

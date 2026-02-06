@@ -35,6 +35,10 @@ object DevelopConfigTable {
     @MMKVFiled
     const val appSecretEncrypted = ""
 
+    // 开发者凭证：是否允许“加密失败时明文兜底”（仅用户显式开启后生效）
+    @MMKVFiled
+    const val credentialPlaintextFallbackEnabled = false
+
     // Bilibili TV App Key（加密后存储）
     @MMKVFiled
     const val bilibiliTvAppKeyEncrypted = ""

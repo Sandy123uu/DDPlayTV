@@ -68,6 +68,18 @@
         android:key="developer_credential_category"
         android:title="@string/developer_credential_category_title">
 
+        <SwitchPreference
+            android:key="developer_credential_plaintext_fallback"
+            android:title="@string/developer_credential_plaintext_fallback_title"
+            android:summary="@string/developer_credential_plaintext_fallback_summary_off"
+            app:icon="@drawable/ic_app_setting" />
+
+        <Preference
+            android:key="developer_credential_migrate_plaintext"
+            android:title="@string/developer_credential_migrate_plaintext_title"
+            android:summary="@string/developer_credential_migrate_summary_clean"
+            app:icon="@drawable/ic_feedback" />
+
         <Preference
             android:key="bilibili_tv_credential"
             android:title="@string/developer_bilibili_tv_credential_title"
