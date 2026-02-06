@@ -85,7 +85,7 @@
 
 | G-ID | 状态 | 负责人 | 目标 | 关联 G-F | 涉及模块 | 来源任务 |
 |---|---|---|---|---|---|---|
-| G-T0067 | Draft | 待分配（QA/Storage） | 增加可复现的回归用例：覆盖多格式/多文件/大文件/异常压缩包的解压行为 | G-F0023,G-F0067 | :repository:seven_zip | REPO_SEVEN_ZIP-T004 |
+| G-T0067 | Done | AI（Codex） | 增加可复现的回归用例：覆盖多格式/多文件/大文件/异常压缩包的解压行为 | G-F0023,G-F0067 | :repository:seven_zip | REPO_SEVEN_ZIP-T004 |
 | G-T0068 | Done | AI（Codex） | 收敛 media3/字幕遥测相关包结构，提升可发现性与复用一致性 | G-F0068 | :data_component | DATA-T003 |
 
 ## 使用建议
