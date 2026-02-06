@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.preference.ListPreference
 import androidx.preference.Preference
-import androidx.preference.PreferenceDataStore
 import androidx.preference.SwitchPreference
 import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.xyoye.common_component.config.BilibiliTvCredentialStore
@@ -17,6 +16,7 @@ import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.log.model.PolicySource
 import com.xyoye.common_component.log.tcp.TcpLogServerState
+import com.xyoye.common_component.preference.MappingPreferenceDataStore
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.SecurityHelperConfig
 import com.xyoye.common_component.utils.SupervisorScope
@@ -629,46 +629,30 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
         return if (all.isEmpty()) "-" else all.joinToString(separator = "\n")
     }
 
-    private class DeveloperSettingDataStore : PreferenceDataStore() {
-        override fun getBoolean(
-            key: String?,
-            defValue: Boolean
-        ): Boolean =
-            when (key) {
-                KEY_APP_LOG_ENABLE -> LogSystem.getRuntimeState().debugSessionEnabled
-                KEY_TCP_LOG_SERVER_ENABLE -> LogSystem.getTcpLogServerState().enabled
-                else -> defValue
-            }
-
-        override fun putBoolean(
-            key: String?,
-            value: Boolean
-        ) {
-            when (key) {
-                KEY_APP_LOG_ENABLE -> {
+    private class DeveloperSettingDataStore : MappingPreferenceDataStore(
+        dataStoreName = "DeveloperSettingDataStore",
+        booleanReaders =
+            mapOf(
+                KEY_APP_LOG_ENABLE to { LogSystem.getRuntimeState().debugSessionEnabled },
+                KEY_TCP_LOG_SERVER_ENABLE to { LogSystem.getTcpLogServerState().enabled },
+            ),
+        booleanWriters =
+            mapOf(
+                KEY_APP_LOG_ENABLE to {
                     DevelopConfig.putDdLogEnable(LogSystem.getRuntimeState().debugSessionEnabled)
-                }
-            }
-        }
-
-        override fun getString(
-            key: String?,
-            defValue: String?
-        ): String? =
-            when (key) {
-                KEY_LOG_LEVEL ->
+                },
+            ),
+        stringReaders =
+            mapOf(
+                KEY_LOG_LEVEL to {
                     LogSystem
                         .getRuntimeState()
                         .activePolicy.defaultLevel.name
-                else -> defValue
-            }
-
-        override fun putString(
-            key: String?,
-            value: String?
-        ) {
-            when (key) {
-                KEY_LOG_LEVEL ->
+                },
+            ),
+        stringWriters =
+            mapOf(
+                KEY_LOG_LEVEL to { value ->
                     value?.let { raw ->
                         runCatching { LogLevel.valueOf(raw) }.getOrNull()?.let { level ->
                             val current = LogSystem.getRuntimeState()
@@ -678,7 +662,7 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
                             )
                         }
                     }
-            }
-        }
-    }
+                },
+            ),
+    )
 }

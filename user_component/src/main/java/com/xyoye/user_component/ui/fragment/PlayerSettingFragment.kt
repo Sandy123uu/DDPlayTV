@@ -4,12 +4,11 @@ import android.os.Bundle
 import android.view.View
 import androidx.preference.ListPreference
 import androidx.preference.Preference
-import androidx.preference.PreferenceDataStore
 import androidx.preference.SeekBarPreference
 import androidx.preference.SwitchPreference
 import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.xyoye.common_component.config.PlayerConfig
-import com.xyoye.common_component.utils.ErrorReportHelper
+import com.xyoye.common_component.preference.MappingPreferenceDataStore
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.enums.LocalProxyMode
 import com.xyoye.data_component.enums.PlayerType
@@ -30,6 +29,21 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
         private const val DEFAULT_MPV_AUDIO_OUTPUT = "default"
         private const val DEFAULT_MPV_VIDEO_SYNC = "default"
         private const val DEFAULT_LOCAL_PROXY_MODE = "1"
+        private const val KEY_PLAYER_TYPE = "player_type"
+        private const val KEY_VLC_HARDWARE_ACCELERATION = "vlc_hardware_acceleration"
+        private const val KEY_VLC_AUDIO_OUTPUT = "vlc_audio_output"
+        private const val KEY_VLC_PROXY_RANGE_INTERVAL_MS = "vlc_proxy_range_interval_ms"
+        private const val KEY_VLC_LOCAL_PROXY_MODE = "vlc_local_proxy_mode"
+        private const val KEY_VLC_PROXY_ALLOW_INSECURE_TLS = "vlc_proxy_allow_insecure_tls"
+        private const val KEY_EXO_PROXY_RANGE_INTERVAL_MS = "exo_proxy_range_interval_ms"
+        private const val KEY_EXO_LOCAL_PROXY_MODE = "exo_local_proxy_mode"
+        private const val KEY_MPV_PROXY_RANGE_INTERVAL_MS = "mpv_proxy_range_interval_ms"
+        private const val KEY_MPV_LOCAL_PROXY_MODE = "mpv_local_proxy_mode"
+        private const val KEY_MPV_AUDIO_OUTPUT = "mpv_audio_output"
+        private const val KEY_MPV_VIDEO_SYNC = "mpv_video_sync"
+        private const val KEY_MPV_HWDEC_PRIORITY = "mpv_hwdec_priority"
+        private const val KEY_MPV_VIDEO_OUTPUT = "mpv_video_output"
+        private const val KEY_SURFACE_RENDERS = "surface_renders"
 
         fun newInstance() = PlayerSettingFragment()
 
@@ -56,27 +70,27 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
 
         val vlcPreference =
             arrayOf(
-                "vlc_hardware_acceleration",
-                "vlc_audio_output",
-                "vlc_proxy_range_interval_ms",
-                "vlc_local_proxy_mode",
-                "vlc_proxy_allow_insecure_tls",
+                KEY_VLC_HARDWARE_ACCELERATION,
+                KEY_VLC_AUDIO_OUTPUT,
+                KEY_VLC_PROXY_RANGE_INTERVAL_MS,
+                KEY_VLC_LOCAL_PROXY_MODE,
+                KEY_VLC_PROXY_ALLOW_INSECURE_TLS,
             )
 
         val exoPreference =
             arrayOf(
-                "exo_proxy_range_interval_ms",
-                "exo_local_proxy_mode",
+                KEY_EXO_PROXY_RANGE_INTERVAL_MS,
+                KEY_EXO_LOCAL_PROXY_MODE,
             )
 
         val mpvPreference =
             arrayOf(
-                "mpv_proxy_range_interval_ms",
-                "mpv_local_proxy_mode",
-                "mpv_audio_output",
-                "mpv_video_sync",
-                "mpv_hwdec_priority",
-                "mpv_video_output",
+                KEY_MPV_PROXY_RANGE_INTERVAL_MS,
+                KEY_MPV_LOCAL_PROXY_MODE,
+                KEY_MPV_AUDIO_OUTPUT,
+                KEY_MPV_VIDEO_SYNC,
+                KEY_MPV_HWDEC_PRIORITY,
+                KEY_MPV_VIDEO_OUTPUT,
             )
 
         val mpvVideoOutput =
@@ -127,9 +141,9 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
     ) {
         preferenceManager.preferenceDataStore = PlayerSettingDataStore()
         addPreferencesFromResource(R.xml.preference_player_setting)
-        setupRangeIntervalPreference("exo_proxy_range_interval_ms")
-        setupRangeIntervalPreference("mpv_proxy_range_interval_ms")
-        setupRangeIntervalPreference("vlc_proxy_range_interval_ms")
+        setupRangeIntervalPreference(KEY_EXO_PROXY_RANGE_INTERVAL_MS)
+        setupRangeIntervalPreference(KEY_MPV_PROXY_RANGE_INTERVAL_MS)
+        setupRangeIntervalPreference(KEY_VLC_PROXY_RANGE_INTERVAL_MS)
     }
 
     override fun onViewCreated(
@@ -137,7 +151,7 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
         savedInstanceState: Bundle?
     ) {
         // 播放器类型
-        findPreference<ListPreference>("player_type")?.apply {
+        findPreference<ListPreference>(KEY_PLAYER_TYPE)?.apply {
             entries = playerData.keys.toTypedArray()
             entryValues = playerData.values.toTypedArray()
             val safeValue =
@@ -162,19 +176,19 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
         }
 
         // VLC硬件加速
-        findPreference<ListPreference>("vlc_hardware_acceleration")?.apply {
+        findPreference<ListPreference>(KEY_VLC_HARDWARE_ACCELERATION)?.apply {
             entries = vlcHWDecode.keys.toTypedArray()
             entryValues = vlcHWDecode.values.toTypedArray()
         }
 
         // VLC音频输出
-        findPreference<ListPreference>("vlc_audio_output")?.apply {
+        findPreference<ListPreference>(KEY_VLC_AUDIO_OUTPUT)?.apply {
             entries = vlcAudioOutput.keys.toTypedArray()
             entryValues = vlcAudioOutput.values.toTypedArray()
         }
 
         // MPV视频输出
-        findPreference<ListPreference>("mpv_video_output")?.apply {
+        findPreference<ListPreference>(KEY_MPV_VIDEO_OUTPUT)?.apply {
             entries = mpvVideoOutput.keys.toTypedArray()
             entryValues = mpvVideoOutput.values.toTypedArray()
             val safeValue =
@@ -188,7 +202,7 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
         }
 
         // MPV音频输出（ao）
-        findPreference<ListPreference>("mpv_audio_output")?.apply {
+        findPreference<ListPreference>(KEY_MPV_AUDIO_OUTPUT)?.apply {
             entries = mpvAudioOutput.keys.toTypedArray()
             entryValues = mpvAudioOutput.values.toTypedArray()
             val current = PlayerConfig.getMpvAudioOutput()
@@ -203,7 +217,7 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
         }
 
         // MPV视频同步（video-sync）
-        findPreference<ListPreference>("mpv_video_sync")?.apply {
+        findPreference<ListPreference>(KEY_MPV_VIDEO_SYNC)?.apply {
             entries = mpvVideoSync.keys.toTypedArray()
             entryValues = mpvVideoSync.values.toTypedArray()
             val current = PlayerConfig.getMpvVideoSync()
@@ -218,7 +232,7 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
         }
 
         // MPV硬解优先级
-        findPreference<ListPreference>("mpv_hwdec_priority")?.apply {
+        findPreference<ListPreference>(KEY_MPV_HWDEC_PRIORITY)?.apply {
             entries = mpvHwdecPriority.keys.toTypedArray()
             entryValues = mpvHwdecPriority.values.toTypedArray()
             val safeValue =
@@ -232,7 +246,7 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
         }
 
         // MPV 本地防风控代理（HttpPlayServer）
-        findPreference<ListPreference>("mpv_local_proxy_mode")?.apply {
+        findPreference<ListPreference>(KEY_MPV_LOCAL_PROXY_MODE)?.apply {
             entries = localProxyMode.keys.toTypedArray()
             entryValues = localProxyMode.values.toTypedArray()
             val stored = PlayerConfig.getMpvLocalProxyMode()
@@ -249,7 +263,7 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
         }
 
         // VLC 本地防风控代理（HttpPlayServer）
-        findPreference<ListPreference>("vlc_local_proxy_mode")?.apply {
+        findPreference<ListPreference>(KEY_VLC_LOCAL_PROXY_MODE)?.apply {
             entries = localProxyMode.keys.toTypedArray()
             entryValues = localProxyMode.values.toTypedArray()
             val stored = PlayerConfig.getVlcLocalProxyMode()
@@ -265,7 +279,7 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
             summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
         }
 
-        findPreference<SwitchPreference>("vlc_proxy_allow_insecure_tls")?.apply {
+        findPreference<SwitchPreference>(KEY_VLC_PROXY_ALLOW_INSECURE_TLS)?.apply {
             onPreferenceChangeListener =
                 Preference.OnPreferenceChangeListener { _, newValue ->
                     val enabled = newValue as? Boolean ?: return@OnPreferenceChangeListener true
@@ -277,7 +291,7 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
         }
 
         // Media3 本地防风控代理（HttpPlayServer）
-        findPreference<ListPreference>("exo_local_proxy_mode")?.apply {
+        findPreference<ListPreference>(KEY_EXO_LOCAL_PROXY_MODE)?.apply {
             entries = localProxyMode.keys.toTypedArray()
             entryValues = localProxyMode.values.toTypedArray()
             val stored = PlayerConfig.getExoLocalProxyMode()
@@ -346,262 +360,163 @@ class PlayerSettingFragment : BasePreferenceFragmentCompat() {
         }
     }
 
-    inner class PlayerSettingDataStore : PreferenceDataStore() {
-        override fun getString(
-            key: String?,
-            defValue: String?
-        ): String? =
-            try {
-                when (key) {
-                    "player_type" -> {
-                        val currentType = PlayerConfig.getUsePlayerType()
+    private inner class PlayerSettingDataStore : MappingPreferenceDataStore(
+        dataStoreName = "PlayerSettingDataStore",
+        stringReaders =
+            mapOf(
+                KEY_PLAYER_TYPE to {
+                    val currentType = PlayerConfig.getUsePlayerType()
+                    val safeType =
+                        when (PlayerType.valueOf(currentType)) {
+                            PlayerType.TYPE_VLC_PLAYER -> PlayerType.TYPE_VLC_PLAYER
+                            PlayerType.TYPE_MPV_PLAYER -> PlayerType.TYPE_MPV_PLAYER
+                            else -> PlayerType.TYPE_EXO_PLAYER
+                        }
+                    if (safeType.value != currentType) {
+                        PlayerConfig.putUsePlayerType(safeType.value)
+                    }
+                    safeType.value.toString()
+                },
+                KEY_VLC_HARDWARE_ACCELERATION to { PlayerConfig.getUseVLCHWDecoder().toString() },
+                KEY_VLC_AUDIO_OUTPUT to { PlayerConfig.getUseVLCAudioOutput() },
+                KEY_MPV_VIDEO_OUTPUT to {
+                    val current = PlayerConfig.getMpvVideoOutput()
+                    val safeValue = current.takeIf { mpvVideoOutput.containsValue(it) } ?: DEFAULT_MPV_VIDEO_OUTPUT
+                    if (current != safeValue) {
+                        PlayerConfig.putMpvVideoOutput(safeValue)
+                    }
+                    safeValue
+                },
+                KEY_MPV_HWDEC_PRIORITY to {
+                    val current = PlayerConfig.getMpvHwdecPriority()
+                    val safeValue = current.takeIf { mpvHwdecPriority.containsValue(it) } ?: DEFAULT_MPV_HWDEC_PRIORITY
+                    if (current != safeValue) {
+                        PlayerConfig.putMpvHwdecPriority(safeValue)
+                    }
+                    safeValue
+                },
+                KEY_MPV_AUDIO_OUTPUT to {
+                    val current = PlayerConfig.getMpvAudioOutput()
+                    val safeValue = current.takeIf { mpvAudioOutput.containsValue(it) } ?: DEFAULT_MPV_AUDIO_OUTPUT
+                    if (current != safeValue) {
+                        PlayerConfig.putMpvAudioOutput(safeValue)
+                    }
+                    safeValue
+                },
+                KEY_MPV_VIDEO_SYNC to {
+                    val current = PlayerConfig.getMpvVideoSync()
+                    val safeValue = current.takeIf { mpvVideoSync.containsValue(it) } ?: DEFAULT_MPV_VIDEO_SYNC
+                    if (current != safeValue) {
+                        PlayerConfig.putMpvVideoSync(safeValue)
+                    }
+                    safeValue
+                },
+                KEY_MPV_LOCAL_PROXY_MODE to {
+                    val current = PlayerConfig.getMpvLocalProxyMode()
+                    val safeValue = LocalProxyMode.from(current).value.toString()
+                    if (current.toString() != safeValue) {
+                        PlayerConfig.putMpvLocalProxyMode(safeValue.toInt())
+                    }
+                    safeValue
+                },
+                KEY_VLC_LOCAL_PROXY_MODE to {
+                    val current = PlayerConfig.getVlcLocalProxyMode()
+                    val safeValue = LocalProxyMode.from(current).value.toString()
+                    if (current.toString() != safeValue) {
+                        PlayerConfig.putVlcLocalProxyMode(safeValue.toInt())
+                    }
+                    safeValue
+                },
+                KEY_EXO_LOCAL_PROXY_MODE to {
+                    val current = PlayerConfig.getExoLocalProxyMode()
+                    val safeValue = LocalProxyMode.from(current).value.toString()
+                    if (current.toString() != safeValue) {
+                        PlayerConfig.putExoLocalProxyMode(safeValue.toInt())
+                    }
+                    safeValue
+                },
+            ),
+        stringWriters =
+            mapOf(
+                KEY_PLAYER_TYPE to { value ->
+                    value?.toIntOrNull()?.let { parsedType ->
                         val safeType =
-                            when (PlayerType.valueOf(currentType)) {
+                            when (PlayerType.valueOf(parsedType)) {
                                 PlayerType.TYPE_VLC_PLAYER -> PlayerType.TYPE_VLC_PLAYER
                                 PlayerType.TYPE_MPV_PLAYER -> PlayerType.TYPE_MPV_PLAYER
                                 else -> PlayerType.TYPE_EXO_PLAYER
                             }
-                        if (safeType.value != currentType) {
-                            PlayerConfig.putUsePlayerType(safeType.value)
-                        }
-                        safeType.value.toString()
+                        PlayerConfig.putUsePlayerType(safeType.value)
                     }
-                    "vlc_hardware_acceleration" -> PlayerConfig.getUseVLCHWDecoder().toString()
-                    "vlc_audio_output" -> PlayerConfig.getUseVLCAudioOutput()
-                    "mpv_video_output" -> {
-                        val current = PlayerConfig.getMpvVideoOutput()
-                        val safeValue =
-                            current.takeIf { mpvVideoOutput.containsValue(it) }
-                                ?: DEFAULT_MPV_VIDEO_OUTPUT
-                        if (current != safeValue) {
-                            PlayerConfig.putMpvVideoOutput(safeValue)
-                        }
-                        safeValue
-                    }
-                    "mpv_hwdec_priority" -> {
-                        val current = PlayerConfig.getMpvHwdecPriority()
-                        val safeValue =
-                            current.takeIf { mpvHwdecPriority.containsValue(it) }
-                                ?: DEFAULT_MPV_HWDEC_PRIORITY
-                        if (current != safeValue) {
-                            PlayerConfig.putMpvHwdecPriority(safeValue)
-                        }
-                        safeValue
-                    }
-                    "mpv_audio_output" -> {
-                        val current = PlayerConfig.getMpvAudioOutput()
-                        val safeValue =
-                            current.takeIf { mpvAudioOutput.containsValue(it) }
-                                ?: DEFAULT_MPV_AUDIO_OUTPUT
-                        if (current != safeValue) {
-                            PlayerConfig.putMpvAudioOutput(safeValue)
-                        }
-                        safeValue
-                    }
-                    "mpv_video_sync" -> {
-                        val current = PlayerConfig.getMpvVideoSync()
-                        val safeValue =
-                            current.takeIf { mpvVideoSync.containsValue(it) }
-                                ?: DEFAULT_MPV_VIDEO_SYNC
-                        if (current != safeValue) {
-                            PlayerConfig.putMpvVideoSync(safeValue)
-                        }
-                        safeValue
-                    }
-                    "mpv_local_proxy_mode" -> {
-                        val current = PlayerConfig.getMpvLocalProxyMode()
-                        val safeValue = LocalProxyMode.from(current).value.toString()
-                        if (current.toString() != safeValue) {
-                            PlayerConfig.putMpvLocalProxyMode(safeValue.toInt())
-                        }
-                        safeValue
-                    }
-                    "vlc_local_proxy_mode" -> {
-                        val current = PlayerConfig.getVlcLocalProxyMode()
-                        val safeValue = LocalProxyMode.from(current).value.toString()
-                        if (current.toString() != safeValue) {
-                            PlayerConfig.putVlcLocalProxyMode(safeValue.toInt())
-                        }
-                        safeValue
-                    }
-                    "exo_local_proxy_mode" -> {
-                        val current = PlayerConfig.getExoLocalProxyMode()
-                        val safeValue = LocalProxyMode.from(current).value.toString()
-                        if (current.toString() != safeValue) {
-                            PlayerConfig.putExoLocalProxyMode(safeValue.toInt())
-                        }
-                        safeValue
-                    }
-                    else -> super.getString(key, defValue)
-                }
-            } catch (e: Exception) {
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    e,
-                    "PlayerSettingDataStore",
-                    "getString",
-                    "Failed to get string value for key: $key",
-                )
-                defValue
-            }
-
-        override fun putString(
-            key: String?,
-            value: String?
-        ) {
-            try {
-                if (value != null) {
-                    when (key) {
-                        "player_type" -> {
-                            val safeType =
-                                when (PlayerType.valueOf(value.toInt())) {
-                                    PlayerType.TYPE_VLC_PLAYER -> PlayerType.TYPE_VLC_PLAYER
-                                    PlayerType.TYPE_MPV_PLAYER -> PlayerType.TYPE_MPV_PLAYER
-                                    else -> PlayerType.TYPE_EXO_PLAYER
-                                }
-                            PlayerConfig.putUsePlayerType(safeType.value)
-                        }
-                        "vlc_hardware_acceleration" -> PlayerConfig.putUseVLCHWDecoder(value.toInt())
-                        "vlc_audio_output" -> PlayerConfig.putUseVLCAudioOutput(value)
-                        "mpv_video_output" -> {
-                            val safeValue =
-                                value.takeIf { mpvVideoOutput.containsValue(it) }
-                                    ?: DEFAULT_MPV_VIDEO_OUTPUT
-                            PlayerConfig.putMpvVideoOutput(safeValue)
-                        }
-                        "mpv_hwdec_priority" -> {
-                            val safeValue =
-                                value.takeIf { mpvHwdecPriority.containsValue(it) }
-                                    ?: DEFAULT_MPV_HWDEC_PRIORITY
-                            PlayerConfig.putMpvHwdecPriority(safeValue)
-                        }
-                        "mpv_audio_output" -> {
-                            val safeValue =
-                                value.takeIf { mpvAudioOutput.containsValue(it) }
-                                    ?: DEFAULT_MPV_AUDIO_OUTPUT
-                            PlayerConfig.putMpvAudioOutput(safeValue)
-                        }
-                        "mpv_video_sync" -> {
-                            val safeValue =
-                                value.takeIf { mpvVideoSync.containsValue(it) }
-                                    ?: DEFAULT_MPV_VIDEO_SYNC
-                            PlayerConfig.putMpvVideoSync(safeValue)
-                        }
-                        "mpv_local_proxy_mode" -> {
-                            val safeValue = LocalProxyMode.from(value.toIntOrNull()).value
-                            PlayerConfig.putMpvLocalProxyMode(safeValue)
-                        }
-                        "vlc_local_proxy_mode" -> {
-                            val safeValue = LocalProxyMode.from(value.toIntOrNull()).value
-                            PlayerConfig.putVlcLocalProxyMode(safeValue)
-                        }
-                        "exo_local_proxy_mode" -> {
-                            val safeValue = LocalProxyMode.from(value.toIntOrNull()).value
-                            PlayerConfig.putExoLocalProxyMode(safeValue)
-                        }
-                        else -> super.putString(key, value)
-                    }
-                } else {
-                    super.putString(key, value)
-                }
-            } catch (e: Exception) {
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    e,
-                    "PlayerSettingDataStore",
-                    "putString",
-                    "Failed to put string value for key: $key, value: $value",
-                )
-            }
-        }
-
-        override fun getInt(
-            key: String?,
-            defValue: Int
-        ): Int =
-            try {
-                when (key) {
-                    "mpv_proxy_range_interval_ms" ->
-                        normalizeMpvRangeInterval(PlayerConfig.getMpvProxyRangeMinIntervalMs())
-                    "vlc_proxy_range_interval_ms" ->
-                        normalizeMpvRangeInterval(PlayerConfig.getVlcProxyRangeMinIntervalMs())
-                    "exo_proxy_range_interval_ms" ->
-                        normalizeMpvRangeInterval(PlayerConfig.getExoProxyRangeMinIntervalMs())
-                    else -> super.getInt(key, defValue)
-                }
-            } catch (e: Exception) {
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    e,
-                    "PlayerSettingDataStore",
-                    "getInt",
-                    "Failed to get int value for key: $key",
-                )
-                defValue
-            }
-
-        override fun putInt(
-            key: String?,
-            value: Int
-        ) {
-            try {
-                when (key) {
-                    "mpv_proxy_range_interval_ms" -> {
-                        PlayerConfig.putMpvProxyRangeMinIntervalMs(normalizeMpvRangeInterval(value))
-                    }
-                    "vlc_proxy_range_interval_ms" -> {
-                        PlayerConfig.putVlcProxyRangeMinIntervalMs(normalizeMpvRangeInterval(value))
-                    }
-                    "exo_proxy_range_interval_ms" -> {
-                        PlayerConfig.putExoProxyRangeMinIntervalMs(normalizeMpvRangeInterval(value))
-                    }
-                    else -> super.putInt(key, value)
-                }
-            } catch (e: Exception) {
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    e,
-                    "PlayerSettingDataStore",
-                    "putInt",
-                    "Failed to put int value for key: $key, value: $value",
-                )
-            }
-        }
-
-        override fun getBoolean(
-            key: String?,
-            defValue: Boolean
-        ): Boolean =
-            try {
-                when (key) {
-                    "surface_renders" -> PlayerConfig.isUseSurfaceView()
-                    "vlc_proxy_allow_insecure_tls" -> PlayerConfig.isVlcProxyAllowInsecureTls()
-                    else -> super.getBoolean(key, defValue)
-                }
-            } catch (e: Exception) {
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    e,
-                    "PlayerSettingDataStore",
-                    "getBoolean",
-                    "Failed to get boolean value for key: $key",
-                )
-                defValue
-            }
-
-        override fun putBoolean(
-            key: String?,
-            value: Boolean
-        ) {
-            try {
-                when (key) {
-                    "surface_renders" -> PlayerConfig.putUseSurfaceView(value)
-                    "vlc_proxy_allow_insecure_tls" -> PlayerConfig.putVlcProxyAllowInsecureTls(value)
-                    else -> super.putBoolean(key, value)
-                }
-            } catch (e: Exception) {
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    e,
-                    "PlayerSettingDataStore",
-                    "putBoolean",
-                    "Failed to put boolean value for key: $key, value: $value",
-                )
-            }
-        }
-    }
+                },
+                KEY_VLC_HARDWARE_ACCELERATION to { value ->
+                    value?.toIntOrNull()?.let { PlayerConfig.putUseVLCHWDecoder(it) }
+                },
+                KEY_VLC_AUDIO_OUTPUT to { value ->
+                    value?.let { PlayerConfig.putUseVLCAudioOutput(it) }
+                },
+                KEY_MPV_VIDEO_OUTPUT to { value ->
+                    val safeValue = value?.takeIf { mpvVideoOutput.containsValue(it) } ?: DEFAULT_MPV_VIDEO_OUTPUT
+                    PlayerConfig.putMpvVideoOutput(safeValue)
+                },
+                KEY_MPV_HWDEC_PRIORITY to { value ->
+                    val safeValue = value?.takeIf { mpvHwdecPriority.containsValue(it) } ?: DEFAULT_MPV_HWDEC_PRIORITY
+                    PlayerConfig.putMpvHwdecPriority(safeValue)
+                },
+                KEY_MPV_AUDIO_OUTPUT to { value ->
+                    val safeValue = value?.takeIf { mpvAudioOutput.containsValue(it) } ?: DEFAULT_MPV_AUDIO_OUTPUT
+                    PlayerConfig.putMpvAudioOutput(safeValue)
+                },
+                KEY_MPV_VIDEO_SYNC to { value ->
+                    val safeValue = value?.takeIf { mpvVideoSync.containsValue(it) } ?: DEFAULT_MPV_VIDEO_SYNC
+                    PlayerConfig.putMpvVideoSync(safeValue)
+                },
+                KEY_MPV_LOCAL_PROXY_MODE to { value ->
+                    val safeValue = LocalProxyMode.from(value?.toIntOrNull()).value
+                    PlayerConfig.putMpvLocalProxyMode(safeValue)
+                },
+                KEY_VLC_LOCAL_PROXY_MODE to { value ->
+                    val safeValue = LocalProxyMode.from(value?.toIntOrNull()).value
+                    PlayerConfig.putVlcLocalProxyMode(safeValue)
+                },
+                KEY_EXO_LOCAL_PROXY_MODE to { value ->
+                    val safeValue = LocalProxyMode.from(value?.toIntOrNull()).value
+                    PlayerConfig.putExoLocalProxyMode(safeValue)
+                },
+            ),
+        intReaders =
+            mapOf(
+                KEY_MPV_PROXY_RANGE_INTERVAL_MS to {
+                    normalizeMpvRangeInterval(PlayerConfig.getMpvProxyRangeMinIntervalMs())
+                },
+                KEY_VLC_PROXY_RANGE_INTERVAL_MS to {
+                    normalizeMpvRangeInterval(PlayerConfig.getVlcProxyRangeMinIntervalMs())
+                },
+                KEY_EXO_PROXY_RANGE_INTERVAL_MS to {
+                    normalizeMpvRangeInterval(PlayerConfig.getExoProxyRangeMinIntervalMs())
+                },
+            ),
+        intWriters =
+            mapOf(
+                KEY_MPV_PROXY_RANGE_INTERVAL_MS to { value ->
+                    PlayerConfig.putMpvProxyRangeMinIntervalMs(normalizeMpvRangeInterval(value))
+                },
+                KEY_VLC_PROXY_RANGE_INTERVAL_MS to { value ->
+                    PlayerConfig.putVlcProxyRangeMinIntervalMs(normalizeMpvRangeInterval(value))
+                },
+                KEY_EXO_PROXY_RANGE_INTERVAL_MS to { value ->
+                    PlayerConfig.putExoProxyRangeMinIntervalMs(normalizeMpvRangeInterval(value))
+                },
+            ),
+        booleanReaders =
+            mapOf(
+                KEY_SURFACE_RENDERS to { PlayerConfig.isUseSurfaceView() },
+                KEY_VLC_PROXY_ALLOW_INSECURE_TLS to { PlayerConfig.isVlcProxyAllowInsecureTls() },
+            ),
+        booleanWriters =
+            mapOf(
+                KEY_SURFACE_RENDERS to { value -> PlayerConfig.putUseSurfaceView(value) },
+                KEY_VLC_PROXY_ALLOW_INSECURE_TLS to { value -> PlayerConfig.putVlcProxyAllowInsecureTls(value) },
+            ),
+    )
 }
