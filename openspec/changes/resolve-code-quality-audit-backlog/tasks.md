@@ -44,7 +44,7 @@
 - [ ] 2.8 关闭 `G-T0034`：B 站弹幕解析/下载编排下沉到 repository/usecase
 - [x] 2.9 关闭 `G-T0035`：`Retrofit` 单例改为可注入 Provider/Factory
 - [x] 2.10 关闭 `G-T0036`：字幕匹配/搜索/Hash 能力收敛到基础层
-- [ ] 2.11 关闭 `G-T0037`：扫描扩展目录/过滤配置与刷新逻辑下沉到 repository/usecase
+- [x] 2.11 关闭 `G-T0037`：扫描扩展目录/过滤配置与刷新逻辑下沉到 repository/usecase
 - [x] 2.12 关闭 `G-T0038`：搜索历史/播放历史持久化从 ViewModel 迁移到 repository/usecase
 - [ ] 2.13 关闭 `G-T0039`：引入数据库访问 Provider，替换跨模块直连 `DatabaseManager.instance`
 - [x] 2.14 关闭 `G-T0040`：打通“写入层磁盘错误→全局状态”链路（`LogSystem` 一致）

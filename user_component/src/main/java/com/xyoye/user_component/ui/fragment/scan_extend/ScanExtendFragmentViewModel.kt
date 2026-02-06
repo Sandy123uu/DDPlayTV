@@ -3,13 +3,12 @@ package com.xyoye.user_component.ui.fragment.scan_extend
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
-import com.xyoye.common_component.database.DatabaseManager
-import com.xyoye.common_component.storage.StorageFactory
+import com.xyoye.common_component.database.repository.ScanSettingsRepository
+import com.xyoye.common_component.storage.usecase.VideoScanRefreshUseCase
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.meida.VideoScan
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.entity.ExtendFolderEntity
-import com.xyoye.data_component.entity.MediaLibraryEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -20,7 +19,7 @@ class ScanExtendFragmentViewModel : BaseViewModel() {
     fun getExtendFolder() {
         viewModelScope.launch {
             try {
-                val entities = DatabaseManager.instance.getExtendFolderDao().getAll()
+                val entities = ScanSettingsRepository.getAllExtendFolders()
                 val extendFolderList = arrayListOf<Any>()
                 // 扩展目录
                 extendFolderList.addAll(entities)
@@ -41,10 +40,7 @@ class ScanExtendFragmentViewModel : BaseViewModel() {
     fun removeExtendFolder(entity: ExtendFolderEntity) {
         viewModelScope.launch {
             try {
-                DatabaseManager.instance.getExtendFolderDao().delete(entity.folderPath)
-
-                // 移除本地视频库中关联的视频
-                DatabaseManager.instance.getVideoDao().deleteExtend()
+                ScanSettingsRepository.removeExtendFolderAndVideos(entity.folderPath)
                 // 刷新扩展目录UI
                 getExtendFolder()
             } catch (e: Exception) {
@@ -71,11 +67,10 @@ class ScanExtendFragmentViewModel : BaseViewModel() {
                 }
 
                 // 新增扩展目录到数据库
-                val entity = ExtendFolderEntity(folderPath, extendVideos.size)
-                DatabaseManager.instance.getExtendFolderDao().insert(entity)
+                ScanSettingsRepository.addExtendFolder(folderPath, extendVideos.size)
 
                 // 刷新本地视频库
-                refreshVideoStorage()
+                VideoScanRefreshUseCase.refreshLocalStorageVideos()
                 // 刷新扩展目录UI
                 getExtendFolder()
 
@@ -90,26 +85,6 @@ class ScanExtendFragmentViewModel : BaseViewModel() {
                     "Failed to add extend folder: $folderPath",
                 )
                 ToastCenter.showError("添加扩展目录失败，请稍后再试")
-            }
-        }
-    }
-
-    /**
-     * 刷新本地视频库
-     */
-    private fun refreshVideoStorage() {
-        viewModelScope.launch {
-            try {
-                val storage = StorageFactory.createStorage(MediaLibraryEntity.LOCAL) ?: return@launch
-                val rootFile = storage.getRootFile() ?: return@launch
-                storage.openDirectory(rootFile, true)
-            } catch (e: Exception) {
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    e,
-                    "ScanExtendFragmentViewModel",
-                    "refreshVideoStorage",
-                    "Failed to refresh video storage",
-                )
             }
         }
     }

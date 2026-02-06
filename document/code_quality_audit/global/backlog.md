@@ -50,7 +50,7 @@
 | G-T0034 | Draft | 待分配（Bilibili/Feature） | 将 B 站弹幕解析/下载编排从 ViewModel 下沉到 repository/usecase，降低 UI 耦合 | G-F0037 | :local_component | LOCAL-T004 |
 | G-T0035 | Done | AI（Codex） | 将 `Retrofit` 单例改为可注入 Provider/Factory，提升可测试性并降低全局静态耦合 | G-F0039 | :core_network_component | CORE_NETWORK-T004 |
 | G-T0036 | Done | AI（Codex） | 将字幕匹配/搜索/Hash 能力从 `:local_component` 收敛到基础层，避免 feature 锁死复用 | G-F0056 | :local_component,:core_storage_component | LOCAL-T001 |
-| G-T0037 | Draft | 待分配（DB/Storage/User） | 将扫描扩展目录/过滤配置与刷新逻辑下沉到 repository/usecase，统一 DAO 访问口径 | G-F0042 | :user_component | USER-T003 |
+| G-T0037 | Done | AI（Codex） | 将扫描扩展目录/过滤配置与刷新逻辑下沉到 repository/usecase，统一 DAO 访问口径 | G-F0042 | :user_component | USER-T003 |
 | G-T0038 | Done | AI（Codex） | 将搜索历史/播放历史等持久化细节从 ViewModel 迁移到 repository/usecase 层 | G-F0033 | :anime_component | ANIME-T002 |
 | G-T0039 | Draft | 待分配（Infra/DB） | 引入“数据库访问契约/Provider”，逐步替换跨模块对 `DatabaseManager.instance` 的直接引用 | G-F0041 | :core_database_component | CORE_DATABASE-T001 |
 | G-T0040 | Done | AI（Codex） | 打通“写入层磁盘错误→全局状态”链路，确保 `LogSystem`/持久化/Writer 三者一致 | G-F0045 | :core_log_component | CORE_LOG-T002 |
