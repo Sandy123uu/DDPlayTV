@@ -41,7 +41,7 @@
 - [x] 2.5 关闭 `G-T0031`：制定“加密失败保存明文”策略与迁移/清理机制
 - [x] 2.6 关闭 `G-T0032`：封装/隔离迅雷 SDK 类型（避免上层显式依赖）
 - [x] 2.7 关闭 `G-T0033`：封装状态栏/沉浸式能力（上层不再直接 import `ImmersionBar`）
-- [ ] 2.8 关闭 `G-T0034`：B 站弹幕解析/下载编排下沉到 repository/usecase
+- [x] 2.8 关闭 `G-T0034`：B 站弹幕解析/下载编排下沉到 repository/usecase
 - [x] 2.9 关闭 `G-T0035`：`Retrofit` 单例改为可注入 Provider/Factory
 - [x] 2.10 关闭 `G-T0036`：字幕匹配/搜索/Hash 能力收敛到基础层
 - [x] 2.11 关闭 `G-T0037`：扫描扩展目录/过滤配置与刷新逻辑下沉到 repository/usecase
