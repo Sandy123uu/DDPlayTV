@@ -1,2 +1,7 @@
-configurations.maybeCreate("default")
-artifacts.add("default", file("sevenzipjbinding4Android.aar"))
+plugins {
+    id("setup.prebuilt-aar")
+}
+
+prebuiltAar {
+    aarFileName = "sevenzipjbinding4Android.aar"
+}

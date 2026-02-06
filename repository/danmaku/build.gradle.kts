@@ -1,2 +1,7 @@
-configurations.maybeCreate("default")
-artifacts.add("default", file("DanmakuFlameMaster.aar"))
+plugins {
+    id("setup.prebuilt-aar")
+}
+
+prebuiltAar {
+    aarFileName = "DanmakuFlameMaster.aar"
+}

@@ -73,7 +73,7 @@
 | G-T0057 | Done | AI（Codex） | 统一 MMKV 初始化策略：明确“Startup 初始化”与“BaseApplication 初始化”的职责边界，避免重复与时序不一致 | G-F0057 | :core_system_component | CORE_SYSTEM-T004 |
 | G-T0058 | Done | AI（Codex） | 统一 Service 包结构（service/services）：提升 discoverability 并减少迁移成本 | G-F0060 | :core_contract_component | CORE_CONTRACT-T003 |
 | G-T0059 | Draft | 待分配（Network/Player） | 统一 Telemetry repository 的模块归属与包命名，避免“core_network 包名却在 feature 模块” | G-F0012 | :player_component | PLAYER-T004 |
-| G-T0060 | Draft | 待分配（Build/Repo） | 统一 prebuilt AAR wrapper 的 Gradle 封装方式，减少脚本重复与漂移 | G-F0064 | :repository:danmaku | REPO_DANMAKU-T002 |
+| G-T0060 | Done | AI（Codex） | 统一 prebuilt AAR wrapper 的 Gradle 封装方式，减少脚本重复与漂移 | G-F0064 | :repository:danmaku | REPO_DANMAKU-T002 |
 | G-T0061 | Done | AI（Codex） | 统一异常处理与脱敏：移除 `printStackTrace()`，统一到 `LogFacade`/`ErrorReportHelper` 并建立敏感字段脱敏规则 | G-F0043 | :core_storage_component | CORE_STORAGE-T004 |
 | G-T0062 | Draft | 待分配（Player/Storage/Network） | 统一本地代理能力：抽取通用 Proxy 服务（headers/range/tls 策略一致），减少 `HttpPlayServer`/`VlcProxyServer` 逻辑重复 | G-F0055 | :core_storage_component | CORE_STORAGE-T005 |
 | G-T0063 | Draft | 待分配（Player） | 若继续使用 PanelSwitchHelper：补齐生命周期释放/资源回收，避免潜在泄漏 | G-F0048 | :repository:panel_switch | REPO_PANEL_SWITCH-T003 |
