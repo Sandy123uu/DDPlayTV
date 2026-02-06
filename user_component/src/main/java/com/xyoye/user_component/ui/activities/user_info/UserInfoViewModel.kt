@@ -7,6 +7,7 @@ import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.extension.toastError
 import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.network.repository.UserRepository
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.UserInfoHelper
 import com.xyoye.common_component.weight.ToastCenter
@@ -42,7 +43,7 @@ class UserInfoViewModel : BaseViewModel() {
                 hideLoading()
 
                 if (result.isFailure) {
-                    val userFingerprint = SensitiveDataSanitizer.fingerprint(UserInfoHelper.mLoginData?.userName.orEmpty())
+                    val userFingerprint = SensitiveDataSanitizer.fingerprint(UserSessionManager.currentLoginData()?.userName.orEmpty())
                     val screenNameFingerprint = SensitiveDataSanitizer.fingerprint(screenName)
                     val exception = result.exceptionOrNull()
                     exception?.let {
@@ -57,13 +58,15 @@ class UserInfoViewModel : BaseViewModel() {
                     return@launch
                 }
 
-                UserInfoHelper.mLoginData?.screenName = screenName
-                UserInfoHelper.updateLoginInfo()
+                val currentLoginData = UserSessionManager.currentLoginData()
+                if (currentLoginData != null) {
+                    UserSessionManager.updateLoginData(currentLoginData.copy(screenName = screenName))
+                }
                 updateScreenNameLiveData.postValue(screenName)
                 ToastCenter.showSuccess("修改昵称成功")
             } catch (e: Exception) {
                 hideLoading()
-                val userFingerprint = SensitiveDataSanitizer.fingerprint(UserInfoHelper.mLoginData?.userName.orEmpty())
+                val userFingerprint = SensitiveDataSanitizer.fingerprint(UserSessionManager.currentLoginData()?.userName.orEmpty())
                 val screenNameFingerprint = SensitiveDataSanitizer.fingerprint(screenName)
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
@@ -87,7 +90,7 @@ class UserInfoViewModel : BaseViewModel() {
                 hideLoading()
 
                 if (result.isFailure) {
-                    val userFingerprint = SensitiveDataSanitizer.fingerprint(UserInfoHelper.mLoginData?.userName.orEmpty())
+                    val userFingerprint = SensitiveDataSanitizer.fingerprint(UserSessionManager.currentLoginData()?.userName.orEmpty())
                     val exception = result.exceptionOrNull()
                     exception?.let {
                         ErrorReportHelper.postCatchedExceptionWithContext(
@@ -101,13 +104,13 @@ class UserInfoViewModel : BaseViewModel() {
                     return@launch
                 }
 
-                val userAccount = UserInfoHelper.mLoginData?.userName.orEmpty()
+                val userAccount = UserSessionManager.currentLoginData()?.userName.orEmpty()
                 UserInfoHelper.exitLogin()
                 updatePasswordLiveData.postValue(userAccount)
                 ToastCenter.showSuccess("修改密码成功")
             } catch (e: Exception) {
                 hideLoading()
-                val userFingerprint = SensitiveDataSanitizer.fingerprint(UserInfoHelper.mLoginData?.userName.orEmpty())
+                val userFingerprint = SensitiveDataSanitizer.fingerprint(UserSessionManager.currentLoginData()?.userName.orEmpty())
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
                     "UserInfoViewModel",

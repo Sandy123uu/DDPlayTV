@@ -1,7 +1,7 @@
 package com.xyoye.common_component.utils
 
-import androidx.lifecycle.MutableLiveData
-import com.xyoye.common_component.config.UserConfig
+import androidx.lifecycle.LiveData
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.data_component.data.LoginData
 
 /**
@@ -9,30 +9,23 @@ import com.xyoye.data_component.data.LoginData
  */
 
 object UserInfoHelper {
-    val loginLiveData = MutableLiveData<LoginData>()
-    var mLoginData: LoginData? = null
+    val loginLiveData: LiveData<LoginData?> = UserSessionManager.loginState()
+
+    var mLoginData: LoginData?
+        get() = UserSessionManager.currentLoginData()
+        set(value) {
+            UserSessionManager.updateLoginData(value)
+        }
 
     fun login(loginData: LoginData): Boolean {
-        val userToken = loginData.token
-        if (!userToken.isNullOrEmpty()) {
-            mLoginData = loginData
-            UserConfig.putUserToken(userToken)
-            UserConfig.putUserLoggedIn(true)
-            updateLoginInfo()
-            return true
-        }
-        exitLogin()
-        return false
+        return UserSessionManager.login(loginData)
     }
 
     fun exitLogin() {
-        mLoginData = null
-        UserConfig.putUserToken("")
-        UserConfig.putUserLoggedIn(false)
-        updateLoginInfo()
+        UserSessionManager.logout()
     }
 
     fun updateLoginInfo() {
-        loginLiveData.postValue(mLoginData)
+        UserSessionManager.updateLoginData(UserSessionManager.currentLoginData())
     }
 }

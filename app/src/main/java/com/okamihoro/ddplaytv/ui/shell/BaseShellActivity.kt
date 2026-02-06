@@ -8,7 +8,7 @@ import com.okamihoro.ddplaytv.BR
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.bridge.LoginObserver
 import com.xyoye.common_component.config.ScreencastConfig
-import com.xyoye.common_component.config.UserConfig
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.services.ScreencastReceiveService
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.common_component.weight.dialog.CommonDialog
@@ -38,7 +38,7 @@ abstract class BaseShellActivity<V : ViewDataBinding> :
         viewModel.initCloudBlockData()
         initScreencastReceive()
 
-        if (UserConfig.isUserLoggedIn()) {
+        if (UserSessionManager.isLoggedIn()) {
             viewModel.reLogin()
         }
     }

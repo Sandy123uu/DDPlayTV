@@ -17,12 +17,12 @@ import com.xyoye.common_component.adapter.buildAdapter
 import com.xyoye.common_component.adapter.setupDiffUtil
 import com.xyoye.common_component.base.BaseFragment
 import com.xyoye.common_component.config.RouteTable
-import com.xyoye.common_component.config.UserConfig
 import com.xyoye.common_component.extension.collectAtStarted
 import com.xyoye.common_component.extension.setData
 import com.xyoye.common_component.extension.setTextColorRes
 import com.xyoye.common_component.extension.toResString
 import com.xyoye.common_component.extension.vertical
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.weight.BottomActionDialog
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.common_component.weight.dialog.CommonDialog
@@ -172,7 +172,7 @@ class AnimeEpisodeFragment : BaseFragment<AnimeEpisodeFragmentViewModel, Fragmen
         }
 
         dataBinding.tvSetRead.setOnClickListener {
-            if (UserConfig.isUserLoggedIn().not()) {
+            if (UserSessionManager.isLoggedIn().not()) {
                 ToastCenter.showWarning(R.string.tips_login_required.toResString())
                 return@setOnClickListener
             }
@@ -213,7 +213,7 @@ class AnimeEpisodeFragment : BaseFragment<AnimeEpisodeFragmentViewModel, Fragmen
      * 考虑标记为已看
      */
     private fun considerMarkAsViewed(data: EpisodeData) {
-        if (UserConfig.isUserLoggedIn().not()) {
+        if (UserSessionManager.isLoggedIn().not()) {
             ToastCenter.showWarning(R.string.tips_login_required.toResString())
             return
         }

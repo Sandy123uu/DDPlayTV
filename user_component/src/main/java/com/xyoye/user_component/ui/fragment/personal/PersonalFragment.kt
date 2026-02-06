@@ -12,7 +12,7 @@ import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.config.UserConfig
 import com.xyoye.common_component.extension.setTextColorRes
 import com.xyoye.common_component.focus.requestDefaultFocus
-import com.xyoye.common_component.utils.UserInfoHelper
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.data_component.data.LoginData
 import com.xyoye.user_component.BR
 import com.xyoye.user_component.R
@@ -50,7 +50,7 @@ class PersonalFragment : BaseFragment<PersonalFragmentViewModel, FragmentPersona
             dataBinding.cloudHistoryTv.text = numberFormat.format(it.second)
         }
 
-        UserInfoHelper.loginLiveData.observe(this) {
+        UserSessionManager.loginState().observe(this) {
             applyLoginData(it)
         }
 
@@ -247,7 +247,7 @@ class PersonalFragment : BaseFragment<PersonalFragmentViewModel, FragmentPersona
      * 检查是否已登录
      */
     private fun checkLoggedIn(): Boolean {
-        if (!UserConfig.isUserLoggedIn()) {
+        if (!UserSessionManager.isLoggedIn()) {
             ARouter
                 .getInstance()
                 .build(RouteTable.User.UserLogin)

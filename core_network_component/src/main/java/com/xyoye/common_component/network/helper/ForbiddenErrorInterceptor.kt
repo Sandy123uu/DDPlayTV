@@ -1,6 +1,6 @@
 package com.xyoye.common_component.network.helper
 
-import com.xyoye.common_component.config.UserConfig
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.utils.AuthenticationHelper
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.SecurityHelper
@@ -48,8 +48,8 @@ class ForbiddenErrorInterceptor : Interceptor {
         val diagnosis = StringBuilder()
 
         // 检查用户认证状态
-        val userToken = UserConfig.getUserToken()
-        val isLoggedIn = UserConfig.isUserLoggedIn()
+        val userToken = UserSessionManager.currentToken().takeIf { it.isNotBlank() }
+        val isLoggedIn = UserSessionManager.isLoggedIn()
 
         diagnosis.append("=== 403错误诊断 ===\n")
         diagnosis.append("请求路径: $path\n")
@@ -149,8 +149,8 @@ class ForbiddenErrorInterceptor : Interceptor {
         request: okhttp3.Request,
         diagnosis: String
     ): Response {
-        val userToken = UserConfig.getUserToken()
-        val isLoggedIn = UserConfig.isUserLoggedIn()
+        val userToken = UserSessionManager.currentToken().takeIf { it.isNotBlank() }
+        val isLoggedIn = UserSessionManager.isLoggedIn()
 
         // 如果用户未登录或Token为空，无法恢复
         if (!isLoggedIn || userToken.isNullOrEmpty()) {

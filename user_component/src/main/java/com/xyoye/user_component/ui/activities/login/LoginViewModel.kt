@@ -7,9 +7,9 @@ import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.extension.toastError
 import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.network.repository.UserRepository
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.SecurityHelper
-import com.xyoye.common_component.utils.UserInfoHelper
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.data.LoginData
 import kotlinx.coroutines.launch
@@ -76,12 +76,12 @@ class LoginViewModel : BaseViewModel() {
                             return@launch
                         }
 
-                    if (UserInfoHelper.login(data)) {
+                    if (UserSessionManager.login(data)) {
                         ToastCenter.showSuccess("登录成功")
                         loginLiveData.postValue(data)
                     } else {
                         ErrorReportHelper.postException(
-                            "Login successful but UserInfoHelper.login failed",
+                            "Login successful but UserSessionManager.login failed",
                             "LoginViewModel",
                             null,
                         )

@@ -4,10 +4,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.anime_component.R
 import com.xyoye.common_component.base.BaseViewModel
-import com.xyoye.common_component.config.UserConfig
 import com.xyoye.common_component.extension.reportAndToastOnFailure
 import com.xyoye.common_component.extension.toResString
 import com.xyoye.common_component.network.repository.AnimeRepository
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.utils.stringCompare
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.data.AnimeData
@@ -116,7 +116,7 @@ class AnimeSeasonViewModel : BaseViewModel() {
             return
         }
 
-        if (!UserConfig.isUserLoggedIn() &&
+        if (!UserSessionManager.isLoggedIn() &&
             AnimeSortType.formValue(sortTypeData[position].typeId) == AnimeSortType.FOLLOW
         ) {
             ToastCenter.showWarning(R.string.tips_login_required.toResString())
@@ -222,7 +222,7 @@ class AnimeSeasonViewModel : BaseViewModel() {
             animeLiveData.postValue(seasonAnimeData.bangumiList)
             return
         }
-        if (!UserConfig.isUserLoggedIn() && sortType == AnimeSortType.FOLLOW) {
+        if (!UserSessionManager.isLoggedIn() && sortType == AnimeSortType.FOLLOW) {
             animeLiveData.postValue(seasonAnimeData.bangumiList)
             return
         }

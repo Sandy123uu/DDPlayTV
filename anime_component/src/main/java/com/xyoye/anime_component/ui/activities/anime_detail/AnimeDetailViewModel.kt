@@ -5,10 +5,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.anime_component.R
 import com.xyoye.common_component.base.BaseViewModel
-import com.xyoye.common_component.config.UserConfig
 import com.xyoye.common_component.extension.reportAndToastOnFailure
 import com.xyoye.common_component.extension.toResString
 import com.xyoye.common_component.network.repository.AnimeRepository
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.data.BangumiData
 import kotlinx.coroutines.launch
@@ -52,7 +52,7 @@ class AnimeDetailViewModel : BaseViewModel() {
     }
 
     fun followAnime() {
-        if (UserConfig.isUserLoggedIn().not()) {
+        if (UserSessionManager.isLoggedIn().not()) {
             ToastCenter.showWarning(R.string.tips_login_required.toResString())
             return
         }

@@ -12,11 +12,11 @@ import android.view.SurfaceView
 import android.view.TextureView
 import android.view.View
 import androidx.annotation.RequiresApi
-import com.xyoye.common_component.config.UserConfig
 import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.extension.resumeWhenAlive
 import com.xyoye.common_component.network.repository.AnimeRepository
 import com.xyoye.common_component.network.repository.ResourceRepository
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.source.base.BaseVideoSource
 import com.xyoye.common_component.source.media.StorageVideoSource
 import com.xyoye.common_component.storage.file.impl.ScreencastStorageFile
@@ -314,7 +314,7 @@ object PlayRecorder {
             return
         }
 
-        if (UserConfig.isUserLoggedIn().not()) {
+        if (UserSessionManager.isLoggedIn().not()) {
             return
         }
 
