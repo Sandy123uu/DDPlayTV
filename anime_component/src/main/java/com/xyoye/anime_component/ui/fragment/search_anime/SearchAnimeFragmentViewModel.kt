@@ -7,10 +7,9 @@ import com.xyoye.anime_component.R
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.config.UserConfig
 import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.extension.reportAndToastOnFailure
 import com.xyoye.common_component.extension.toResString
-import com.xyoye.common_component.extension.toastError
 import com.xyoye.common_component.network.repository.AnimeRepository
-import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.stringCompare
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.data.AnimeData
@@ -75,15 +74,13 @@ class SearchAnimeFragmentViewModel : BaseViewModel() {
                 .insert(AnimeSearchHistoryEntity(searchText.get()!!))
 
             val result = AnimeRepository.searchAnime(searchWord, searchType)
-            if (result.isFailure) {
-                val exception = result.exceptionOrNull()
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    exception ?: RuntimeException("Search anime failed with unknown error"),
-                    "SearchAnimeFragmentViewModel",
-                    "search",
-                    "搜索关键字: $searchWord, 搜索类型: $searchType",
+            if (result.reportAndToastOnFailure(
+                    unknownErrorMessage = "Search anime failed with unknown error",
+                    className = "SearchAnimeFragmentViewModel",
+                    methodName = "search",
+                    reportMessage = "搜索关键字: $searchWord, 搜索类型: $searchType",
                 )
-                exception?.message?.toastError()
+            ) {
                 return@launch
             }
 

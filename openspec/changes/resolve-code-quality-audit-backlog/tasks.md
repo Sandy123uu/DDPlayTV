@@ -54,7 +54,7 @@
 - [ ] 2.18 关闭 `G-T0044`：抽取壳层 Fragment 装载/切换逻辑（减少重复实现）
 - [ ] 2.19 关闭 `G-T0045`：抽取投屏协议与 server 公共能力到 core 层
 - [ ] 2.20 关闭 `G-T0046`：抽取统一 OkHttpClientFactory（timeout/拦截器/安全策略集中）
-- [ ] 2.21 关闭 `G-T0047`：抽取统一“Result 失败处理 + 上报 + toast”助手
+- [x] 2.21 关闭 `G-T0047`：抽取统一“Result 失败处理 + 上报 + toast”助手
 - [ ] 2.22 关闭 `G-T0048`：拆分 `BilibiliRepository`（子域组件 + 单测 + facade）
 - [ ] 2.23 关闭 `G-T0049`：收敛 MediaLibrary/PlayHistory 写入口径（替换 feature 直连 DAO）
 - [ ] 2.24 关闭 `G-T0050`：收敛 contract 层运行时实现（副作用迁移到 runtime）

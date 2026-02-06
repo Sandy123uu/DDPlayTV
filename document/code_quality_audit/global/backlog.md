@@ -60,7 +60,7 @@
 | G-T0044 | Draft | 待分配（App/UI） | 抽取壳层 Fragment 装载/切换逻辑，减少重复实现与差异漂移 | G-F0050 | :app | APP-T003 |
 | G-T0045 | Draft | 待分配（Storage/Infra） | 抽取投屏协议与 server 公共能力到 core 层，减少 NanoHTTPD/UDP 重复与策略漂移 | G-F0053 | :storage_component | STORAGE-T003 |
 | G-T0046 | Draft | 待分配（Infra/Network） | 抽取统一 OkHttpClientFactory：集中维护 timeout/拦截器链/安全策略，减少跨模块漂移 | G-F0049 | :core_network_component | CORE_NETWORK-T005 |
-| G-T0047 | Draft | 待分配（Feature/UI/Log） | 抽取统一的“Result 失败处理 + 上下文上报 + toast”助手，减少 ViewModel 样板与口径漂移 | G-F0058 | :anime_component | ANIME-T001 |
+| G-T0047 | Done | AI（Codex） | 抽取统一的“Result 失败处理 + 上下文上报 + toast”助手，减少 ViewModel 样板与口径漂移 | G-F0058 | :anime_component | ANIME-T001 |
 | G-T0048 | Draft | 待分配（Bilibili） | 拆分 `BilibiliRepository`：按子域抽取组件并引入单测/契约化接口，提高可维护性 | G-F0038 | :bilibili_component | BILIBILI-T003 |
 | G-T0049 | Draft | 待分配（DB/Feature） | 收敛 MediaLibrary/PlayHistory 的写入口径：提供 repository/usecase 并替换 feature 直连 DAO | G-F0031 | :storage_component | STORAGE-T004 |
 | G-T0050 | Draft | AI（Codex） | 收敛 contract 层的运行时实现：将可变状态/副作用迁移到 runtime 层，仅保留契约 | G-F0030 | :core_contract_component | CORE_CONTRACT-T001 |
