@@ -5,15 +5,13 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.config.AppConfig
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.repository.MagnetSearchHistoryRepository
 import com.xyoye.common_component.extension.reportAndToastOnFailure
 import com.xyoye.common_component.network.repository.MagnetRepository
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.data.MagnetData
 import com.xyoye.data_component.entity.MagnetScreenEntity
-import com.xyoye.data_component.entity.MagnetSearchHistoryEntity
 import com.xyoye.data_component.enums.MagnetScreenType
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class SearchMagnetFragmentViewModel : BaseViewModel() {
@@ -26,7 +24,7 @@ class SearchMagnetFragmentViewModel : BaseViewModel() {
 
     val magnetLiveData = MutableLiveData<List<MagnetData>>()
 
-    val searchHistoryLiveData = DatabaseManager.instance.getMagnetSearchHistoryDao().getAll()
+    val searchHistoryLiveData = MagnetSearchHistoryRepository.getAll()
 
     var magnetSubgroupData = MutableLiveData<List<MagnetScreenEntity>>()
     var magnetTypeData = MutableLiveData<List<MagnetScreenEntity>>()
@@ -47,9 +45,7 @@ class SearchMagnetFragmentViewModel : BaseViewModel() {
         }
 
         viewModelScope.launch {
-            DatabaseManager.instance
-                .getMagnetSearchHistoryDao()
-                .insert(MagnetSearchHistoryEntity(keyword))
+            MagnetSearchHistoryRepository.insert(keyword)
 
             val typeId = magnetTypeId.get()?.toString().orEmpty()
             val subgroupId = magnetSubgroupId.get()?.toString().orEmpty()
@@ -74,18 +70,14 @@ class SearchMagnetFragmentViewModel : BaseViewModel() {
     }
 
     fun deleteSearchHistory(searchText: String) {
-        viewModelScope.launch(context = Dispatchers.Main) {
-            DatabaseManager.instance
-                .getMagnetSearchHistoryDao()
-                .deleteByText(searchText)
+        viewModelScope.launch {
+            MagnetSearchHistoryRepository.deleteByText(searchText)
         }
     }
 
     fun deleteAllSearchHistory() {
-        viewModelScope.launch(context = Dispatchers.Main) {
-            DatabaseManager.instance
-                .getMagnetSearchHistoryDao()
-                .deleteAll()
+        viewModelScope.launch {
+            MagnetSearchHistoryRepository.deleteAll()
         }
     }
 

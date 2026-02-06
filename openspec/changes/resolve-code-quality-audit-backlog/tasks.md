@@ -45,7 +45,7 @@
 - [x] 2.9 关闭 `G-T0035`：`Retrofit` 单例改为可注入 Provider/Factory
 - [x] 2.10 关闭 `G-T0036`：字幕匹配/搜索/Hash 能力收敛到基础层
 - [ ] 2.11 关闭 `G-T0037`：扫描扩展目录/过滤配置与刷新逻辑下沉到 repository/usecase
-- [ ] 2.12 关闭 `G-T0038`：搜索历史/播放历史持久化从 ViewModel 迁移到 repository/usecase
+- [x] 2.12 关闭 `G-T0038`：搜索历史/播放历史持久化从 ViewModel 迁移到 repository/usecase
 - [ ] 2.13 关闭 `G-T0039`：引入数据库访问 Provider，替换跨模块直连 `DatabaseManager.instance`
 - [x] 2.14 关闭 `G-T0040`：打通“写入层磁盘错误→全局状态”链路（`LogSystem` 一致）
 - [ ] 2.15 关闭 `G-T0041`：抽取 PlayHistory/MediaLibrary repository/usecase，收敛 DAO 访问
@@ -70,7 +70,7 @@
 - [x] 2.34 关闭 `G-T0060`：统一 prebuilt AAR wrapper 的 Gradle 封装方式
 - [x] 2.35 关闭 `G-T0061`：`core_storage_component` 统一异常处理与脱敏（移除 `printStackTrace()`）
 - [ ] 2.36 关闭 `G-T0062`：统一本地代理能力（Proxy 服务抽取，headers/range/tls 一致）
-- [ ] 2.37 关闭 `G-T0063`：PanelSwitchHelper 生命周期释放/资源回收
+- [x] 2.37 关闭 `G-T0063`：PanelSwitchHelper 生命周期释放/资源回收
 - [x] 2.38 关闭 `G-T0064`：迁移存储凭证到安全存储（DB 不再明文）
 - [x] 2.39 关闭 `G-T0065`：重命名自定义 `Retrofit` 包装类（避免与 `retrofit2.Retrofit` 同名）
 - [x] 2.40 关闭 `G-T0066`：重构 `DatabaseManager` holder 命名与结构

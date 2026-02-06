@@ -55,7 +55,13 @@
 |---|---|---|---|---|---|---|---|---|---|
 | REPO_PANEL_SWITCH-T001 | REPO_PANEL_SWITCH-F001 | 为 PanelSwitchHelper AAR 增加可追溯元信息（来源/版本/License/校验和/更新流程） | 新增 `repository/panel_switch/README.md`（中文）；在 README 中引用/关联 `user_component/src/main/assets/license/PanelSwitchHelper.txt`，并记录 AAR SHA256（当前：`ace2e33a70f393388c041ce428f497ce0379b0367a4279fae2dc9f8d9f671c00`）与升级步骤 | 1) README 明确：上游项目/下载地址、版本号、License、AAR SHA256、更新步骤；2) 任意人可按文档复现升级；3) 不影响现有依赖解析 | Medium | Small | P1 | AI（Codex） | Done |
 | REPO_PANEL_SWITCH-T002 | REPO_PANEL_SWITCH-F002 | 移除“发送弹幕”整条链路：删除相关 UI/代码并移除 `:repository:panel_switch` 依赖 | 删除发送弹幕入口/实现/资源（`SendDanmuDialog`、相关布局与图标字符串等）；移除 `player_component/build.gradle.kts` 对 `:repository:panel_switch` 的依赖，并清理引用点 | 1) 依赖与调用点一致（不再存在“依赖存在但入口不可达”）；2) `rg "com\\.effective\\.android\\.panel" -n` 无命中；3) 全仓编译通过 | Medium | Medium | P2 | AI（Codex） | Done |
-| REPO_PANEL_SWITCH-T003 | REPO_PANEL_SWITCH-F003 | 若继续使用 PanelSwitchHelper：补齐生命周期释放/资源回收，避免潜在泄漏 | 调整 `SendDanmuDialog` 持有 helper 实例，并在 `dismiss()`/`onStop()` 中按上游 API 做释放；必要时封装为 `PanelSwitchController`（内部持有 helper）以统一管理 | 1) Dialog 关闭后无残留监听（LeakCanary/手动验证）；2) Back 键与沉浸式状态栏恢复行为不回退；3) 不影响现有 UI | Medium | Small | P2 | 待分配（Player） | Draft |
+| REPO_PANEL_SWITCH-T003 | REPO_PANEL_SWITCH-F003 | 若继续使用 PanelSwitchHelper：补齐生命周期释放/资源回收，避免潜在泄漏 | 调整 `SendDanmuDialog` 持有 helper 实例，并在 `dismiss()`/`onStop()` 中按上游 API 做释放；必要时封装为 `PanelSwitchController`（内部持有 helper）以统一管理 | 1) Dialog 关闭后无残留监听（LeakCanary/手动验证）；2) Back 键与沉浸式状态栏恢复行为不回退；3) 不影响现有 UI | Medium | Small | P2 | AI（Codex） | Done |
+
+### T003 关闭说明（2026-02-06）
+
+- `REPO_PANEL_SWITCH-T002` 已删除发送弹幕链路与 `:repository:panel_switch` 依赖，`PanelSwitchHelper` 不再有运行时调用面。
+- ast-grep 检索 Kotlin/Java `import com.effective.android.panel.$A` 与 `PanelSwitchHelper.Builder($A, $B)` 均无命中。
+- 在当前代码基线下，生命周期释放风险已随能力下线消失；若未来重新引入该能力，需按本任务验收标准重新启用并验证。
 
 ## 5) 风险与回归关注点
 

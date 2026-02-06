@@ -51,7 +51,7 @@
 | G-T0035 | Done | AI（Codex） | 将 `Retrofit` 单例改为可注入 Provider/Factory，提升可测试性并降低全局静态耦合 | G-F0039 | :core_network_component | CORE_NETWORK-T004 |
 | G-T0036 | Done | AI（Codex） | 将字幕匹配/搜索/Hash 能力从 `:local_component` 收敛到基础层，避免 feature 锁死复用 | G-F0056 | :local_component,:core_storage_component | LOCAL-T001 |
 | G-T0037 | Draft | 待分配（DB/Storage/User） | 将扫描扩展目录/过滤配置与刷新逻辑下沉到 repository/usecase，统一 DAO 访问口径 | G-F0042 | :user_component | USER-T003 |
-| G-T0038 | Draft | 待分配（Feature/DB） | 将搜索历史/播放历史等持久化细节从 ViewModel 迁移到 repository/usecase 层 | G-F0033 | :anime_component | ANIME-T002 |
+| G-T0038 | Done | AI（Codex） | 将搜索历史/播放历史等持久化细节从 ViewModel 迁移到 repository/usecase 层 | G-F0033 | :anime_component | ANIME-T002 |
 | G-T0039 | Draft | 待分配（Infra/DB） | 引入“数据库访问契约/Provider”，逐步替换跨模块对 `DatabaseManager.instance` 的直接引用 | G-F0041 | :core_database_component | CORE_DATABASE-T001 |
 | G-T0040 | Done | AI（Codex） | 打通“写入层磁盘错误→全局状态”链路，确保 `LogSystem`/持久化/Writer 三者一致 | G-F0045 | :core_log_component | CORE_LOG-T002 |
 | G-T0041 | Draft | 待分配（DB/Feature） | 抽取 PlayHistory/MediaLibrary 的 repository/usecase，收敛 DAO 访问与写入口径 | G-F0034 | :local_component | LOCAL-T002 |
@@ -76,7 +76,7 @@
 | G-T0060 | Done | AI（Codex） | 统一 prebuilt AAR wrapper 的 Gradle 封装方式，减少脚本重复与漂移 | G-F0064 | :repository:danmaku | REPO_DANMAKU-T002 |
 | G-T0061 | Done | AI（Codex） | 统一异常处理与脱敏：移除 `printStackTrace()`，统一到 `LogFacade`/`ErrorReportHelper` 并建立敏感字段脱敏规则 | G-F0043 | :core_storage_component | CORE_STORAGE-T004 |
 | G-T0062 | Draft | 待分配（Player/Storage/Network） | 统一本地代理能力：抽取通用 Proxy 服务（headers/range/tls 策略一致），减少 `HttpPlayServer`/`VlcProxyServer` 逻辑重复 | G-F0055 | :core_storage_component | CORE_STORAGE-T005 |
-| G-T0063 | Draft | 待分配（Player） | 若继续使用 PanelSwitchHelper：补齐生命周期释放/资源回收，避免潜在泄漏 | G-F0048 | :repository:panel_switch | REPO_PANEL_SWITCH-T003 |
+| G-T0063 | Done | AI（Codex） | 若继续使用 PanelSwitchHelper：补齐生命周期释放/资源回收，避免潜在泄漏 | G-F0048 | :repository:panel_switch | REPO_PANEL_SWITCH-T003 |
 | G-T0064 | Done | AI（Codex） | 迁移存储凭证到安全存储：DB 中不再保存明文 `password/remoteSecret`（改为引用/加密存储） | G-F0027 | :core_storage_component | CORE_STORAGE-T003 |
 | G-T0065 | Done | AI（Codex） | 重命名自定义 `Retrofit` 包装类（或对 `retrofit2.Retrofit` 使用别名 import），降低阅读歧义 | G-F0065 | :core_network_component | CORE_NETWORK-T006 |
 | G-T0066 | Done | AI（Codex） | 重构 `DatabaseManager` holder 命名与结构，降低阅读歧义 | G-F0059 | :core_database_component | CORE_DATABASE-T002 |

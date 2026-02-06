@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.xyoye.anime_component.R
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.config.UserConfig
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.repository.AnimeSearchHistoryRepository
 import com.xyoye.common_component.extension.reportAndToastOnFailure
 import com.xyoye.common_component.extension.toResString
 import com.xyoye.common_component.network.repository.AnimeRepository
@@ -15,7 +15,6 @@ import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.data.AnimeData
 import com.xyoye.data_component.data.CommonTypeData
 import com.xyoye.data_component.data.SearchAnimeData
-import com.xyoye.data_component.entity.AnimeSearchHistoryEntity
 import com.xyoye.data_component.enums.AnimeSortType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -57,7 +56,7 @@ class SearchAnimeFragmentViewModel : BaseViewModel() {
 
     val animeTypeLiveData = MutableLiveData<MutableList<CommonTypeData>>()
     val animeSortLiveData = MutableLiveData<MutableList<CommonTypeData>>()
-    val searchHistoryLiveData = DatabaseManager.instance.getAnimeSearchHistoryDao().getAll()
+    val searchHistoryLiveData = AnimeSearchHistoryRepository.getAll()
 
     val animeLiveData = MutableLiveData<MutableList<AnimeData>>()
 
@@ -69,9 +68,7 @@ class SearchAnimeFragmentViewModel : BaseViewModel() {
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            DatabaseManager.instance
-                .getAnimeSearchHistoryDao()
-                .insert(AnimeSearchHistoryEntity(searchText.get()!!))
+            AnimeSearchHistoryRepository.insert(searchText.get()!!)
 
             val result = AnimeRepository.searchAnime(searchWord, searchType)
             if (result.reportAndToastOnFailure(
@@ -193,18 +190,14 @@ class SearchAnimeFragmentViewModel : BaseViewModel() {
     }
 
     fun deleteSearchHistory(searchText: String) {
-        viewModelScope.launch(context = Dispatchers.Main) {
-            DatabaseManager.instance
-                .getAnimeSearchHistoryDao()
-                .deleteByText(searchText)
+        viewModelScope.launch {
+            AnimeSearchHistoryRepository.deleteByText(searchText)
         }
     }
 
     fun deleteAllSearchHistory() {
-        viewModelScope.launch(context = Dispatchers.Main) {
-            DatabaseManager.instance
-                .getAnimeSearchHistoryDao()
-                .deleteAll()
+        viewModelScope.launch {
+            AnimeSearchHistoryRepository.deleteAll()
         }
     }
 
