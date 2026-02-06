@@ -68,7 +68,7 @@
 |---|---|---|---|---|---|---|---|---|---|
 | APP-T001 | APP-F001 | 将“TV 禁用后台/画中画”的策略显式化并避免误伤移动端 | 调整 `Media3BackgroundCoordinator#sync`：仅 TV 下强制清空；非 TV 按 `PlayerCapabilityContract` 同步能力；必要时引入配置开关（例如 `AppConfig`/`BuildConfig`） | 1) TV 模式下 capability 同步后 `sessionCommands/backgroundModes` 为空；2) 非 TV 模式下按契约同步（可用单测/仪表测试覆盖）；3) 不引入跨 feature 直接依赖；4) 行为变更有文档说明 | High | Small | P1 | AI（Codex） | Done |
 | APP-T002 | APP-F002 | 以显式结果/能力开关替代 “禁用功能即 throw”，降低误调用崩溃风险 | `Media3CastManager#prepareCastSession`：改为返回 `CastSessionPrepareResult`（`Ready/Disabled/UnsupportedTarget`），并通过 `castSenderEnabled` 能力开关控制行为，避免底层直接抛异常 | 1) 任何 UI/业务入口都不会因误调用导致崩溃；2) TV 模式下保持“投屏发送不可用”的可理解提示（`Disabled.message`）；3) 覆盖 JVM 单测（`Media3CastManagerTest`）验证禁用/启用/目标缺失分支 | Medium | Small | P2 | AI（Codex） | Done |
-| APP-T003 | APP-F003 | 抽取壳层 Fragment 装载/切换逻辑，减少重复实现与差异漂移 | 抽取 `FragmentSwitcher`/delegate（建议落在 `:core_ui_component` 或 `:app` 内部包），统一 `findFragmentByTag/add/show/hide` 与状态处理；TV 专有的导航数据结构保留在 `TvMainActivity` | 1) `MainActivity` 与 `TvMainActivity` 使用同一套切换实现；2) 旋转/进程重建后不出现错乱（当前已 `findAndRemoveFragment` 规避）；3) TV DPAD 焦点可达、可见、可返回；4) 不改变现有路由路径与功能入口 | Medium | Medium | P2 | 待分配（App/UI） | Draft |
+| APP-T003 | APP-F003 | 抽取壳层 Fragment 装载/切换逻辑，减少重复实现与差异漂移 | 抽取 `FragmentSwitcher`/delegate（建议落在 `:core_ui_component` 或 `:app` 内部包），统一 `findFragmentByTag/add/show/hide` 与状态处理；TV 专有的导航数据结构保留在 `TvMainActivity` | 1) `MainActivity` 与 `TvMainActivity` 使用同一套切换实现；2) 旋转/进程重建后不出现错乱（当前已 `findAndRemoveFragment` 规避）；3) TV DPAD 焦点可达、可见、可返回；4) 不改变现有路由路径与功能入口 | Medium | Medium | P2 | AI（Codex） | Done |
 
 ## 5) 风险与回归关注点
 
@@ -80,3 +80,4 @@
 - `Media3BackgroundCoordinator` 与 `Media3CastManager` 的“TV 裁剪”属于产品决策还是临时方案需进一步确认；若为全端禁用，应在配置/文档中明确为“全端禁用”，避免以“TV 适配”名义静默 stub。
 - 2026-02-04：已将 `Media3BackgroundCoordinator#sync` 的“TV 禁用后台/画中画”策略显式化为 `isTelevisionUiMode()` 分流；TV 仍强制清空，非 TV 恢复按 `PlayerCapabilityContract` 同步能力（见 `Media3BackgroundCoordinatorTest`）。
 - 2026-02-06：已完成 `APP-T002`：`Media3CastManager#prepareCastSession` 不再抛 `UnsupportedOperationException`，改为返回显式结果 `CastSessionPrepareResult`，并新增 `Media3CastManagerTest` 覆盖禁用/启用/目标缺失路径。
+- 2026-02-06：已完成 `APP-T003`：新增 `ShellFragmentSwitcher` 统一 Fragment 装载/切换流程，`MainActivity` 与 `TvMainActivity` 共用同一实现，保留各自导航与焦点逻辑。

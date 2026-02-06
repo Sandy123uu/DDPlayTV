@@ -4,16 +4,14 @@ import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentTransaction
 import com.alibaba.android.arouter.facade.annotation.Autowired
 import com.alibaba.android.arouter.launcher.ARouter
 import com.okamihoro.ddplaytv.R
 import com.okamihoro.ddplaytv.databinding.ActivityMainBinding
 import com.okamihoro.ddplaytv.ui.shell.BaseShellActivity
+import com.okamihoro.ddplaytv.ui.shell.ShellFragmentSwitcher
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.extension.findAndRemoveFragment
-import com.xyoye.common_component.extension.hideFragment
-import com.xyoye.common_component.extension.showFragment
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.services.DeveloperMenuService
@@ -26,15 +24,16 @@ class MainActivity : BaseShellActivity<ActivityMainBinding>() {
         private const val LOG_TAG = "MainNav"
     }
 
-    private lateinit var homeFragment: Fragment
-    private lateinit var mediaFragment: Fragment
-    private lateinit var personalFragment: Fragment
-    private lateinit var previousFragment: Fragment
-
     @Autowired
     lateinit var developerMenuService: DeveloperMenuService
 
-    private var fragmentTag = ""
+    private val fragmentSwitcher by lazy {
+        ShellFragmentSwitcher(
+            fragmentManager = supportFragmentManager,
+            containerId = R.id.fragment_container,
+            fragmentProvider = ::getFragment,
+        )
+    }
 
     // 标题栏菜单管理器
     private var developerMenus: DeveloperMenuService.Delegate? = null
@@ -113,86 +112,14 @@ class MainActivity : BaseShellActivity<ActivityMainBinding>() {
     }
 
     private fun switchFragment(tag: String) {
-        // 重复打开当前页面，不进行任何操作
-        if (tag == fragmentTag) {
-            return
-        }
-
-        // 隐藏上一个布局，fragmentTag不为空代表上一个布局已存在
-        if (fragmentTag.isNotEmpty()) {
-            supportFragmentManager.hideFragment(previousFragment)
-        }
-
-        when (tag) {
-            TAG_FRAGMENT_HOME -> {
-                // 根据TAG寻找页面
-                val fragment = supportFragmentManager.findFragmentByTag(TAG_FRAGMENT_HOME)
-                if (fragment == null) {
-                    // 根据TAG无法找到页面，通过路由寻找页面，找到页面则添加
-                    getFragment(RouteTable.Anime.HomeFragment)?.also {
-                        addFragment(it, TAG_FRAGMENT_HOME)
-                        homeFragment = it
-                        previousFragment = it
-                        fragmentTag = tag
-                    }
-                } else {
-                    // 根据TAG找到页面，显示
-                    supportFragmentManager.showFragment(fragment)
-                    homeFragment = fragment
-                    previousFragment = fragment
-                    fragmentTag = tag
-                }
+        val fragmentPath =
+            when (tag) {
+                TAG_FRAGMENT_HOME -> RouteTable.Anime.HomeFragment
+                TAG_FRAGMENT_MEDIA -> RouteTable.Local.MediaFragment
+                TAG_FRAGMENT_PERSONAL -> RouteTable.User.PersonalFragment
+                else -> throw RuntimeException("no match fragment")
             }
-
-            TAG_FRAGMENT_MEDIA -> {
-                val fragment = supportFragmentManager.findFragmentByTag(TAG_FRAGMENT_MEDIA)
-                if (fragment == null) {
-                    getFragment(RouteTable.Local.MediaFragment)?.also {
-                        addFragment(it, TAG_FRAGMENT_MEDIA)
-                        mediaFragment = it
-                        previousFragment = it
-                        fragmentTag = tag
-                    }
-                } else {
-                    supportFragmentManager.showFragment(fragment)
-                    mediaFragment = fragment
-                    previousFragment = fragment
-                    fragmentTag = tag
-                }
-            }
-
-            TAG_FRAGMENT_PERSONAL -> {
-                val fragment = supportFragmentManager.findFragmentByTag(TAG_FRAGMENT_PERSONAL)
-                if (fragment == null) {
-                    getFragment(RouteTable.User.PersonalFragment)?.also {
-                        addFragment(it, TAG_FRAGMENT_PERSONAL)
-                        personalFragment = it
-                        previousFragment = it
-                        fragmentTag = tag
-                    }
-                } else {
-                    supportFragmentManager.showFragment(fragment)
-                    personalFragment = fragment
-                    previousFragment = fragment
-                    fragmentTag = tag
-                }
-            }
-
-            else -> {
-                throw RuntimeException("no match fragment")
-            }
-        }
-    }
-
-    private fun addFragment(
-        fragment: Fragment,
-        tag: String
-    ) {
-        supportFragmentManager
-            .beginTransaction()
-            .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-            .add(R.id.fragment_container, fragment, tag)
-            .commit()
+        fragmentSwitcher.switchFragment(tag, fragmentPath)
     }
 
     private fun getFragment(path: String) =
