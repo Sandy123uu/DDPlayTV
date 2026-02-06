@@ -1,9 +1,9 @@
 package com.okamihoro.ddplaytv.ui.shell
 
-import androidx.databinding.ViewDataBinding
-import androidx.lifecycle.LiveData
 import com.alibaba.android.arouter.facade.annotation.Autowired
 import com.alibaba.android.arouter.launcher.ARouter
+import androidx.databinding.ViewDataBinding
+import androidx.lifecycle.LiveData
 import com.okamihoro.ddplaytv.BR
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.bridge.LoginObserver

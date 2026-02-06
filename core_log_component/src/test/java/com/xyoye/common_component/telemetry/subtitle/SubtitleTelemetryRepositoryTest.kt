@@ -1,12 +1,12 @@
 package com.xyoye.common_component.telemetry.subtitle
 
-import com.xyoye.data_component.media3.telemetry.subtitle.FallbackEvent
-import com.xyoye.data_component.media3.telemetry.subtitle.SubtitlePipelineState
-import com.xyoye.data_component.media3.telemetry.subtitle.TelemetrySample
 import com.xyoye.data_component.enums.SubtitleFrameStatus
 import com.xyoye.data_component.enums.SubtitlePipelineFallbackReason
 import com.xyoye.data_component.enums.SubtitlePipelineMode
 import com.xyoye.data_component.enums.SubtitlePipelineStatus
+import com.xyoye.data_component.media3.telemetry.subtitle.FallbackEvent
+import com.xyoye.data_component.media3.telemetry.subtitle.SubtitlePipelineState
+import com.xyoye.data_component.media3.telemetry.subtitle.TelemetrySample
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

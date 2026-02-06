@@ -37,7 +37,7 @@ sealed class CastSessionPrepareResult {
  */
 class Media3CastManager(
     private val codecFallbackHandler: CodecFallbackHandler,
-    private val castSenderEnabled: Boolean = false,
+    private val castSenderEnabled: Boolean = false
 ) {
     fun prepareCastSession(
         targetId: String,
@@ -51,6 +51,7 @@ class Media3CastManager(
 
         val target = capability.castTargets.firstOrNull { it.id == targetId }
             ?: return CastSessionPrepareResult.UnsupportedTarget(targetId)
+
         val decision = capabilityResult?.let { codecFallbackHandler.evaluate(it) }
             ?: CodecFallbackDecision.None
         val (audioOnly, message) = when (decision) {
@@ -63,7 +64,7 @@ class Media3CastManager(
                 target = target,
                 sessionId = session.sessionId,
                 audioOnly = audioOnly,
-                fallbackMessage = message,
+                fallbackMessage = message
             )
         )
     }
