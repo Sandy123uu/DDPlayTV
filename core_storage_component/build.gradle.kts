@@ -18,6 +18,9 @@ dependencies {
     implementation(project(":core_database_component"))
     implementation(project(":bilibili_component"))
 
+    implementation(Dependencies.AndroidX.lifecycle_livedata)
+    implementation(Dependencies.AndroidX.paging)
+
     // Keep repository wrappers internal to storage implementation.
     implementation(project(":repository:seven_zip"))
     implementation(project(":repository:thunder"))

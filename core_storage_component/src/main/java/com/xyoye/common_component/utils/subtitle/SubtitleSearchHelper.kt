@@ -20,9 +20,7 @@ import kotlinx.coroutines.flow.flatMapLatest
  * Created by xyoye on 2021/3/25.
  */
 
-class SubtitleSearchHelper(
-    private val scope: CoroutineScope
-) {
+class SubtitleSearchHelper(private val scope: CoroutineScope) {
     private val searchKeyLiveData = MutableLiveData<String>()
 
     val subtitleLiveData =
