@@ -4,7 +4,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
-import com.xyoye.common_component.database.DatabaseProvider
+import com.xyoye.common_component.database.repository.MediaLibraryRepository
+import com.xyoye.common_component.database.repository.PlayHistoryRepository
 import com.xyoye.common_component.source.VideoSourceManager
 import com.xyoye.common_component.source.factory.StorageVideoSourceFactory
 import com.xyoye.common_component.storage.StorageFactory
@@ -34,9 +35,9 @@ class PlayHistoryViewModel : BaseViewModel() {
             try {
                 val historyData =
                     if (mediaType == MediaType.OTHER_STORAGE) {
-                        DatabaseProvider.instance.getPlayHistoryDao().getAll()
+                        PlayHistoryRepository.getAll()
                     } else {
-                        DatabaseProvider.instance.getPlayHistoryDao().getSingleMediaType(mediaType)
+                        PlayHistoryRepository.getSingleMediaType(mediaType)
                     }
                 _historyLiveData.postValue(historyData)
             } catch (e: Exception) {
@@ -53,7 +54,7 @@ class PlayHistoryViewModel : BaseViewModel() {
     fun removeHistory(history: PlayHistoryEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                DatabaseProvider.instance.getPlayHistoryDao().delete(history.id)
+                PlayHistoryRepository.delete(history.id)
                 updatePlayHistory()
             } catch (e: Exception) {
                 ErrorReportHelper.postCatchedExceptionWithContext(
@@ -70,11 +71,10 @@ class PlayHistoryViewModel : BaseViewModel() {
     fun clearHistory() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val historyDao = DatabaseProvider.instance.getPlayHistoryDao()
                 if (mediaType == MediaType.STREAM_LINK || mediaType == MediaType.MAGNET_LINK) {
-                    historyDao.deleteTypeAll(listOf(mediaType))
+                    PlayHistoryRepository.deleteTypeAll(listOf(mediaType))
                 } else {
-                    historyDao.deleteAll()
+                    PlayHistoryRepository.deleteAll()
                 }
                 updatePlayHistory()
             } catch (e: Exception) {
@@ -115,7 +115,7 @@ class PlayHistoryViewModel : BaseViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val newHistory = history.copy(danmuPath = null, episodeId = null)
-                DatabaseProvider.instance.getPlayHistoryDao().insert(newHistory)
+                PlayHistoryRepository.insert(newHistory)
                 updatePlayHistory()
             } catch (e: Exception) {
                 ErrorReportHelper.postCatchedExceptionWithContext(
@@ -133,7 +133,7 @@ class PlayHistoryViewModel : BaseViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val newHistory = history.copy(subtitlePath = null)
-                DatabaseProvider.instance.getPlayHistoryDao().insert(newHistory)
+                PlayHistoryRepository.insert(newHistory)
                 updatePlayHistory()
             } catch (e: Exception) {
                 ErrorReportHelper.postCatchedExceptionWithContext(
@@ -190,7 +190,7 @@ class PlayHistoryViewModel : BaseViewModel() {
             showLoading()
             val library =
                 history.storageId
-                    ?.run { DatabaseProvider.instance.getMediaLibraryDao().getById(this) }
+                    ?.run { MediaLibraryRepository.getById(this) }
             if (library == null) {
                 hideLoading()
                 ToastCenter.showError("播放失败，找不到播放资源")

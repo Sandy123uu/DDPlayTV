@@ -134,11 +134,13 @@ open class MappingPreferenceDataStore(
         method: String,
         key: String,
     ) {
-        ErrorReportHelper.postCatchedExceptionWithContext(
-            exception,
-            dataStoreName,
-            method,
-            "Failed to handle preference value for key: $key",
-        )
+        runCatching {
+            ErrorReportHelper.postCatchedExceptionWithContext(
+                exception,
+                dataStoreName,
+                method,
+                "Failed to handle preference value for key: $key",
+            )
+        }
     }
 }

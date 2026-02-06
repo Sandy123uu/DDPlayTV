@@ -4,7 +4,8 @@ import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.bilibili.BilibiliPlaybackPreferencesStore
-import com.xyoye.common_component.database.DatabaseProvider
+import com.xyoye.common_component.database.repository.MediaLibraryRepository
+import com.xyoye.common_component.database.repository.PlayHistoryRepository
 import com.xyoye.common_component.extension.toastError
 import com.xyoye.common_component.network.repository.ScreencastRepository
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanAuthStore
@@ -26,8 +27,7 @@ import kotlinx.coroutines.launch
 
 class MediaViewModel : BaseViewModel() {
     val mediaLibWithStatusLiveData =
-        DatabaseProvider.instance
-            .getMediaLibraryDao()
+        MediaLibraryRepository
             .getAll()
             .map { libraries ->
                 libraries
@@ -41,9 +41,8 @@ class MediaViewModel : BaseViewModel() {
         viewModelScope.launch(context = Dispatchers.IO) {
             try {
                 // 播放历史首条记录
-                DatabaseProvider.instance
-                    .getPlayHistoryDao()
-                    .gitLastPlay(
+                PlayHistoryRepository
+                    .getLastPlay(
                         MediaType.LOCAL_STORAGE,
                         MediaType.OTHER_STORAGE,
                         MediaType.FTP_SERVER,
@@ -55,23 +54,21 @@ class MediaViewModel : BaseViewModel() {
                     }
 
                 // 磁链播放首条记录
-                DatabaseProvider.instance.getPlayHistoryDao().gitLastPlay(MediaType.MAGNET_LINK)?.apply {
+                PlayHistoryRepository.getLastPlay(MediaType.MAGNET_LINK)?.apply {
                     MediaLibraryEntity.TORRENT.describe = getFileName(torrentPath)
                 }
 
                 // 串流播放首条记录
-                DatabaseProvider.instance.getPlayHistoryDao().gitLastPlay(MediaType.STREAM_LINK)?.apply {
+                PlayHistoryRepository.getLastPlay(MediaType.STREAM_LINK)?.apply {
                     MediaLibraryEntity.STREAM.describe = url
                 }
 
-                DatabaseProvider.instance
-                    .getMediaLibraryDao()
-                    .insert(
-                        MediaLibraryEntity.LOCAL,
-                        MediaLibraryEntity.STREAM,
-                        MediaLibraryEntity.TORRENT,
-                        MediaLibraryEntity.HISTORY,
-                    )
+                MediaLibraryRepository.insert(
+                    MediaLibraryEntity.LOCAL,
+                    MediaLibraryEntity.STREAM,
+                    MediaLibraryEntity.TORRENT,
+                    MediaLibraryEntity.HISTORY,
+                )
             } catch (e: Exception) {
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
@@ -101,9 +98,7 @@ class MediaViewModel : BaseViewModel() {
                 if (data.id > 0) {
                     MediaLibraryCredentialStore.clear(data.id)
                 }
-                DatabaseProvider.instance
-                    .getMediaLibraryDao()
-                    .delete(data.url, data.mediaType)
+                MediaLibraryRepository.delete(data.url, data.mediaType)
             } catch (e: Exception) {
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,

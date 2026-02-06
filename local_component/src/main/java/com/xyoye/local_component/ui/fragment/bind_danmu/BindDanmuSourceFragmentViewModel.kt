@@ -2,7 +2,7 @@ package com.xyoye.local_component.ui.fragment.bind_danmu
 
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
-import com.xyoye.common_component.database.DatabaseProvider
+import com.xyoye.common_component.database.repository.PlayHistoryRepository
 import com.xyoye.common_component.extension.collectable
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.utils.ErrorReportHelper
@@ -310,7 +310,7 @@ class BindDanmuSourceFragmentViewModel : BaseViewModel() {
                     danmuPath = danmuPath,
                     episodeId = episodeId,
                 )
-            DatabaseProvider.instance.getPlayHistoryDao().insert(historyEntity)
+            PlayHistoryRepository.insert(historyEntity)
 
             _boundEpisodeFlow.emit(historyEntity)
         } catch (e: Exception) {
@@ -325,7 +325,7 @@ class BindDanmuSourceFragmentViewModel : BaseViewModel() {
 
     private suspend fun getStorageFileHistory(): PlayHistoryEntity =
         try {
-            DatabaseProvider.instance.getPlayHistoryDao().getPlayHistory(
+            PlayHistoryRepository.getPlayHistory(
                 storageFile.uniqueKey(),
                 storageFile.storage.library.id,
             ) ?: PlayHistoryEntity(
