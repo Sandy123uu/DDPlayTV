@@ -38,10 +38,15 @@ class AdapterDiffCreator {
         if (oldData === newData) {
             return true
         }
+        if (oldData::class != newData::class) {
+            return false
+        }
         if (areItemsTheSame == null) {
             return oldData == newData
         }
-        return areItemsTheSame!!.invoke(oldData, newData)
+        return runCatching {
+            areItemsTheSame!!.invoke(oldData, newData)
+        }.getOrDefault(false)
     }
 
     fun isSameContent(
@@ -51,10 +56,15 @@ class AdapterDiffCreator {
         if (oldData === newData) {
             return true
         }
+        if (oldData::class != newData::class) {
+            return false
+        }
         if (areContentsTheSame == null) {
             return oldData == newData
         }
-        return areContentsTheSame!!.invoke(oldData, newData)
+        return runCatching {
+            areContentsTheSame!!.invoke(oldData, newData)
+        }.getOrDefault(false)
     }
 
     private fun generateNewData(data: Any): Any {

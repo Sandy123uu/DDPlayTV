@@ -9,7 +9,6 @@ import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import com.xyoye.common_component.utils.ErrorReportHelper
 
 /**
  * Created by xyoye on 2020/7/7.
@@ -28,7 +27,10 @@ class BaseAdapter : AnimatedAdapter<RecyclerView.ViewHolder>() {
     }
 
     // 数据源
-    val items: MutableList<Any> = mutableListOf()
+    private val mutableItems: MutableList<Any> = mutableListOf()
+
+    val items: List<Any>
+        get() = mutableItems
 
     // 数据差异比较器
     var diffCreator: AdapterDiffCreator? = AdapterDiffCreator()
@@ -49,7 +51,7 @@ class BaseAdapter : AnimatedAdapter<RecyclerView.ViewHolder>() {
             ),
         )
 
-    override fun getItemCount() = items.size
+    override fun getItemCount() = mutableItems.size
 
     override fun onBindViewHolder(
         holder: RecyclerView.ViewHolder,
@@ -66,7 +68,7 @@ class BaseAdapter : AnimatedAdapter<RecyclerView.ViewHolder>() {
         bindViewHolderAnimation(viewHolder)
         getHolderCreator(viewHolder.itemViewType).apply {
             initItemBinding(viewHolder.itemView)
-            onBindViewHolder(items[position], position, this)
+            onBindViewHolder(mutableItems[position], position, this)
         }
     }
 
@@ -74,7 +76,7 @@ class BaseAdapter : AnimatedAdapter<RecyclerView.ViewHolder>() {
      * 根据item下标，获取ViewHolder所在集合位置
      */
     override fun getItemViewType(position: Int): Int {
-        if (items[position] == EMPTY_ITEM &&
+        if (mutableItems[position] == EMPTY_ITEM &&
             typeHolders.contains(VIEW_TYPE_EMPTY)
         ) {
             return VIEW_TYPE_EMPTY
@@ -92,7 +94,7 @@ class BaseAdapter : AnimatedAdapter<RecyclerView.ViewHolder>() {
             }
 
             val holder = typeHolders.valueAt(i)
-            if (holder.isForViewType(items[position], position)) {
+            if (holder.isForViewType(mutableItems[position], position)) {
                 return typeHolders.keyAt(i)
             }
         }
@@ -110,18 +112,7 @@ class BaseAdapter : AnimatedAdapter<RecyclerView.ViewHolder>() {
         super.setData(data)
 
         if (diffCreator != null) {
-            // [Bugly] #2529539
-            // TODO: 临时的解决方案，需要复现与排查
-            try {
-                setDiffData(data, diffCreator!!)
-            } catch (e: Exception) {
-                ErrorReportHelper.postCatchedException(
-                    e,
-                    "BaseAdapter.setData",
-                    "DiffUtil计算差异失败，回退到全量刷新",
-                )
-                setNotifyData(data)
-            }
+            setDiffData(data, diffCreator!!)
         } else {
             setNotifyData(data)
         }
@@ -134,15 +125,16 @@ class BaseAdapter : AnimatedAdapter<RecyclerView.ViewHolder>() {
         data: List<Any>,
         diffCreator: AdapterDiffCreator
     ) {
+        val oldItems = mutableItems.toList()
         val newItems = data.map { diffCreator.createNewData(it) }.toMutableList()
         // 数据为空时，显示空布局
         if (newItems.isEmpty() && typeHolders.contains(VIEW_TYPE_EMPTY)) {
             newItems.add(EMPTY_ITEM)
         }
-        val diffCallBack = AdapterDiffCallBack(items, newItems, diffCreator)
+        val diffCallBack = AdapterDiffCallBack(oldItems, newItems, diffCreator)
         val diffResult = DiffUtil.calculateDiff(diffCallBack)
-        items.clear()
-        items.addAll(newItems)
+        mutableItems.clear()
+        mutableItems.addAll(newItems)
         diffResult.dispatchUpdatesTo(this)
     }
 
@@ -151,12 +143,12 @@ class BaseAdapter : AnimatedAdapter<RecyclerView.ViewHolder>() {
      */
     @SuppressLint("NotifyDataSetChanged")
     private fun setNotifyData(data: List<Any>) {
-        items.clear()
-        items.addAll(data)
+        mutableItems.clear()
+        mutableItems.addAll(data)
 
         // 数据为空时，显示空布局
-        if (items.isEmpty() && typeHolders.contains(VIEW_TYPE_EMPTY)) {
-            items.add(EMPTY_ITEM)
+        if (mutableItems.isEmpty() && typeHolders.contains(VIEW_TYPE_EMPTY)) {
+            mutableItems.add(EMPTY_ITEM)
         }
         notifyDataSetChanged()
     }

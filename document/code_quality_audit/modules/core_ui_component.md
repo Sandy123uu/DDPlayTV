@@ -54,7 +54,7 @@
 | ID | 关联 Finding | 目标 | 范围 | 验收标准 | Impact | Effort | P | 负责人 | 状态 |
 |---|---|---|---|---|---|---|---|---|---|
 | CORE_UI-T001 | CORE_UI-F001 | 封装状态栏/沉浸式能力：上层不再直接 import `ImmersionBar`，并尽量减少 `api(...)` 依赖透传 | `core_ui_component`（新增 `StatusBarStyle`/扩展 API、调整 `build.gradle.kts`）；迁移 `anime_component/player_component/storage_component/app` 等直接引用 `ImmersionBar` 的页面 | 1) 上层模块不再直接引用 `com.gyf.immersionbar.ImmersionBar`；2) `:core_ui_component` 对外暴露的 API 清晰且可替换；3) 全仓编译通过，关键页面状态栏样式在 TV/移动端一致 | Medium | Medium | P2 | AI（Codex） | Done |
-| CORE_UI-T002 | CORE_UI-F002 | 定位并修复 DiffUtil 异常根因：约束数据模型或改造 diff 机制，降低回退刷新与上报噪音 | `BaseAdapter`/`AdapterDiffCreator`/`AdapterDiffCallBack`；必要时为常见列表数据引入稳定 `id` 或不可变数据约束 | 1) `BaseAdapter#setData` 不再依赖 try/catch“吞异常”；2) 列表更新动画与焦点恢复稳定；3) Diff 失败率显著下降（可通过线上/日志统计或回归验证） | Medium | Medium | P2 | 待分配（UI） | Draft |
+| CORE_UI-T002 | CORE_UI-F002 | 定位并修复 DiffUtil 异常根因：约束数据模型或改造 diff 机制，降低回退刷新与上报噪音 | `BaseAdapter`/`AdapterDiffCreator`/`AdapterDiffCallBack`；`core_ui_component/src/test/java/com/xyoye/common_component/adapter/AdapterDiffCreatorTest.kt`；`core_ui_component/src/test/java/com/xyoye/common_component/adapter/AdapterDiffCallBackSafetyTest.kt` | 1) `BaseAdapter#setData` 不再依赖 try/catch“吞异常”；2) 列表更新动画与焦点恢复稳定；3) Diff 失败率显著下降（可通过线上/日志统计或回归验证） | Medium | Medium | P2 | AI（Codex） | Done |
 | CORE_UI-T003 | CORE_UI-F003 | 明确 Fragment 宿主契约：引入 `LoadingHost`（或等价接口）并替换强制 cast，避免隐藏崩溃点 | `BaseAppFragment` + 所有继承链（`BaseFragment/BasePreferenceFragmentCompat` 等）及其宿主 Activity | 1) 不再出现 `context as BaseAppCompatActivity<*>` 的强制转换；2) 宿主不满足契约时能明确报错（Fail Fast）；3) 全仓编译通过，页面 loading 行为不变 | Medium | Small | P1 | AI（Codex） | Done |
 
 ## 5) 风险与回归关注点
