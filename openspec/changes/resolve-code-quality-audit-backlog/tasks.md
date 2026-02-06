@@ -56,7 +56,7 @@
 - [x] 2.20 关闭 `G-T0046`：抽取统一 OkHttpClientFactory（timeout/拦截器/安全策略集中）
 - [x] 2.21 关闭 `G-T0047`：抽取统一“Result 失败处理 + 上报 + toast”助手
 - [ ] 2.22 关闭 `G-T0048`：拆分 `BilibiliRepository`（子域组件 + 单测 + facade）
-- [ ] 2.23 关闭 `G-T0049`：收敛 MediaLibrary/PlayHistory 写入口径（替换 feature 直连 DAO）
+- [x] 2.23 关闭 `G-T0049`：收敛 MediaLibrary/PlayHistory 写入口径（替换 feature 直连 DAO）
 - [x] 2.24 关闭 `G-T0050`：收敛 contract 层运行时实现（副作用迁移到 runtime）
 - [ ] 2.25 关闭 `G-T0051`：收敛本地代理/HTTP server 能力（减少多实现漂移）
 - [ ] 2.26 关闭 `G-T0052`：收敛第三方协议库依赖泄漏（减少/消除 `api(...)`）

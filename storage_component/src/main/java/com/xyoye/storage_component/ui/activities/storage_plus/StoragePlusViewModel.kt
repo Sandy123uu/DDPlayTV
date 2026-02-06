@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.bilibili.BilibiliPlaybackPreferencesStore
 import com.xyoye.common_component.bilibili.auth.BilibiliCookieJarStore
-import com.xyoye.common_component.database.DatabaseProvider
+import com.xyoye.common_component.database.repository.MediaLibraryRepository
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.storage.StorageFactory
 import com.xyoye.common_component.storage.cloud115.auth.Cloud115AuthStore
@@ -102,9 +102,7 @@ class StoragePlusViewModel : BaseViewModel() {
             }
 
             val duplicateLibrary =
-                DatabaseProvider.instance
-                    .getMediaLibraryDao()
-                    .getByUrl(upsertLibrary.url, upsertLibrary.mediaType)
+                MediaLibraryRepository.getByUrl(upsertLibrary.url, upsertLibrary.mediaType)
             if (duplicateLibrary != null && duplicateLibrary.id != oldLibraryId) {
                 if (showToast) {
                     ToastCenter.showError("保存失败，媒体库地址已存在")
@@ -118,10 +116,9 @@ class StoragePlusViewModel : BaseViewModel() {
             upsertLibrary.remoteSecret = null
 
             upsertLibrary.id = oldLibraryId ?: upsertLibrary.id
-            val dao = DatabaseProvider.instance.getMediaLibraryDao()
-            dao.insert(upsertLibrary)
+            MediaLibraryRepository.insert(upsertLibrary)
             val savedLibrary =
-                dao.getByUrl(upsertLibrary.url, upsertLibrary.mediaType)
+                MediaLibraryRepository.getByUrl(upsertLibrary.url, upsertLibrary.mediaType)
                     ?: upsertLibrary
             if (savedLibrary.id != 0) {
                 editingLibraryId = savedLibrary.id

@@ -5,7 +5,7 @@ import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import com.xyoye.common_component.config.PlayerActions
-import com.xyoye.common_component.database.DatabaseProvider
+import com.xyoye.common_component.database.repository.MediaLibraryRepository
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.storage.cloud115.auth.Cloud115AuthStore
@@ -278,8 +278,7 @@ class Cloud115StorageEditDialog(
 
                         val result =
                             runCatching {
-                                val dao = DatabaseProvider.instance.getMediaLibraryDao()
-                                val storedLibrary = dao.getByUrl(editLibrary.url, editLibrary.mediaType)
+                                val storedLibrary = MediaLibraryRepository.getByUrl(editLibrary.url, editLibrary.mediaType)
                                 val storedKey = storedLibrary?.let { Cloud115AuthStore.storageKey(it) }
 
                                 if (!storedKey.isNullOrBlank()) {
@@ -294,7 +293,7 @@ class Cloud115StorageEditDialog(
                                         if (it.id > 0) {
                                             MediaLibraryCredentialStore.clear(it.id)
                                         }
-                                        dao.delete(it.url, it.mediaType)
+                                        MediaLibraryRepository.delete(it.url, it.mediaType)
                                     }
                                 }
 

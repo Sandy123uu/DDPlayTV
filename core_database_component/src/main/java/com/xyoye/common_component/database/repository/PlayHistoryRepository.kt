@@ -39,6 +39,23 @@ object PlayHistoryRepository {
                 .getPlayHistory(uniqueKey, storageId)
         }
 
+    suspend fun getPlayHistory(
+        uniqueKey: String,
+        mediaType: MediaType,
+    ): PlayHistoryEntity? =
+        withContext(Dispatchers.IO) {
+            DatabaseProvider.instance
+                .getPlayHistoryDao()
+                .getPlayHistory(uniqueKey, mediaType)
+        }
+
+    suspend fun getStorageLastPlay(storageId: Int): PlayHistoryEntity? =
+        withContext(Dispatchers.IO) {
+            DatabaseProvider.instance
+                .getPlayHistoryDao()
+                .gitStorageLastPlay(storageId)
+        }
+
     fun getPlayHistoryFlow(
         uniqueKey: String,
         storageId: Int,
@@ -52,6 +69,43 @@ object PlayHistoryRepository {
             DatabaseProvider.instance
                 .getPlayHistoryDao()
                 .insert(playHistoryEntity)
+        }
+    }
+
+    suspend fun updateDanmu(
+        uniqueKey: String,
+        storageId: Int,
+        danmuPath: String?,
+        episodeId: String?,
+    ) {
+        withContext(Dispatchers.IO) {
+            DatabaseProvider.instance
+                .getPlayHistoryDao()
+                .updateDanmu(uniqueKey, storageId, danmuPath, episodeId)
+        }
+    }
+
+    suspend fun updateSubtitle(
+        uniqueKey: String,
+        storageId: Int,
+        subtitlePath: String?,
+    ) {
+        withContext(Dispatchers.IO) {
+            DatabaseProvider.instance
+                .getPlayHistoryDao()
+                .updateSubtitle(uniqueKey, storageId, subtitlePath)
+        }
+    }
+
+    suspend fun updateAudio(
+        uniqueKey: String,
+        storageId: Int,
+        audioPath: String?,
+    ) {
+        withContext(Dispatchers.IO) {
+            DatabaseProvider.instance
+                .getPlayHistoryDao()
+                .updateAudio(uniqueKey, storageId, audioPath)
         }
     }
 
