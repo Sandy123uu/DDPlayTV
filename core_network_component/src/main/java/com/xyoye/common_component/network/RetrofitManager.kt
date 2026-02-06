@@ -1,30 +1,6 @@
 package com.xyoye.common_component.network
 
-import com.xyoye.common_component.network.config.Api
-import com.xyoye.common_component.network.helper.AgentInterceptor
-import com.xyoye.common_component.network.helper.AuthInterceptor
-import com.xyoye.common_component.network.helper.BackupDomainInterceptor
-import com.xyoye.common_component.network.helper.DecompressInterceptor
-import com.xyoye.common_component.network.helper.DeveloperCertificateInterceptor
-import com.xyoye.common_component.network.helper.DynamicBaseUrlInterceptor
-import com.xyoye.common_component.network.helper.ForbiddenErrorInterceptor
-import com.xyoye.common_component.network.helper.LoggerInterceptor
-import com.xyoye.common_component.network.helper.OkHttpClientConfig
-import com.xyoye.common_component.network.helper.OkHttpClientFactory
-import com.xyoye.common_component.network.helper.SignatureInterceptor
-import com.xyoye.common_component.network.service.AlistService
-import com.xyoye.common_component.network.service.BaiduPanService
-import com.xyoye.common_component.network.service.Cloud115Service
-import com.xyoye.common_component.network.service.DanDanService
-import com.xyoye.common_component.network.service.ExtendedService
-import com.xyoye.common_component.network.service.MagnetService
-import com.xyoye.common_component.network.service.Open115Service
-import com.xyoye.common_component.network.service.RemoteService
-import com.xyoye.common_component.network.service.ScreencastService
-import com.xyoye.common_component.utils.JsonHelper
 import okhttp3.OkHttpClient
-import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
 
 /**
  * Created by xyoye on 2020/4/14.
@@ -32,155 +8,30 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 
 class RetrofitManager private constructor() {
     companion object {
-        val danDanService: DanDanService by lazy { Holder.instance.danDanService }
-        val extendedService: ExtendedService by lazy { Holder.instance.extendedService }
-        val remoteService: RemoteService by lazy { Holder.instance.remoteService }
-        val magnetService: MagnetService by lazy { Holder.instance.magnetService }
-        val screencastService: ScreencastService by lazy { Holder.instance.screencastService }
-        val alistService: AlistService by lazy { Holder.instance.alistService }
-        val baiduPanService: BaiduPanService by lazy { Holder.instance.baiduPanService }
-        val open115Service: Open115Service by lazy { Holder.instance.open115Service }
-        val cloud115Service: Cloud115Service by lazy { Holder.instance.cloud115Service }
+        val danDanService get() = provider().danDanService
+        val extendedService get() = provider().extendedService
+        val remoteService get() = provider().remoteService
+        val magnetService get() = provider().magnetService
+        val screencastService get() = provider().screencastService
+        val alistService get() = provider().alistService
+        val baiduPanService get() = provider().baiduPanService
+        val open115Service get() = provider().open115Service
+        val cloud115Service get() = provider().cloud115Service
+
+        fun replaceServiceProvider(provider: RetrofitServiceProvider) {
+            RetrofitServiceLocator.replaceProvider(provider)
+        }
+
+        fun resetServiceProvider() {
+            RetrofitServiceLocator.resetProvider()
+        }
 
         fun <T> createService(
             baseUrl: String,
             client: OkHttpClient,
             service: Class<T>
-        ): T =
-            retrofit2.Retrofit
-                .Builder()
-                .addConverterFactory(Holder.instance.moshiConverterFactory)
-                .client(client)
-                .baseUrl(baseUrl)
-                .build()
-                .create(service)
-    }
+        ): T = provider().createService(baseUrl, client, service)
 
-    private object Holder {
-        val instance = RetrofitManager()
-    }
-
-    private val danDanClient: OkHttpClient by lazy {
-        OkHttpClientFactory.create(
-            OkHttpClientConfig(
-                interceptors =
-                    listOf(
-                        SignatureInterceptor(),
-                        DeveloperCertificateInterceptor(),
-                        AgentInterceptor(),
-                        AuthInterceptor(),
-                        ForbiddenErrorInterceptor(),
-                        DecompressInterceptor(),
-                        BackupDomainInterceptor(),
-                        LoggerInterceptor().retrofit(),
-                    ),
-            ),
-        )
-    }
-
-    private val commonClient: OkHttpClient by lazy {
-        OkHttpClientFactory.create(
-            OkHttpClientConfig(
-                interceptors =
-                    listOf(
-                        AgentInterceptor(),
-                        DecompressInterceptor(),
-                        DynamicBaseUrlInterceptor(),
-                        LoggerInterceptor().retrofit(),
-                    ),
-            ),
-        )
-    }
-
-    private val moshiConverterFactory = MoshiConverterFactory.create(JsonHelper.MO_SHI)
-
-    private val danDanService: DanDanService by lazy {
-        Retrofit
-            .Builder()
-            .addConverterFactory(moshiConverterFactory)
-            .client(danDanClient)
-            .baseUrl(Api.DAN_DAN_OPEN)
-            .build()
-            .create(DanDanService::class.java)
-    }
-
-    private val magnetService: MagnetService by lazy {
-        Retrofit
-            .Builder()
-            .addConverterFactory(moshiConverterFactory)
-            .client(commonClient)
-            .baseUrl(Api.DAN_DAN_RES)
-            .build()
-            .create(MagnetService::class.java)
-    }
-
-    private val extendedService: ExtendedService by lazy {
-        Retrofit
-            .Builder()
-            .addConverterFactory(moshiConverterFactory)
-            .client(commonClient)
-            .baseUrl(Api.PLACEHOLDER)
-            .build()
-            .create(ExtendedService::class.java)
-    }
-
-    private val remoteService: RemoteService by lazy {
-        Retrofit
-            .Builder()
-            .addConverterFactory(moshiConverterFactory)
-            .client(commonClient)
-            .baseUrl(Api.PLACEHOLDER)
-            .build()
-            .create(RemoteService::class.java)
-    }
-
-    private val screencastService: ScreencastService by lazy {
-        Retrofit
-            .Builder()
-            .addConverterFactory(moshiConverterFactory)
-            .client(commonClient)
-            .baseUrl(Api.PLACEHOLDER)
-            .build()
-            .create(ScreencastService::class.java)
-    }
-
-    private val alistService: AlistService by lazy {
-        Retrofit
-            .Builder()
-            .addConverterFactory(moshiConverterFactory)
-            .client(commonClient)
-            .baseUrl(Api.PLACEHOLDER)
-            .build()
-            .create(AlistService::class.java)
-    }
-
-    private val baiduPanService: BaiduPanService by lazy {
-        Retrofit
-            .Builder()
-            .addConverterFactory(moshiConverterFactory)
-            .client(commonClient)
-            .baseUrl(Api.PLACEHOLDER)
-            .build()
-            .create(BaiduPanService::class.java)
-    }
-
-    private val open115Service: Open115Service by lazy {
-        Retrofit
-            .Builder()
-            .addConverterFactory(moshiConverterFactory)
-            .client(commonClient)
-            .baseUrl(Api.PLACEHOLDER)
-            .build()
-            .create(Open115Service::class.java)
-    }
-
-    private val cloud115Service: Cloud115Service by lazy {
-        Retrofit
-            .Builder()
-            .addConverterFactory(moshiConverterFactory)
-            .client(commonClient)
-            .baseUrl(Api.PLACEHOLDER)
-            .build()
-            .create(Cloud115Service::class.java)
+        private fun provider(): RetrofitServiceProvider = RetrofitServiceLocator.currentProvider()
     }
 }

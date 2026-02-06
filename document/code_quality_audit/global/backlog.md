@@ -48,7 +48,7 @@
 | G-T0032 | Done | AI（Codex） | 封装/隔离迅雷 SDK 类型，避免第三方类型在上层模块显式出现 | G-F0046 | :repository:thunder | REPO_THUNDER-T002 |
 | G-T0033 | Done | AI（Codex） | 封装状态栏/沉浸式能力：上层不再直接 import `ImmersionBar`，并尽量减少 `api(...)` 依赖透传 | G-F0035 | :core_ui_component | CORE_UI-T001 |
 | G-T0034 | Draft | 待分配（Bilibili/Feature） | 将 B 站弹幕解析/下载编排从 ViewModel 下沉到 repository/usecase，降低 UI 耦合 | G-F0037 | :local_component | LOCAL-T004 |
-| G-T0035 | Draft | 待分配（Infra/Network） | 将 `Retrofit` 单例改为可注入 Provider/Factory，提升可测试性并降低全局静态耦合 | G-F0039 | :core_network_component | CORE_NETWORK-T004 |
+| G-T0035 | Done | AI（Codex） | 将 `Retrofit` 单例改为可注入 Provider/Factory，提升可测试性并降低全局静态耦合 | G-F0039 | :core_network_component | CORE_NETWORK-T004 |
 | G-T0036 | Draft | 待分配（Storage/Feature） | 将字幕匹配/搜索/Hash 能力从 `:local_component` 收敛到基础层，避免 feature 锁死复用 | G-F0056 | :local_component | LOCAL-T001 |
 | G-T0037 | Draft | 待分配（DB/Storage/User） | 将扫描扩展目录/过滤配置与刷新逻辑下沉到 repository/usecase，统一 DAO 访问口径 | G-F0042 | :user_component | USER-T003 |
 | G-T0038 | Draft | 待分配（Feature/DB） | 将搜索历史/播放历史等持久化细节从 ViewModel 迁移到 repository/usecase 层 | G-F0033 | :anime_component | ANIME-T002 |
