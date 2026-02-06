@@ -58,7 +58,7 @@
 | G-T0042 | Draft | AI（Codex） | 抽取 `LogLevel` 优先级/比较逻辑为单一实现，移除重复 `levelPriority` | G-F0051 | :core_log_component | CORE_LOG-T001 |
 | G-T0043 | Done | AI（Codex） | 抽取可复用的 PreferenceDataStore/映射抽象，减少 key→config 样板与 drift | G-F0063 | :user_component | USER-T001 |
 | G-T0044 | Done | AI（Codex） | 抽取壳层 Fragment 装载/切换逻辑，减少重复实现与差异漂移 | G-F0050 | :app | APP-T003 |
-| G-T0045 | Draft | 待分配（Storage/Infra） | 抽取投屏协议与 server 公共能力到 core 层，减少 NanoHTTPD/UDP 重复与策略漂移 | G-F0053 | :storage_component | STORAGE-T003 |
+| G-T0045 | Done | AI（Codex） | 抽取投屏协议与 server 公共能力到 core 层，减少 NanoHTTPD/UDP 重复与策略漂移 | G-F0053 | :storage_component,:core_storage_component | STORAGE-T003 |
 | G-T0046 | Done | AI（Codex） | 抽取统一 OkHttpClientFactory：集中维护 timeout/拦截器链/安全策略，减少跨模块漂移 | G-F0049 | :core_network_component | CORE_NETWORK-T005 |
 | G-T0047 | Done | AI（Codex） | 抽取统一的“Result 失败处理 + 上下文上报 + toast”助手，减少 ViewModel 样板与口径漂移 | G-F0058 | :anime_component | ANIME-T001 |
 | G-T0048 | Draft | 待分配（Bilibili） | 拆分 `BilibiliRepository`：按子域抽取组件并引入单测/契约化接口，提高可维护性 | G-F0038 | :bilibili_component | BILIBILI-T003 |

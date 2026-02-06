@@ -1,4 +1,4 @@
-package com.xyoye.storage_component.utils.screencast.receiver
+package com.xyoye.common_component.storage.screencast.receiver
 
 import android.os.Build
 import android.provider.Settings

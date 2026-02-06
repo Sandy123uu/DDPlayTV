@@ -19,6 +19,9 @@ import com.xyoye.common_component.source.VideoSourceManager
 import com.xyoye.common_component.source.factory.StorageVideoSourceFactory
 import com.xyoye.common_component.storage.StorageFactory
 import com.xyoye.common_component.storage.impl.ScreencastStorage
+import com.xyoye.common_component.storage.screencast.receiver.HttpServer
+import com.xyoye.common_component.storage.screencast.receiver.ScreencastReceiveHandler
+import com.xyoye.common_component.storage.screencast.receiver.UdpServer
 import com.xyoye.common_component.utils.ActivityHelper
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.screencast.ScreencastHandler
@@ -27,8 +30,6 @@ import com.xyoye.data_component.data.screeencast.ScreencastData
 import com.xyoye.data_component.data.screeencast.ScreencastVideoData
 import com.xyoye.data_component.entity.MediaLibraryEntity
 import com.xyoye.data_component.enums.MediaType
-import com.xyoye.storage_component.utils.screencast.receiver.HttpServer
-import com.xyoye.storage_component.utils.screencast.receiver.UdpServer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -42,10 +43,6 @@ import kotlin.coroutines.resume
 /**
  * Created by xyoye on 2022/9/16
  */
-
-interface ScreencastReceiveHandler {
-    fun onReceiveVideo(screencastData: ScreencastData)
-}
 
 class ScreencastReceiveService :
     Service(),

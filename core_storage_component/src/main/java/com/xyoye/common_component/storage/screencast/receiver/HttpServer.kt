@@ -1,11 +1,10 @@
-package com.xyoye.storage_component.utils.screencast.receiver
+package com.xyoye.common_component.storage.screencast.receiver
 
 import com.xyoye.common_component.extension.aesDecode
 import com.xyoye.common_component.network.config.HeaderKey
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.JsonHelper
 import com.xyoye.data_component.data.CommonJsonData
-import com.xyoye.storage_component.services.ScreencastReceiveHandler
 import fi.iki.elonen.NanoHTTPD
 
 /**
