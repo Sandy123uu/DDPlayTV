@@ -9,7 +9,6 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.decode.VideoFrameDecoder
 import com.alibaba.android.arouter.launcher.ARouter
-import com.tencent.mmkv.MMKV
 import com.xyoye.common_component.config.AppConfig
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
@@ -83,7 +82,6 @@ open class BaseApplication :
 
     override fun onCreate() {
         super.onCreate()
-        MMKV.initialize(this)
         AppCompatDelegate.setDefaultNightMode(AppConfig.getDarkMode())
 
         LogFacade.i(

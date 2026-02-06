@@ -2,7 +2,6 @@ package com.xyoye.common_component.log
 
 import android.content.Context
 import android.util.Log
-import com.tencent.mmkv.MMKV
 import com.xyoye.common_component.log.model.DebugToggleState
 import com.xyoye.common_component.log.model.LogEvent
 import com.xyoye.common_component.log.model.LogLevel
@@ -42,7 +41,6 @@ object LogSystem {
         if (initialized) return
         synchronized(initLock) {
             if (initialized) return
-            MMKV.initialize(context.applicationContext)
             policyRepository = LogPolicyRepository(defaultPolicy)
             val initialState = policyRepository.loadFromStorage()
             stateRef.set(initialState)
