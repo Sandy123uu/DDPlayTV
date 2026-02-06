@@ -7,7 +7,7 @@ import android.graphics.Point
 import android.net.Uri
 import android.support.v4.media.session.PlaybackStateCompat
 import android.view.Surface
-import com.xyoye.common_component.storage.file.helper.HttpPlayServer
+import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.common_component.utils.IOUtils
 import com.xyoye.common_component.utils.SupervisorScope
 import com.xyoye.data_component.bean.VideoTrackBean
@@ -75,9 +75,7 @@ class VlcVideoPlayer(
         isBufferEnd = false
         dataSource = path
         runCatching {
-            val playServer = HttpPlayServer.getInstance()
-            if (playServer.isServingUrl(path)) {
-                playServer.setSeekEnabled(false)
+            if (LocalProxy.setSeekEnabledIfServing(path, enabled = false)) {
                 proxySeekEnabled = false
             }
         }
@@ -316,9 +314,7 @@ class VlcVideoPlayer(
                         val path = dataSource
                         if (!proxySeekEnabled && !path.isNullOrEmpty()) {
                             runCatching {
-                                val playServer = HttpPlayServer.getInstance()
-                                if (playServer.isServingUrl(path)) {
-                                    playServer.setSeekEnabled(true)
+                                if (LocalProxy.setSeekEnabledIfServing(path, enabled = true)) {
                                     proxySeekEnabled = true
                                 }
                             }

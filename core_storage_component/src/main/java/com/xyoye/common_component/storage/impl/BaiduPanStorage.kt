@@ -13,7 +13,6 @@ import com.xyoye.common_component.storage.baidupan.auth.BaiduPanReAuthRequiredEx
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanTokenManager
 import com.xyoye.common_component.storage.baidupan.play.BaiduPanDlinkCache
 import com.xyoye.common_component.storage.file.StorageFile
-import com.xyoye.common_component.storage.file.helper.HttpPlayServer
 import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.common_component.storage.file.impl.BaiduPanStorageFile
 import com.xyoye.common_component.storage.file.payloadAs
@@ -260,7 +259,7 @@ class BaiduPanStorage(
         }
     }
 
-    private fun buildRangeUnsupportedRefreshSupplier(file: StorageFile): () -> HttpPlayServer.UpstreamSource? =
+    private fun buildRangeUnsupportedRefreshSupplier(file: StorageFile): () -> LocalProxy.UpstreamSource? =
         {
             synchronized(rangeUnsupportedRefreshLock) {
                 runCatching {
@@ -275,7 +274,7 @@ class BaiduPanStorage(
                     )
                     runBlocking {
                         val upstream = resolveUpstream(file, forceRefresh = true)
-                        HttpPlayServer.UpstreamSource(
+                        LocalProxy.UpstreamSource(
                             url = upstream.url,
                             contentLength = upstream.contentLength,
                         )

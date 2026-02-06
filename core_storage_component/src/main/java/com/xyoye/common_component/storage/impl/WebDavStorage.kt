@@ -9,7 +9,6 @@ import com.xyoye.common_component.network.helper.WebDavOkHttpClient
 import com.xyoye.common_component.network.helper.WebDavOkHttpClientFactory
 import com.xyoye.common_component.storage.AbstractStorage
 import com.xyoye.common_component.storage.file.StorageFile
-import com.xyoye.common_component.storage.file.helper.HttpPlayServer
 import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.common_component.storage.file.impl.WebDavStorageFile
 import com.xyoye.common_component.utils.ErrorReportHelper
@@ -136,9 +135,9 @@ class WebDavStorage(
             autoEnabled = autoEnabled,
             upstreamTlsPolicy =
                 if (this.library.webDavAllowInsecureTls) {
-                    HttpPlayServer.UpstreamTlsPolicy.UNSAFE_TRUST_ALL
+                    LocalProxy.UpstreamTlsPolicy.UNSAFE_TRUST_ALL
                 } else {
-                    HttpPlayServer.UpstreamTlsPolicy.STRICT
+                    LocalProxy.UpstreamTlsPolicy.STRICT
                 },
         )
     }

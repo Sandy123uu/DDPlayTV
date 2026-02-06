@@ -35,7 +35,7 @@ import androidx.media3.exoplayer.util.EventLogger
 import androidx.media3.ui.DefaultTrackNameProvider
 import com.xyoye.common_component.config.SubtitlePreferenceUpdater
 import com.xyoye.common_component.extension.mapByLength
-import com.xyoye.common_component.storage.file.helper.HttpPlayServer
+import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.data_component.bean.VideoTrackBean
 import com.xyoye.data_component.enums.TrackType
 import com.xyoye.player.info.PlayerInitializer
@@ -167,10 +167,7 @@ class Media3VideoPlayer(
         currentDataSourceHeaders = headers
         anime4kFallbackTriggered = false
         runCatching {
-            val playServer = HttpPlayServer.getInstance()
-            if (playServer.isServingUrl(path)) {
-                playServer.setSeekEnabled(false)
-            }
+            LocalProxy.setSeekEnabledIfServing(path, enabled = false)
         }
         mediaSource = getMediaSource(path, headers)
         videoOverrideApplied = false
@@ -557,10 +554,7 @@ class Media3VideoPlayer(
         val path = currentDataSource
         if (!path.isNullOrBlank()) {
             runCatching {
-                val playServer = HttpPlayServer.getInstance()
-                if (playServer.isServingUrl(path)) {
-                    playServer.setSeekEnabled(true)
-                }
+                LocalProxy.setSeekEnabledIfServing(path, enabled = true)
             }
         }
     }

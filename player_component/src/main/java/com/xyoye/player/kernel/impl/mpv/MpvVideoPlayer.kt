@@ -10,7 +10,7 @@ import com.xyoye.common_component.config.PlayerConfig
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.LogSystem
 import com.xyoye.common_component.log.model.LogModule
-import com.xyoye.common_component.storage.file.helper.HttpPlayServer
+import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.common_component.subtitle.SubtitleFontManager
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.data_component.bean.VideoTrackBean
@@ -107,9 +107,7 @@ class MpvVideoPlayer(
         dataSource = path
         pendingExternalTracks.clear()
         runCatching {
-            val playServer = HttpPlayServer.getInstance()
-            if (playServer.isServingUrl(path)) {
-                playServer.setSeekEnabled(false)
+            if (LocalProxy.setSeekEnabledIfServing(path, enabled = false)) {
                 proxySeekEnabled = false
                 pendingSeekMs = null
             }
@@ -284,8 +282,7 @@ class MpvVideoPlayer(
             try {
                 userAgent?.let { nativeBridge.setUserAgent(it) }
                 runCatching {
-                    val playServer = HttpPlayServer.getInstance()
-                    nativeBridge.setForceSeekable(playServer.isServingUrl(path))
+                    nativeBridge.setForceSeekable(LocalProxy.isServingUrl(path))
                 }.getOrNull()
                 nativeBridge.setDataSource(path, headers)
             } catch (e: Exception) {
@@ -362,7 +359,7 @@ class MpvVideoPlayer(
         if (!proxySeekEnabled) {
             val path = dataSource
             if (!path.isNullOrEmpty()) {
-                val isLocalProxy = runCatching { HttpPlayServer.getInstance().isServingUrl(path) }.getOrDefault(false)
+                val isLocalProxy = runCatching { LocalProxy.isServingUrl(path) }.getOrDefault(false)
                 if (isLocalProxy) {
                     pendingSeekMs = timeMs
                     return
@@ -586,9 +583,7 @@ class MpvVideoPlayer(
                 val path = dataSource
                 if (!path.isNullOrEmpty()) {
                     runCatching {
-                        val playServer = HttpPlayServer.getInstance()
-                        if (playServer.isServingUrl(path)) {
-                            playServer.setSeekEnabled(true)
+                        if (LocalProxy.setSeekEnabledIfServing(path, enabled = true)) {
                             proxySeekEnabled = true
                             pendingSeekMs?.let { pending ->
                                 pendingSeekMs = null

@@ -9,7 +9,6 @@ import com.xyoye.common_component.storage.AbstractStorage
 import com.xyoye.common_component.storage.AuthStorage
 import com.xyoye.common_component.storage.PagedStorage
 import com.xyoye.common_component.storage.file.StorageFile
-import com.xyoye.common_component.storage.file.helper.HttpPlayServer
 import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.common_component.storage.file.impl.Open115StorageFile
 import com.xyoye.common_component.storage.file.payloadAs
@@ -333,7 +332,7 @@ class Open115Storage(
         }
     }
 
-    private fun buildRangeUnsupportedRefreshSupplier(file: StorageFile): () -> HttpPlayServer.UpstreamSource? =
+    private fun buildRangeUnsupportedRefreshSupplier(file: StorageFile): () -> LocalProxy.UpstreamSource? =
         {
             synchronized(rangeUnsupportedRefreshLock) {
                 runCatching {
@@ -351,7 +350,7 @@ class Open115Storage(
                     )
                     runBlocking {
                         val upstream = resolveUpstream(file, forceRefresh = true)
-                        HttpPlayServer.UpstreamSource(
+                        LocalProxy.UpstreamSource(
                             url = upstream.url,
                             headers = getNetworkHeaders(file).orEmpty(),
                             contentLength = upstream.contentLength,

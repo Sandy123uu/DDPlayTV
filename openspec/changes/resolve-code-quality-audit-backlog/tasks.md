@@ -58,7 +58,7 @@
 - [ ] 2.22 关闭 `G-T0048`：拆分 `BilibiliRepository`（子域组件 + 单测 + facade）
 - [x] 2.23 关闭 `G-T0049`：收敛 MediaLibrary/PlayHistory 写入口径（替换 feature 直连 DAO）
 - [x] 2.24 关闭 `G-T0050`：收敛 contract 层运行时实现（副作用迁移到 runtime）
-- [ ] 2.25 关闭 `G-T0051`：收敛本地代理/HTTP server 能力（减少多实现漂移）
+- [x] 2.25 关闭 `G-T0051`：收敛本地代理/HTTP server 能力（减少多实现漂移）
 - [x] 2.26 关闭 `G-T0052`：收敛第三方协议库依赖泄漏（减少/消除 `api(...)`）
 - [x] 2.27 关闭 `G-T0053`：收敛第三方类型扩散（统一状态栏/沉浸式入口）
 - [x] 2.28 关闭 `G-T0054`：移除“发送弹幕”整条链路（删除相关 UI/代码并移除依赖）
@@ -69,7 +69,7 @@
 - [x] 2.33 关闭 `G-T0059`：统一 Telemetry repository 的模块归属与包命名
 - [x] 2.34 关闭 `G-T0060`：统一 prebuilt AAR wrapper 的 Gradle 封装方式
 - [x] 2.35 关闭 `G-T0061`：`core_storage_component` 统一异常处理与脱敏（移除 `printStackTrace()`）
-- [ ] 2.36 关闭 `G-T0062`：统一本地代理能力（Proxy 服务抽取，headers/range/tls 一致）
+- [x] 2.36 关闭 `G-T0062`：统一本地代理能力（Proxy 服务抽取，headers/range/tls 一致）
 - [x] 2.37 关闭 `G-T0063`：PanelSwitchHelper 生命周期释放/资源回收
 - [x] 2.38 关闭 `G-T0064`：迁移存储凭证到安全存储（DB 不再明文）
 - [x] 2.39 关闭 `G-T0065`：重命名自定义 `Retrofit` 包装类（避免与 `retrofit2.Retrofit` 同名）

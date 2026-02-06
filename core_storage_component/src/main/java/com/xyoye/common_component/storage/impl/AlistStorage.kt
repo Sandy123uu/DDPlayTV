@@ -6,7 +6,6 @@ import com.xyoye.common_component.network.repository.AlistRepository
 import com.xyoye.common_component.network.repository.ResourceRepository
 import com.xyoye.common_component.storage.AbstractStorage
 import com.xyoye.common_component.storage.file.StorageFile
-import com.xyoye.common_component.storage.file.helper.HttpPlayServer
 import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.common_component.storage.file.impl.AlistStorageFile
 import com.xyoye.common_component.storage.file.payloadAs
@@ -152,11 +151,11 @@ class AlistStorage(
 
     /**
      * Threading model:
-     * - Invoked by [HttpPlayServer] when upstream Range probing fails.
+     * - Invoked by [LocalProxy] when upstream Range probing fails.
      * - Runs on NanoHTTPD request thread (NOT main thread).
      * - Serialized by [rangeUnsupportedRefreshLock] to avoid concurrent token refresh storms.
      */
-    private fun buildRangeUnsupportedRefreshSupplier(file: StorageFile): () -> HttpPlayServer.UpstreamSource? =
+    private fun buildRangeUnsupportedRefreshSupplier(file: StorageFile): () -> LocalProxy.UpstreamSource? =
         {
             synchronized(rangeUnsupportedRefreshLock) {
                 runCatching {
@@ -165,7 +164,7 @@ class AlistStorage(
                             getStorageFileProxyUrl(file, forceRefresh = true)
                                 ?: getStorageFileUrl(file, forceRefresh = true)
                         refreshed?.let { url ->
-                            HttpPlayServer.UpstreamSource(
+                            LocalProxy.UpstreamSource(
                                 url = url,
                                 contentLength = runCatching { file.fileLength() }.getOrNull() ?: -1L,
                             )

@@ -64,7 +64,7 @@
 | G-T0048 | Draft | 待分配（Bilibili） | 拆分 `BilibiliRepository`：按子域抽取组件并引入单测/契约化接口，提高可维护性 | G-F0038 | :bilibili_component | BILIBILI-T003 |
 | G-T0049 | Done | AI（Codex） | 收敛 MediaLibrary/PlayHistory 的写入口径：提供 repository/usecase 并替换 feature 直连 DAO | G-F0031 | :storage_component | STORAGE-T004 |
 | G-T0050 | Done | AI（Codex） | 收敛 contract 层的运行时实现：将可变状态/副作用迁移到 runtime 层，仅保留契约 | G-F0030 | :core_contract_component | CORE_CONTRACT-T001 |
-| G-T0051 | Draft | 待分配（Infra/Player/Storage） | 收敛本地代理/HTTP server 能力，减少多实现与策略漂移 | G-F0054 | :player_component | PLAYER-T003 |
+| G-T0051 | Done | AI（Codex） | 收敛本地代理/HTTP server 能力，减少多实现与策略漂移 | G-F0054 | :player_component,:core_storage_component | PLAYER-T003,CORE_STORAGE-T005 |
 | G-T0052 | Done | AI（Codex） | 收敛第三方协议库依赖泄漏：减少/消除 `api(...)`，上层模块不再直接 import 协议库类型 | G-F0032 | :core_storage_component | CORE_STORAGE-T001 |
 | G-T0053 | Done | AI（Codex） | 收敛第三方类型扩散：以 `core_ui_component` 提供统一状态栏/沉浸式配置入口 | G-F0047 | :repository:immersion_bar | REPO_IMMERSION_BAR-T002 |
 | G-T0054 | Done | AI（Codex） | 移除“发送弹幕”整条链路：删除相关 UI/代码并移除 `:repository:panel_switch` 依赖 | G-F0062 | :player_component,:repository:panel_switch | REPO_PANEL_SWITCH-T002 |
@@ -75,7 +75,7 @@
 | G-T0059 | Done | AI（Codex） | 统一 Telemetry repository 的模块归属与包命名，避免“core_network 包名却在 feature 模块” | G-F0012 | :player_component | PLAYER-T004 |
 | G-T0060 | Done | AI（Codex） | 统一 prebuilt AAR wrapper 的 Gradle 封装方式，减少脚本重复与漂移 | G-F0064 | :repository:danmaku | REPO_DANMAKU-T002 |
 | G-T0061 | Done | AI（Codex） | 统一异常处理与脱敏：移除 `printStackTrace()`，统一到 `LogFacade`/`ErrorReportHelper` 并建立敏感字段脱敏规则 | G-F0043 | :core_storage_component | CORE_STORAGE-T004 |
-| G-T0062 | Draft | 待分配（Player/Storage/Network） | 统一本地代理能力：抽取通用 Proxy 服务（headers/range/tls 策略一致），减少 `HttpPlayServer`/`VlcProxyServer` 逻辑重复 | G-F0055 | :core_storage_component | CORE_STORAGE-T005 |
+| G-T0062 | Done | AI（Codex） | 统一本地代理能力：抽取通用 Proxy 服务（headers/range/tls 策略一致），减少 `HttpPlayServer`/`VlcProxyServer` 逻辑重复 | G-F0055 | :core_storage_component,:player_component | CORE_STORAGE-T005,PLAYER-T003 |
 | G-T0063 | Done | AI（Codex） | 若继续使用 PanelSwitchHelper：补齐生命周期释放/资源回收，避免潜在泄漏 | G-F0048 | :repository:panel_switch | REPO_PANEL_SWITCH-T003 |
 | G-T0064 | Done | AI（Codex） | 迁移存储凭证到安全存储：DB 中不再保存明文 `password/remoteSecret`（改为引用/加密存储） | G-F0027 | :core_storage_component | CORE_STORAGE-T003 |
 | G-T0065 | Done | AI（Codex） | 重命名自定义 `Retrofit` 包装类（或对 `retrofit2.Retrofit` 使用别名 import），降低阅读歧义 | G-F0065 | :core_network_component | CORE_NETWORK-T006 |
