@@ -1,7 +1,6 @@
 package com.xyoye.common_component.storage.impl
 
 import android.net.Uri
-import com.xunlei.downloadlib.parameter.TorrentFileInfo
 import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.storage.AbstractStorage
 import com.xyoye.common_component.storage.file.StorageFile
@@ -10,6 +9,7 @@ import com.xyoye.common_component.storage.file.helper.TorrentBean
 import com.xyoye.common_component.storage.file.impl.TorrentStorageFile
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.thunder.ThunderManager
+import com.xyoye.common_component.utils.thunder.model.ThunderTorrentFileInfo
 import com.xyoye.data_component.bean.LocalDanmuBean
 import com.xyoye.data_component.entity.MediaLibraryEntity
 import com.xyoye.data_component.entity.PlayHistoryEntity
@@ -46,7 +46,7 @@ class TorrentStorage(
                 )
                 return emptyList()
             }
-            if (torrent.mSubFileInfo.isNullOrEmpty()) {
+            if (torrent.subFileInfo.isEmpty()) {
                 ErrorReportHelper.postException(
                     "Torrent file has no sub files",
                     "TorrentStorage",
@@ -54,7 +54,7 @@ class TorrentStorage(
                 )
                 return emptyList()
             }
-            torrent.mSubFileInfo.map {
+            torrent.subFileInfo.map {
                 TorrentStorageFile(this, it)
             }
         } catch (e: Exception) {
@@ -72,10 +72,7 @@ class TorrentStorage(
         try {
             TorrentStorageFile(
                 this,
-                TorrentFileInfo().apply {
-                    mFileIndex = -1
-                    mSubPath = library.url
-                },
+                ThunderTorrentFileInfo.createRoot(library.url),
             )
         } catch (e: Exception) {
             ErrorReportHelper.postCatchedExceptionWithContext(
@@ -106,8 +103,8 @@ class TorrentStorage(
                 )
 
             val fileInfo =
-                torrent.mSubFileInfo?.find {
-                    it.mFileIndex == history.torrentIndex
+                torrent.subFileInfo.find {
+                    it.fileIndex == history.torrentIndex
                 } ?: run {
                     val sanitizedTorrentPath = SensitiveDataSanitizer.sanitizePath(torrentPath)
                     ErrorReportHelper.postException(
@@ -146,7 +143,7 @@ class TorrentStorage(
                         )
                         return null
                     }
-            val fileIndex = (file as TorrentStorageFile).getRealFile().mFileIndex
+            val fileIndex = (file as TorrentStorageFile).getFileInfo().fileIndex
             if (fileIndex == -1) {
                 ErrorReportHelper.postException(
                     "Invalid file index for play URL creation",
@@ -191,14 +188,14 @@ class TorrentStorage(
 
     private suspend fun getTorrentFormFile(file: StorageFile): TorrentBean? {
         return try {
-            val directoryInfo = (file as TorrentStorageFile).getRealFile()
-            val torrentPath = torrentPath(directoryInfo.mSubPath)
+            val directoryInfo = (file as TorrentStorageFile).getFileInfo()
+            val torrentPath = torrentPath(directoryInfo.subPath)
             if (torrentPath.isNullOrEmpty()) {
                 ErrorReportHelper.postException(
                     "Failed to get torrent path",
                     "TorrentStorage",
                     RuntimeException(
-                        "torrentPath returned null for path: ${SensitiveDataSanitizer.sanitizeUrl(directoryInfo.mSubPath)}",
+                        "torrentPath returned null for path: ${SensitiveDataSanitizer.sanitizeUrl(directoryInfo.subPath)}",
                     ),
                 )
                 return null

@@ -12,8 +12,13 @@ import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.storage.file.helper.TorrentBean
 import com.xyoye.common_component.utils.ErrorReportHelper
+import com.xyoye.common_component.utils.JsonHelper
 import com.xyoye.common_component.utils.MagnetUtils
 import com.xyoye.common_component.utils.PathHelper
+import com.xyoye.common_component.utils.thunder.model.ThunderTaskInfo
+import com.xyoye.common_component.utils.thunder.model.ThunderTaskReadableInfo
+import com.xyoye.common_component.utils.thunder.model.ThunderTorrentFileInfo
+import com.xyoye.common_component.utils.thunder.model.ThunderTorrentInfo
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.atomic.AtomicInteger
@@ -57,6 +62,29 @@ class ThunderManager private constructor() {
 
         // 种子文件下载超时时间
         private const val TIME_OUT_DOWNLOAD_TORRENT = 5 * 1000L
+
+        private val TASK_STATUS_MSG =
+            mapOf(
+                Pair(XLConstant.XLTaskStatus.TASK_FAILED, "Failed"),
+                Pair(XLConstant.XLTaskStatus.TASK_IDLE, "Idle"),
+                Pair(XLConstant.XLTaskStatus.TASK_RUNNING, "Running"),
+                Pair(XLConstant.XLTaskStatus.TASK_STOPPED, "Stopped"),
+                Pair(XLConstant.XLTaskStatus.TASK_SUCCESS, "Success"),
+            )
+
+        private val TASK_ERROR_MSG by lazy {
+            try {
+                JsonHelper.parseJsonMap(ErrorCodeToMsg.ErrCodeToMsg)
+            } catch (e: Exception) {
+                ErrorReportHelper.postCatchedExceptionWithContext(
+                    e,
+                    "ThunderManager",
+                    "TASK_ERROR_MSG",
+                    "解析迅雷错误码映射失败",
+                )
+                emptyMap()
+            }
+        }
 
         fun getInstance() = Holder.instance
 
@@ -175,6 +203,18 @@ class ThunderManager private constructor() {
             val combined = if (fileIndex >= 0) "$normalized#$fileIndex" else normalized
             return combined.toMd5String()
         }
+
+        fun readTaskInfo(taskInfo: ThunderTaskInfo): ThunderTaskReadableInfo {
+            val statusText = TASK_STATUS_MSG[taskInfo.taskStatus] ?: "Unknown_${taskInfo.taskStatus}"
+            val errorCode = taskInfo.errorCode
+            val errorText = TASK_ERROR_MSG[errorCode.toString()]?.trim().orEmpty()
+            return ThunderTaskReadableInfo(
+                statusCode = taskInfo.taskStatus,
+                statusText = statusText,
+                errorCode = errorCode,
+                errorText = errorText,
+            )
+        }
     }
 
     object Holder {
@@ -235,7 +275,7 @@ class ThunderManager private constructor() {
     /**
      * 生成视频播放地址
      */
-    suspend fun generatePlayUrl(
+    internal suspend fun generatePlayUrl(
         torrent: TorrentBean,
         index: Int
     ): String? {
@@ -263,7 +303,7 @@ class ThunderManager private constructor() {
             // 保存任务ID
             mTaskList[torrent.torrentPath] = taskId
 
-            val fileName = torrent.mSubFileInfo.find { it.mFileIndex == index }?.mFileName ?: "temp.mp4"
+            val fileName = torrent.subFileInfo.find { it.fileIndex == index }?.fileName ?: "temp.mp4"
             val filePath = "${cacheDirectory.absolutePath}/$fileName"
             val playUrl = XLTaskLocalUrl()
             XLDownloadManager.getInstance().getLocalUrl(filePath, playUrl)
@@ -408,9 +448,9 @@ class ThunderManager private constructor() {
             }
 
         val deselectedIndexes =
-            torrent.mSubFileInfo
-                .filter { it.mFileIndex != index }
-                .map { it.mFileIndex }
+            torrent.subFileInfo
+                .filter { it.fileIndex != index }
+                .map { it.fileIndex }
                 .toIntArray()
 
         val selectedIndexSet =
@@ -515,12 +555,29 @@ class ThunderManager private constructor() {
     /**
      * 获取种子文件信息
      */
-    fun getTaskInfo(torrentPath: String): TorrentInfo =
+    fun getTaskInfo(torrentPath: String): ThunderTorrentInfo =
         try {
             if (!ensureInitialized()) {
                 throw IllegalStateException(ensureInitializedOrErrorMessage() ?: "Thunder is not initialized")
             }
-            XLTaskHelper.getInstance().getTorrentInfo(torrentPath)
+            val torrentInfo = XLTaskHelper.getInstance().getTorrentInfo(torrentPath)
+            ThunderTorrentInfo(
+                fileCount = torrentInfo.mFileCount,
+                infoHash = torrentInfo.mInfoHash,
+                isMultiFiles = torrentInfo.mIsMultiFiles,
+                multiFileBaseFolder = torrentInfo.mMultiFileBaseFolder,
+                subFileInfo =
+                    torrentInfo.mSubFileInfo
+                        ?.map {
+                            ThunderTorrentFileInfo(
+                                fileIndex = it.mFileIndex,
+                                fileName = it.mFileName,
+                                fileSize = it.mFileSize,
+                                subPath = it.mSubPath,
+                            )
+                        }
+                        .orEmpty(),
+            )
         } catch (e: Exception) {
             ErrorReportHelper.postCatchedExceptionWithContext(
                 e,
@@ -528,19 +585,22 @@ class ThunderManager private constructor() {
                 "getTaskInfo",
                 "种子路径: $torrentPath",
             )
-            // 返回默认的空TorrentInfo或重新抛出异常
             throw e
         }
 
     /**
      * 获取下载任务信息
      */
-    fun getTaskInfo(taskId: Long): XLTaskInfo =
+    fun getTaskInfo(taskId: Long): ThunderTaskInfo =
         try {
             if (!ensureInitialized()) {
                 throw IllegalStateException(ensureInitializedOrErrorMessage() ?: "Thunder is not initialized")
             }
-            XLTaskHelper.getInstance().getTaskInfo(taskId)
+            val taskInfo = XLTaskHelper.getInstance().getTaskInfo(taskId)
+            ThunderTaskInfo(
+                taskStatus = taskInfo.mTaskStatus,
+                errorCode = taskInfo.mErrorCode,
+            )
         } catch (e: Exception) {
             ErrorReportHelper.postCatchedExceptionWithContext(
                 e,
@@ -548,7 +608,6 @@ class ThunderManager private constructor() {
                 "getTaskInfo",
                 "任务ID: $taskId",
             )
-            // 返回默认的空XLTaskInfo或重新抛出异常
             throw e
         }
 

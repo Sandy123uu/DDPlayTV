@@ -45,7 +45,7 @@
 | G-T0029 | Done | AI（Codex） | 以显式结果/能力开关替代 “禁用功能即 throw”，降低误调用崩溃风险 | G-F0040 | :app | APP-T002 |
 | G-T0030 | Done | AI（Codex） | 定位并修复 DiffUtil 异常根因：约束数据模型或改造 diff 机制，降低回退刷新与上报噪音 | G-F0036 | :core_ui_component | CORE_UI-T002 |
 | G-T0031 | Done | AI（Codex） | 对“加密失败保存明文”制定策略：默认安全优先（禁用/提示/二次确认），并提供可追踪的迁移/清理机制 | G-F0026 | :core_system_component | CORE_SYSTEM-T005 |
-| G-T0032 | Draft | 待分配（Storage） | 封装/隔离迅雷 SDK 类型，避免第三方类型在上层模块显式出现 | G-F0046 | :repository:thunder | REPO_THUNDER-T002 |
+| G-T0032 | Done | AI（Codex） | 封装/隔离迅雷 SDK 类型，避免第三方类型在上层模块显式出现 | G-F0046 | :repository:thunder | REPO_THUNDER-T002 |
 | G-T0033 | Done | AI（Codex） | 封装状态栏/沉浸式能力：上层不再直接 import `ImmersionBar`，并尽量减少 `api(...)` 依赖透传 | G-F0035 | :core_ui_component | CORE_UI-T001 |
 | G-T0034 | Draft | 待分配（Bilibili/Feature） | 将 B 站弹幕解析/下载编排从 ViewModel 下沉到 repository/usecase，降低 UI 耦合 | G-F0037 | :local_component | LOCAL-T004 |
 | G-T0035 | Draft | 待分配（Infra/Network） | 将 `Retrofit` 单例改为可注入 Provider/Factory，提升可测试性并降低全局静态耦合 | G-F0039 | :core_network_component | CORE_NETWORK-T004 |
