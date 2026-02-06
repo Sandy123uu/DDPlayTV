@@ -42,7 +42,7 @@
 |---|---|---|---|---|---|---|
 | G-T0027 | Done | AI（Codex） | 为 Cookie/Token 引入加密存储：落地统一的密钥管理与数据迁移，避免明文落盘 | G-F0028 | :bilibili_component | BILIBILI-T002 |
 | G-T0028 | Done | AI（Codex） | 为媒体库远程凭据建立统一的安全存储策略，避免 DB 明文落盘 | G-F0029 | :data_component | DATA-T002 |
-| G-T0029 | Draft | 待分配（App） | 以显式结果/能力开关替代 “禁用功能即 throw”，降低误调用崩溃风险 | G-F0040 | :app | APP-T002 |
+| G-T0029 | Done | AI（Codex） | 以显式结果/能力开关替代 “禁用功能即 throw”，降低误调用崩溃风险 | G-F0040 | :app | APP-T002 |
 | G-T0030 | Draft | 待分配（UI） | 定位并修复 DiffUtil 异常根因：约束数据模型或改造 diff 机制，降低回退刷新与上报噪音 | G-F0036 | :core_ui_component | CORE_UI-T002 |
 | G-T0031 | Draft | 待分配（Runtime/User） | 对“加密失败保存明文”制定策略：默认安全优先（禁用/提示/二次确认），并提供可追踪的迁移/清理机制 | G-F0026 | :core_system_component | CORE_SYSTEM-T005 |
 | G-T0032 | Draft | 待分配（Storage） | 封装/隔离迅雷 SDK 类型，避免第三方类型在上层模块显式出现 | G-F0046 | :repository:thunder | REPO_THUNDER-T002 |
@@ -59,7 +59,7 @@
 | G-T0043 | Draft | 待分配（UI） | 抽取可复用的 PreferenceDataStore/映射抽象，减少 key→config 样板与 drift | G-F0063 | :user_component | USER-T001 |
 | G-T0044 | Draft | 待分配（App/UI） | 抽取壳层 Fragment 装载/切换逻辑，减少重复实现与差异漂移 | G-F0050 | :app | APP-T003 |
 | G-T0045 | Draft | 待分配（Storage/Infra） | 抽取投屏协议与 server 公共能力到 core 层，减少 NanoHTTPD/UDP 重复与策略漂移 | G-F0053 | :storage_component | STORAGE-T003 |
-| G-T0046 | Draft | 待分配（Infra/Network） | 抽取统一 OkHttpClientFactory：集中维护 timeout/拦截器链/安全策略，减少跨模块漂移 | G-F0049 | :core_network_component | CORE_NETWORK-T005 |
+| G-T0046 | Done | AI（Codex） | 抽取统一 OkHttpClientFactory：集中维护 timeout/拦截器链/安全策略，减少跨模块漂移 | G-F0049 | :core_network_component | CORE_NETWORK-T005 |
 | G-T0047 | Done | AI（Codex） | 抽取统一的“Result 失败处理 + 上下文上报 + toast”助手，减少 ViewModel 样板与口径漂移 | G-F0058 | :anime_component | ANIME-T001 |
 | G-T0048 | Draft | 待分配（Bilibili） | 拆分 `BilibiliRepository`：按子域抽取组件并引入单测/契约化接口，提高可维护性 | G-F0038 | :bilibili_component | BILIBILI-T003 |
 | G-T0049 | Draft | 待分配（DB/Feature） | 收敛 MediaLibrary/PlayHistory 的写入口径：提供 repository/usecase 并替换 feature 直连 DAO | G-F0031 | :storage_component | STORAGE-T004 |

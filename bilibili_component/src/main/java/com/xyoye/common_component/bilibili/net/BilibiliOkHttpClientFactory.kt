@@ -4,24 +4,26 @@ import com.xyoye.common_component.bilibili.auth.BilibiliCookieJarStore
 import com.xyoye.common_component.network.helper.DecompressInterceptor
 import com.xyoye.common_component.network.helper.DynamicBaseUrlInterceptor
 import com.xyoye.common_component.network.helper.LoggerInterceptor
+import com.xyoye.common_component.network.helper.OkHttpClientConfig
+import com.xyoye.common_component.network.helper.OkHttpClientFactory
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import java.util.concurrent.TimeUnit
 
 object BilibiliOkHttpClientFactory {
     fun create(storageKey: String): OkHttpClient =
-        OkHttpClient
-            .Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(10, TimeUnit.SECONDS)
-            .callTimeout(30, TimeUnit.SECONDS)
-            .cookieJar(BilibiliCookieJarStore(storageKey))
-            .addInterceptor(BilibiliHeaderInterceptor())
-            .addInterceptor(DecompressInterceptor())
-            .addInterceptor(DynamicBaseUrlInterceptor())
-            .addInterceptor(LoggerInterceptor().retrofit())
-            .build()
+        OkHttpClientFactory.create(
+            OkHttpClientConfig(
+                callTimeoutSeconds = 30,
+                cookieJar = BilibiliCookieJarStore(storageKey),
+                interceptors =
+                    listOf(
+                        BilibiliHeaderInterceptor(),
+                        DecompressInterceptor(),
+                        DynamicBaseUrlInterceptor(),
+                        LoggerInterceptor().retrofit(),
+                    ),
+            ),
+        )
 
     private class BilibiliHeaderInterceptor : Interceptor {
         override fun intercept(chain: Interceptor.Chain): okhttp3.Response {

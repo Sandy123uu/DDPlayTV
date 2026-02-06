@@ -9,6 +9,8 @@ import com.xyoye.common_component.network.helper.DeveloperCertificateInterceptor
 import com.xyoye.common_component.network.helper.DynamicBaseUrlInterceptor
 import com.xyoye.common_component.network.helper.ForbiddenErrorInterceptor
 import com.xyoye.common_component.network.helper.LoggerInterceptor
+import com.xyoye.common_component.network.helper.OkHttpClientConfig
+import com.xyoye.common_component.network.helper.OkHttpClientFactory
 import com.xyoye.common_component.network.helper.SignatureInterceptor
 import com.xyoye.common_component.network.service.AlistService
 import com.xyoye.common_component.network.service.BaiduPanService
@@ -23,7 +25,6 @@ import com.xyoye.common_component.utils.JsonHelper
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import java.util.concurrent.TimeUnit
 
 /**
  * Created by xyoye on 2020/4/14.
@@ -60,33 +61,35 @@ class RetrofitManager private constructor() {
     }
 
     private val danDanClient: OkHttpClient by lazy {
-        OkHttpClient
-            .Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(10, TimeUnit.SECONDS)
-            .addInterceptor(SignatureInterceptor())
-            .addInterceptor(DeveloperCertificateInterceptor())
-            .addInterceptor(AgentInterceptor())
-            .addInterceptor(AuthInterceptor())
-            .addInterceptor(ForbiddenErrorInterceptor())
-            .addInterceptor(DecompressInterceptor())
-            .addInterceptor(BackupDomainInterceptor())
-            .addInterceptor(LoggerInterceptor().retrofit())
-            .build()
+        OkHttpClientFactory.create(
+            OkHttpClientConfig(
+                interceptors =
+                    listOf(
+                        SignatureInterceptor(),
+                        DeveloperCertificateInterceptor(),
+                        AgentInterceptor(),
+                        AuthInterceptor(),
+                        ForbiddenErrorInterceptor(),
+                        DecompressInterceptor(),
+                        BackupDomainInterceptor(),
+                        LoggerInterceptor().retrofit(),
+                    ),
+            ),
+        )
     }
 
     private val commonClient: OkHttpClient by lazy {
-        OkHttpClient
-            .Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(10, TimeUnit.SECONDS)
-            .addInterceptor(AgentInterceptor())
-            .addInterceptor(DecompressInterceptor())
-            .addInterceptor(DynamicBaseUrlInterceptor())
-            .addInterceptor(LoggerInterceptor().retrofit())
-            .build()
+        OkHttpClientFactory.create(
+            OkHttpClientConfig(
+                interceptors =
+                    listOf(
+                        AgentInterceptor(),
+                        DecompressInterceptor(),
+                        DynamicBaseUrlInterceptor(),
+                        LoggerInterceptor().retrofit(),
+                    ),
+            ),
+        )
     }
 
     private val moshiConverterFactory = MoshiConverterFactory.create(JsonHelper.MO_SHI)

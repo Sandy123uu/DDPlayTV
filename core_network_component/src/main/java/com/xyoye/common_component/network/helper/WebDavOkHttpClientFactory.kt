@@ -30,18 +30,20 @@ object WebDavOkHttpClientFactory {
                 override fun loadForRequest(url: HttpUrl): List<Cookie> = store[url.host] ?: emptyList()
             }
 
-        val builder =
-            OkHttpClient
-                .Builder()
-                .cookieJar(cookieStore)
-                .addNetworkInterceptor(RedirectAuthorizationInterceptor())
+        val networkInterceptors =
+            buildList {
+                add(RedirectAuthorizationInterceptor())
+                if (BuildConfig.DEBUG) {
+                    add(LoggerInterceptor().webDav())
+                }
+            }
 
-        OkHttpTlsConfigurer.apply(builder, tlsPolicy)
-
-        if (BuildConfig.DEBUG) {
-            builder.addNetworkInterceptor(LoggerInterceptor().webDav())
-        }
-
-        return builder.build()
+        return OkHttpClientFactory.create(
+            OkHttpClientConfig(
+                tlsPolicy = tlsPolicy,
+                cookieJar = cookieStore,
+                networkInterceptors = networkInterceptors,
+            ),
+        )
     }
 }

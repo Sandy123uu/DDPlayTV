@@ -36,7 +36,7 @@
 
 - [x] 2.1 关闭 `G-T0027`：Cookie/Token 加密存储（密钥管理 + 迁移）
 - [x] 2.2 关闭 `G-T0028`：媒体库远程凭据安全存储策略（避免 DB 明文）
-- [ ] 2.3 关闭 `G-T0029`：以显式结果/能力开关替代“禁用功能即 throw”
+- [x] 2.3 关闭 `G-T0029`：以显式结果/能力开关替代“禁用功能即 throw”
 - [ ] 2.4 关闭 `G-T0030`：定位并修复 DiffUtil 异常根因
 - [ ] 2.5 关闭 `G-T0031`：制定“加密失败保存明文”策略与迁移/清理机制
 - [ ] 2.6 关闭 `G-T0032`：封装/隔离迅雷 SDK 类型（避免上层显式依赖）
@@ -53,7 +53,7 @@
 - [ ] 2.17 关闭 `G-T0043`：抽取 PreferenceDataStore/映射抽象（减少 drift）
 - [ ] 2.18 关闭 `G-T0044`：抽取壳层 Fragment 装载/切换逻辑（减少重复实现）
 - [ ] 2.19 关闭 `G-T0045`：抽取投屏协议与 server 公共能力到 core 层
-- [ ] 2.20 关闭 `G-T0046`：抽取统一 OkHttpClientFactory（timeout/拦截器/安全策略集中）
+- [x] 2.20 关闭 `G-T0046`：抽取统一 OkHttpClientFactory（timeout/拦截器/安全策略集中）
 - [x] 2.21 关闭 `G-T0047`：抽取统一“Result 失败处理 + 上报 + toast”助手
 - [ ] 2.22 关闭 `G-T0048`：拆分 `BilibiliRepository`（子域组件 + 单测 + facade）
 - [ ] 2.23 关闭 `G-T0049`：收敛 MediaLibrary/PlayHistory 写入口径（替换 feature 直连 DAO）

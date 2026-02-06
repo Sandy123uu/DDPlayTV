@@ -4,7 +4,6 @@ import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
-import java.util.concurrent.TimeUnit
 
 /**
  * Local proxy (NanoHTTPD) use-case OkHttpClient factory.
@@ -31,17 +30,12 @@ object ProxyOkHttpClientFactory {
                 override fun loadForRequest(url: HttpUrl): List<Cookie> = store[url.host] ?: emptyList()
             }
 
-        val builder =
-            OkHttpClient
-                .Builder()
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(10, TimeUnit.SECONDS)
-                .cookieJar(cookieStore)
-                .addNetworkInterceptor(RedirectAuthorizationInterceptor())
-
-        OkHttpTlsConfigurer.apply(builder, tlsPolicy)
-
-        return builder.build()
+        return OkHttpClientFactory.create(
+            OkHttpClientConfig(
+                tlsPolicy = tlsPolicy,
+                cookieJar = cookieStore,
+                networkInterceptors = listOf(RedirectAuthorizationInterceptor()),
+            ),
+        )
     }
 }
