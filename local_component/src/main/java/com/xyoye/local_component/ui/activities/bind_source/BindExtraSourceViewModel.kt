@@ -5,7 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.extension.collectable
 import com.xyoye.common_component.extension.toastError
 import com.xyoye.common_component.network.repository.OtherRepository
@@ -39,7 +39,7 @@ class BindExtraSourceViewModel : BaseViewModel() {
     private lateinit var storageFile: StorageFile
 
     val storageFileFlow: StateFlow<StorageFile> by lazy {
-        DatabaseManager.instance
+        DatabaseProvider.instance
             .getPlayHistoryDao()
             .getPlayHistoryFlow(
                 storageFile.uniqueKey(),

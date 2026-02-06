@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.bilibili.BilibiliPlaybackPreferencesStore
 import com.xyoye.common_component.bilibili.auth.BilibiliCookieJarStore
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.storage.StorageFactory
 import com.xyoye.common_component.storage.cloud115.auth.Cloud115AuthStore
@@ -102,7 +102,7 @@ class StoragePlusViewModel : BaseViewModel() {
             }
 
             val duplicateLibrary =
-                DatabaseManager.instance
+                DatabaseProvider.instance
                     .getMediaLibraryDao()
                     .getByUrl(upsertLibrary.url, upsertLibrary.mediaType)
             if (duplicateLibrary != null && duplicateLibrary.id != oldLibraryId) {
@@ -118,7 +118,7 @@ class StoragePlusViewModel : BaseViewModel() {
             upsertLibrary.remoteSecret = null
 
             upsertLibrary.id = oldLibraryId ?: upsertLibrary.id
-            val dao = DatabaseManager.instance.getMediaLibraryDao()
+            val dao = DatabaseProvider.instance.getMediaLibraryDao()
             dao.insert(upsertLibrary)
             val savedLibrary =
                 dao.getByUrl(upsertLibrary.url, upsertLibrary.mediaType)

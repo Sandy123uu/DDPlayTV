@@ -4,7 +4,7 @@ import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import com.xyoye.common_component.config.PlayerActions
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanAuthStore
 import com.xyoye.common_component.storage.credential.MediaLibraryCredentialStore
 import com.xyoye.common_component.weight.BottomActionDialog
@@ -121,7 +121,7 @@ class BaiduPanStorageEditDialog(
                     dialog.dismiss()
                     activity.lifecycleScope.launch {
                         withContext(Dispatchers.IO) {
-                            val dao = DatabaseManager.instance.getMediaLibraryDao()
+                            val dao = DatabaseProvider.instance.getMediaLibraryDao()
                             val storedLibrary = dao.getById(libraryId)
                             val storedKey = storedLibrary?.let { BaiduPanAuthStore.storageKey(it) }
                             val currentKey = BaiduPanAuthStore.storageKey(editLibrary)

@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.config.SubtitleConfig
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.extension.toastError
 import com.xyoye.common_component.network.repository.ResourceRepository
 import com.xyoye.common_component.storage.file.StorageFile
@@ -239,13 +239,13 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
             try {
                 val storageId = storageFile.storage.library.id
                 val history =
-                    DatabaseManager.instance
+                    DatabaseProvider.instance
                         .getPlayHistoryDao()
                         .getPlayHistory(storageFile.uniqueKey(), storageId)
 
                 if (history != null) {
                     history.subtitlePath = filePath
-                    DatabaseManager.instance.getPlayHistoryDao().insert(history)
+                    DatabaseProvider.instance.getPlayHistoryDao().insert(history)
                     return@launch
                 }
 
@@ -259,7 +259,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                         subtitlePath = filePath,
                         storageId = storageId,
                     )
-                DatabaseManager.instance.getPlayHistoryDao().insert(newHistory)
+                DatabaseProvider.instance.getPlayHistoryDao().insert(newHistory)
             } catch (e: Exception) {
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,

@@ -6,7 +6,7 @@ import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.extension.setTextColorRes
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
@@ -176,7 +176,7 @@ class Open115StorageEditDialog(
         val currentId = activity.editData?.id ?: editLibrary.id
         val duplicate =
             withContext(Dispatchers.IO) {
-                DatabaseManager.instance.getMediaLibraryDao().getByUrl(url, MediaType.OPEN_115_STORAGE)
+                DatabaseProvider.instance.getMediaLibraryDao().getByUrl(url, MediaType.OPEN_115_STORAGE)
             }
         if (duplicate != null && duplicate.id != currentId) {
             LogFacade.w(
@@ -273,7 +273,7 @@ class Open115StorageEditDialog(
                     dialog.dismiss()
                     activity.lifecycleScope.launch {
                         withContext(Dispatchers.IO) {
-                            val dao = DatabaseManager.instance.getMediaLibraryDao()
+                            val dao = DatabaseProvider.instance.getMediaLibraryDao()
                             val storedLibrary = dao.getById(libraryId)
                             val storedKey = storedLibrary?.let { Open115AuthStore.storageKey(it) }
                             val currentKey = Open115AuthStore.storageKey(editLibrary)

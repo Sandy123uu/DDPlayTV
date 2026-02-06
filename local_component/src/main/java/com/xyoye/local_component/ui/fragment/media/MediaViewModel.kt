@@ -4,7 +4,7 @@ import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.bilibili.BilibiliPlaybackPreferencesStore
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.extension.toastError
 import com.xyoye.common_component.network.repository.ScreencastRepository
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanAuthStore
@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 
 class MediaViewModel : BaseViewModel() {
     val mediaLibWithStatusLiveData =
-        DatabaseManager.instance
+        DatabaseProvider.instance
             .getMediaLibraryDao()
             .getAll()
             .map { libraries ->
@@ -41,7 +41,7 @@ class MediaViewModel : BaseViewModel() {
         viewModelScope.launch(context = Dispatchers.IO) {
             try {
                 // 播放历史首条记录
-                DatabaseManager.instance
+                DatabaseProvider.instance
                     .getPlayHistoryDao()
                     .gitLastPlay(
                         MediaType.LOCAL_STORAGE,
@@ -55,16 +55,16 @@ class MediaViewModel : BaseViewModel() {
                     }
 
                 // 磁链播放首条记录
-                DatabaseManager.instance.getPlayHistoryDao().gitLastPlay(MediaType.MAGNET_LINK)?.apply {
+                DatabaseProvider.instance.getPlayHistoryDao().gitLastPlay(MediaType.MAGNET_LINK)?.apply {
                     MediaLibraryEntity.TORRENT.describe = getFileName(torrentPath)
                 }
 
                 // 串流播放首条记录
-                DatabaseManager.instance.getPlayHistoryDao().gitLastPlay(MediaType.STREAM_LINK)?.apply {
+                DatabaseProvider.instance.getPlayHistoryDao().gitLastPlay(MediaType.STREAM_LINK)?.apply {
                     MediaLibraryEntity.STREAM.describe = url
                 }
 
-                DatabaseManager.instance
+                DatabaseProvider.instance
                     .getMediaLibraryDao()
                     .insert(
                         MediaLibraryEntity.LOCAL,
@@ -101,7 +101,7 @@ class MediaViewModel : BaseViewModel() {
                 if (data.id > 0) {
                     MediaLibraryCredentialStore.clear(data.id)
                 }
-                DatabaseManager.instance
+                DatabaseProvider.instance
                     .getMediaLibraryDao()
                     .delete(data.url, data.mediaType)
             } catch (e: Exception) {

@@ -1,7 +1,7 @@
 package com.xyoye.common_component.storage.impl
 
 import android.net.Uri
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.network.repository.ResourceRepository
 import com.xyoye.common_component.network.repository.ScreencastRepository
 import com.xyoye.common_component.storage.AbstractStorage
@@ -172,7 +172,7 @@ class ScreencastStorage(
      */
     private suspend fun findPlayHistory(videoData: ScreencastVideoData): PlayHistoryEntity? {
         val playHistory =
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getPlayHistoryDao()
                 .getPlayHistory(videoData.uniqueKey, library.id)
 
@@ -195,7 +195,7 @@ class ScreencastStorage(
                 videoPosition = videoData.position,
                 videoDuration = videoData.duration,
             ).also {
-                DatabaseManager.instance.getPlayHistoryDao().insert(it)
+                DatabaseProvider.instance.getPlayHistoryDao().insert(it)
             }
     }
 }

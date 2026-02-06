@@ -100,7 +100,7 @@ class StorageFileViewModel : BaseViewModel() {
 //    fun locateLastPlay(storage: Storage) {
 //        viewModelScope.launch(Dispatchers.IO) {
 //            try {
-//                val history = DatabaseManager.instance.getPlayHistoryDao()
+//                val history = DatabaseProvider.instance.getPlayHistoryDao()
 //                    .gitStorageLastPlay(storage.library.id)
 //                if (history == null) {
 //                    ToastCenter.showError("当前媒体库暂无播放记录")

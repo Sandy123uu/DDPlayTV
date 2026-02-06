@@ -4,7 +4,7 @@ import android.content.Context
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.xyoye.common_component.config.AppConfig
 import com.xyoye.common_component.config.RouteTable
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.network.repository.OtherRepository
 import com.xyoye.common_component.services.CloudDanmuBlockService
 import com.xyoye.data_component.entity.DanmuBlockEntity
@@ -93,7 +93,7 @@ class CloudDanmuBlockServiceImpl : CloudDanmuBlockService {
                     true,
                 )
             }
-        val dao = DatabaseManager.instance.getDanmuBlockDao()
+        val dao = DatabaseProvider.instance.getDanmuBlockDao()
         dao.deleteByType(true)
         dao.insert(*blockEntities.toTypedArray())
     }

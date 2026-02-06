@@ -1,7 +1,7 @@
 package com.xyoye.common_component.database.migration
 
 import com.xyoye.common_component.config.DatabaseConfig
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.utils.HashUtils
 import com.xyoye.data_component.entity.PlayHistoryEntity
 import com.xyoye.data_component.enums.MediaType
@@ -30,7 +30,7 @@ object ManualMigration {
         }
 
         withContext(Dispatchers.IO) {
-            val videoList = DatabaseManager.instance.getVideoDao().getAll()
+            val videoList = DatabaseProvider.instance.getVideoDao().getAll()
             val historyList =
                 videoList.mapNotNull {
                     if (it.danmuPath.isNullOrEmpty() && it.subtitlePath.isNullOrEmpty()) {
@@ -50,7 +50,7 @@ object ManualMigration {
                 }
 
             if (historyList.isNotEmpty()) {
-                DatabaseManager.instance.getPlayHistoryDao().insert(*historyList.toTypedArray())
+                DatabaseProvider.instance.getPlayHistoryDao().insert(*historyList.toTypedArray())
             }
             DatabaseConfig.putIsMigrated_6_7(true)
         }

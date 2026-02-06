@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.bilibili.error.BilibiliException
 import com.xyoye.common_component.config.AppConfig
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.storage.AuthStorage
 import com.xyoye.common_component.storage.PagedStorage
 import com.xyoye.common_component.storage.Storage
@@ -242,7 +242,7 @@ class StorageFileFragmentViewModel : BaseViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             val playHistory = getStorageFileHistory(file)
             playHistory.audioPath = audioPath
-            DatabaseManager.instance.getPlayHistoryDao().insert(playHistory)
+            DatabaseProvider.instance.getPlayHistoryDao().insert(playHistory)
 
             // 更新文件列表的播放历史
             updateHistory()
@@ -259,7 +259,7 @@ class StorageFileFragmentViewModel : BaseViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             when (resource) {
                 TrackType.DANMU -> {
-                    DatabaseManager.instance.getPlayHistoryDao().updateDanmu(
+                    DatabaseProvider.instance.getPlayHistoryDao().updateDanmu(
                         file.uniqueKey(),
                         storage.library.id,
                         null,
@@ -268,7 +268,7 @@ class StorageFileFragmentViewModel : BaseViewModel() {
                 }
 
                 TrackType.SUBTITLE -> {
-                    DatabaseManager.instance.getPlayHistoryDao().updateSubtitle(
+                    DatabaseProvider.instance.getPlayHistoryDao().updateSubtitle(
                         file.uniqueKey(),
                         storage.library.id,
                         null,
@@ -276,7 +276,7 @@ class StorageFileFragmentViewModel : BaseViewModel() {
                 }
 
                 TrackType.AUDIO -> {
-                    DatabaseManager.instance.getPlayHistoryDao().updateAudio(
+                    DatabaseProvider.instance.getPlayHistoryDao().updateAudio(
                         file.uniqueKey(),
                         file.storage.library.id,
                         null,
@@ -398,20 +398,20 @@ class StorageFileFragmentViewModel : BaseViewModel() {
                 .takeIf { storage.library.mediaType == MediaType.BILIBILI_STORAGE }
 
         var history: PlayHistoryEntity? =
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getPlayHistoryDao()
                 .getPlayHistory(file.uniqueKey(), file.storage.library.id)
         if (history == null) {
             // 这是一步补救措施，数据库11版本之前，没有存储storageId字段
             // 因此为了避免弹幕等历史数据无法展示，依旧需要通过mediaType查询
             history =
-                DatabaseManager.instance
+                DatabaseProvider.instance
                     .getPlayHistoryDao()
                     .getPlayHistory(file.uniqueKey(), file.storage.library.mediaType)
             // 补充storageId字段
             if (history != null) {
                 history.storageId = file.storage.library.id
-                DatabaseManager.instance.getPlayHistoryDao().insert(history)
+                DatabaseProvider.instance.getPlayHistoryDao().insert(history)
             }
         }
         if (history != null && storageLastPlay != null) {
@@ -455,7 +455,7 @@ class StorageFileFragmentViewModel : BaseViewModel() {
                         ).also {
                             it.isLastPlay = local.isLastPlay
                         }
-                DatabaseManager.instance.getPlayHistoryDao().insert(updated)
+                DatabaseProvider.instance.getPlayHistoryDao().insert(updated)
                 history = updated
             }
         }
@@ -477,7 +477,7 @@ class StorageFileFragmentViewModel : BaseViewModel() {
      */
     private suspend fun refreshStorageLastPlay() {
         storageLastPlay =
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getPlayHistoryDao()
                 .gitStorageLastPlay(storage.library.id)
         storageLastPlay?.isLastPlay = true
@@ -518,7 +518,7 @@ class StorageFileFragmentViewModel : BaseViewModel() {
     }
 
     private suspend fun getStorageFileHistory(storageFile: StorageFile): PlayHistoryEntity =
-        DatabaseManager.instance.getPlayHistoryDao().getPlayHistory(
+        DatabaseProvider.instance.getPlayHistoryDao().getPlayHistory(
             storageFile.uniqueKey(),
             storageFile.storage.library.id,
         ) ?: PlayHistoryEntity(

@@ -1,6 +1,6 @@
 package com.xyoye.common_component.storage.credential
 
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.utils.SupervisorScope
@@ -30,7 +30,7 @@ internal object MediaLibraryCredentialMigration {
     }
 
     private suspend fun migrateLegacyCredentials() {
-        val dao = DatabaseManager.instance.getMediaLibraryDao()
+        val dao = DatabaseProvider.instance.getMediaLibraryDao()
         val libraries = dao.getAllSuspend()
         libraries.forEach { library ->
             migrateLibrary(dao = dao, library = library)

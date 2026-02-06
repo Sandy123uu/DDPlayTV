@@ -1,7 +1,7 @@
 package com.xyoye.common_component.database.repository
 
 import androidx.lifecycle.LiveData
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.data_component.bean.FolderBean
 import com.xyoye.data_component.entity.ExtendFolderEntity
 import kotlinx.coroutines.Dispatchers
@@ -9,13 +9,13 @@ import kotlinx.coroutines.withContext
 
 object ScanSettingsRepository {
     fun getAllFolderFilters(): LiveData<MutableList<FolderBean>> =
-        DatabaseManager.instance
+        DatabaseProvider.instance
             .getVideoDao()
             .getAllFolder()
 
     suspend fun getAllExtendFolders(): MutableList<ExtendFolderEntity> =
         withContext(Dispatchers.IO) {
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getExtendFolderDao()
                 .getAll()
         }
@@ -25,7 +25,7 @@ object ScanSettingsRepository {
         childCount: Int,
     ) {
         withContext(Dispatchers.IO) {
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getExtendFolderDao()
                 .insert(ExtendFolderEntity(folderPath, childCount))
         }
@@ -33,11 +33,11 @@ object ScanSettingsRepository {
 
     suspend fun removeExtendFolderAndVideos(folderPath: String) {
         withContext(Dispatchers.IO) {
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getExtendFolderDao()
                 .delete(folderPath)
 
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getVideoDao()
                 .deleteExtend()
         }
@@ -48,7 +48,7 @@ object ScanSettingsRepository {
         filter: Boolean,
     ) {
         withContext(Dispatchers.IO) {
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getVideoDao()
                 .updateFolderFilter(filter, folderPath)
         }

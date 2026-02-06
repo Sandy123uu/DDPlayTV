@@ -1,20 +1,20 @@
 package com.xyoye.common_component.database.repository
 
 import androidx.lifecycle.LiveData
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.data_component.entity.AnimeSearchHistoryEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object AnimeSearchHistoryRepository {
     fun getAll(): LiveData<MutableList<String>> =
-        DatabaseManager.instance
+        DatabaseProvider.instance
             .getAnimeSearchHistoryDao()
             .getAll()
 
     suspend fun insert(searchText: String) {
         withContext(Dispatchers.IO) {
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getAnimeSearchHistoryDao()
                 .insert(AnimeSearchHistoryEntity(searchText))
         }
@@ -22,7 +22,7 @@ object AnimeSearchHistoryRepository {
 
     suspend fun deleteByText(searchText: String) {
         withContext(Dispatchers.IO) {
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getAnimeSearchHistoryDao()
                 .deleteByText(searchText)
         }
@@ -30,7 +30,7 @@ object AnimeSearchHistoryRepository {
 
     suspend fun deleteAll() {
         withContext(Dispatchers.IO) {
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getAnimeSearchHistoryDao()
                 .deleteAll()
         }
