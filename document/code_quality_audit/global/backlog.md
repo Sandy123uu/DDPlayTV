@@ -66,7 +66,7 @@
 | G-T0050 | Done | AI（Codex） | 收敛 contract 层的运行时实现：将可变状态/副作用迁移到 runtime 层，仅保留契约 | G-F0030 | :core_contract_component | CORE_CONTRACT-T001 |
 | G-T0051 | Draft | 待分配（Infra/Player/Storage） | 收敛本地代理/HTTP server 能力，减少多实现与策略漂移 | G-F0054 | :player_component | PLAYER-T003 |
 | G-T0052 | Draft | 待分配（Infra/Storage） | 收敛第三方协议库依赖泄漏：减少/消除 `api(...)`，上层模块不再直接 import 协议库类型 | G-F0032 | :core_storage_component | CORE_STORAGE-T001 |
-| G-T0053 | Draft | 待分配（UI） | 收敛第三方类型扩散：以 `core_ui_component` 提供统一状态栏/沉浸式配置入口 | G-F0047 | :repository:immersion_bar | REPO_IMMERSION_BAR-T002 |
+| G-T0053 | Done | AI（Codex） | 收敛第三方类型扩散：以 `core_ui_component` 提供统一状态栏/沉浸式配置入口 | G-F0047 | :repository:immersion_bar | REPO_IMMERSION_BAR-T002 |
 | G-T0054 | Done | AI（Codex） | 移除“发送弹幕”整条链路：删除相关 UI/代码并移除 `:repository:panel_switch` 依赖 | G-F0062 | :player_component,:repository:panel_switch | REPO_PANEL_SWITCH-T002 |
 | G-T0055 | Draft | 待分配（System/User） | 明确登录态单一事实源：用 UserSessionManager 统一 token/登录态更新与观察 | G-F0044 | :user_component | USER-T004 |
 | G-T0056 | Done | AI（Codex） | 统一 MD5/hex 工具：复用 `CacheKeyMapper`（或抽取 `HashUtils`），移除 `ManualMigration#md5Hex` 重复实现 | G-F0052 | :core_database_component | CORE_DATABASE-T004 |
