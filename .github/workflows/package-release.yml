@@ -5,11 +5,20 @@ on:
   push:
     branches:
       - master
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
+    inputs:
+      export_local_properties_only:
+        description: "仅导出 local.properties（不打包）"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 jobs:
   export_local_properties:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.export_local_properties_only == 'true' }}
     name: Export Local Properties
     runs-on: ubuntu-latest
     steps:
@@ -72,7 +81,7 @@ EOF
           path: out/local.properties
 
   package:
-    if: ${{ github.event_name != 'workflow_dispatch' }}
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.export_local_properties_only == 'true') }}
     name: Generate Release APK
     runs-on: ubuntu-latest
     steps:
