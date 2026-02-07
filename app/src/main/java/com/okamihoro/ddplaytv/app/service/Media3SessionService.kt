@@ -23,7 +23,9 @@ class Media3SessionService : LifecycleService() {
     private val capabilityState = MutableStateFlow<PlayerCapabilityContract?>(null)
     private val backgroundModesState = MutableStateFlow<Set<Media3BackgroundMode>>(emptySet())
     private val sessionCommandsState = MutableStateFlow<Set<String>>(emptySet())
-    private val isTelevisionUiMode = isTelevisionUiMode()
+    private val isTelevisionUiMode: Boolean by lazy(LazyThreadSafetyMode.NONE) {
+        applicationContext.isTelevisionUiMode()
+    }
 
     private val commandBridge =
         StateFlowCommandBridge(
@@ -32,7 +34,7 @@ class Media3SessionService : LifecycleService() {
         )
 
     private val coordinator = Media3BackgroundCoordinator(commandBridge)
-    private val binder =
+    private val binder: IBinder by lazy(LazyThreadSafetyMode.NONE) {
         Media3SessionBinder(
             sessionState = sessionState,
             capabilityState = capabilityState,
@@ -41,6 +43,7 @@ class Media3SessionService : LifecycleService() {
             coordinator = coordinator,
             isTelevisionUiMode = isTelevisionUiMode,
         )
+    }
 
     override fun onBind(intent: Intent): IBinder {
         super.onBind(intent)

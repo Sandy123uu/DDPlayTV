@@ -24,9 +24,14 @@ keystore.properties
 .codex/
 .DS_Store
 Thumbs.db
+*.tmp
 *.swp
 .vscode/
 .gradle-cache/
+
+# Canonical IDE/Gradle ignores (keep generic forms for tooling checks)
+.gradle/
+.idea/
 
 # Python caches (scripts/)
 __pycache__/

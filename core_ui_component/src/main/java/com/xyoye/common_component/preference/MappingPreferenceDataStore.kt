@@ -31,7 +31,7 @@ open class MappingPreferenceDataStore(
         value: Boolean
     ) {
         val resolvedKey = key ?: return super.putBoolean(key, value)
-        val writer = booleanWriters[resolvedKey] ?: return super.putBoolean(key, value)
+        val writer = booleanWriters[resolvedKey] ?: return
         write(
             method = "putBoolean",
             key = resolvedKey,
@@ -59,7 +59,7 @@ open class MappingPreferenceDataStore(
         value: String?
     ) {
         val resolvedKey = key ?: return super.putString(key, value)
-        val writer = stringWriters[resolvedKey] ?: return super.putString(key, value)
+        val writer = stringWriters[resolvedKey] ?: return
         write(
             method = "putString",
             key = resolvedKey,
@@ -87,7 +87,7 @@ open class MappingPreferenceDataStore(
         value: Int
     ) {
         val resolvedKey = key ?: return super.putInt(key, value)
-        val writer = intWriters[resolvedKey] ?: return super.putInt(key, value)
+        val writer = intWriters[resolvedKey] ?: return
         write(
             method = "putInt",
             key = resolvedKey,

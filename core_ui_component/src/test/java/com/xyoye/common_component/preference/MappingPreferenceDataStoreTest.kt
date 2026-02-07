@@ -58,4 +58,17 @@ class MappingPreferenceDataStoreTest {
         assertEquals("updated", stringValue)
         assertEquals(7, intValue)
     }
+
+    @Test
+    fun putMissingWriterDoesNothing() {
+        val store =
+            MappingPreferenceDataStore(
+                dataStoreName = "TestStore",
+            )
+
+        store.putBoolean("missing_bool", true)
+        store.putString("missing_string", "value")
+        store.putInt("missing_int", 1)
+    }
+
 }
