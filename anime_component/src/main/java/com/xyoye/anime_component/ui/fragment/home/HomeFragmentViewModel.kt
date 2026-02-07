@@ -3,10 +3,9 @@ package com.xyoye.anime_component.ui.fragment.home
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
-import com.xyoye.common_component.extension.toastError
+import com.xyoye.common_component.extension.reportAndToastOnFailure
 import com.xyoye.common_component.network.repository.AnimeRepository
 import com.xyoye.common_component.network.repository.OtherRepository
-import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.data_component.data.BangumiAnimeData
 import com.xyoye.data_component.data.BannerData
 import kotlinx.coroutines.launch
@@ -24,15 +23,13 @@ class HomeFragmentViewModel : BaseViewModel() {
         viewModelScope.launch {
             val result = AnimeRepository.getWeeklyAnime()
 
-            if (result.isFailure) {
-                val exception = result.exceptionOrNull()
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    exception ?: RuntimeException("Get weekly anime failed with unknown error"),
-                    "HomeFragmentViewModel",
-                    "getWeeklyAnime",
-                    "获取每周动画数据失败",
+            if (result.reportAndToastOnFailure(
+                    unknownErrorMessage = "Get weekly anime failed with unknown error",
+                    className = "HomeFragmentViewModel",
+                    methodName = "getWeeklyAnime",
+                    reportMessage = "获取每周动画数据失败",
                 )
-                exception?.message?.toastError()
+            ) {
                 return@launch
             }
 
@@ -46,15 +43,13 @@ class HomeFragmentViewModel : BaseViewModel() {
         viewModelScope.launch {
             val result = OtherRepository.getHomeBanner()
 
-            if (result.isFailure) {
-                val exception = result.exceptionOrNull()
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    exception ?: RuntimeException("Get home banner failed with unknown error"),
-                    "HomeFragmentViewModel",
-                    "getBanners",
-                    "获取首页横幅数据失败",
+            if (result.reportAndToastOnFailure(
+                    unknownErrorMessage = "Get home banner failed with unknown error",
+                    className = "HomeFragmentViewModel",
+                    methodName = "getBanners",
+                    reportMessage = "获取首页横幅数据失败",
                 )
-                exception?.message?.toastError()
+            ) {
                 return@launch
             }
 

@@ -5,18 +5,16 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.anime_component.R
 import com.xyoye.common_component.base.BaseViewModel
-import com.xyoye.common_component.config.UserConfig
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.repository.AnimeSearchHistoryRepository
+import com.xyoye.common_component.extension.reportAndToastOnFailure
 import com.xyoye.common_component.extension.toResString
-import com.xyoye.common_component.extension.toastError
 import com.xyoye.common_component.network.repository.AnimeRepository
-import com.xyoye.common_component.utils.ErrorReportHelper
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.utils.stringCompare
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.data.AnimeData
 import com.xyoye.data_component.data.CommonTypeData
 import com.xyoye.data_component.data.SearchAnimeData
-import com.xyoye.data_component.entity.AnimeSearchHistoryEntity
 import com.xyoye.data_component.enums.AnimeSortType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -58,7 +56,7 @@ class SearchAnimeFragmentViewModel : BaseViewModel() {
 
     val animeTypeLiveData = MutableLiveData<MutableList<CommonTypeData>>()
     val animeSortLiveData = MutableLiveData<MutableList<CommonTypeData>>()
-    val searchHistoryLiveData = DatabaseManager.instance.getAnimeSearchHistoryDao().getAll()
+    val searchHistoryLiveData = AnimeSearchHistoryRepository.getAll()
 
     val animeLiveData = MutableLiveData<MutableList<AnimeData>>()
 
@@ -70,20 +68,16 @@ class SearchAnimeFragmentViewModel : BaseViewModel() {
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            DatabaseManager.instance
-                .getAnimeSearchHistoryDao()
-                .insert(AnimeSearchHistoryEntity(searchText.get()!!))
+            AnimeSearchHistoryRepository.insert(searchText.get()!!)
 
             val result = AnimeRepository.searchAnime(searchWord, searchType)
-            if (result.isFailure) {
-                val exception = result.exceptionOrNull()
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    exception ?: RuntimeException("Search anime failed with unknown error"),
-                    "SearchAnimeFragmentViewModel",
-                    "search",
-                    "搜索关键字: $searchWord, 搜索类型: $searchType",
+            if (result.reportAndToastOnFailure(
+                    unknownErrorMessage = "Search anime failed with unknown error",
+                    className = "SearchAnimeFragmentViewModel",
+                    methodName = "search",
+                    reportMessage = "搜索关键字: $searchWord, 搜索类型: $searchType",
                 )
-                exception?.message?.toastError()
+            ) {
                 return@launch
             }
 
@@ -158,7 +152,7 @@ class SearchAnimeFragmentViewModel : BaseViewModel() {
             return
         }
 
-        if (!UserConfig.isUserLoggedIn() &&
+        if (!UserSessionManager.isLoggedIn() &&
             AnimeSortType.formValue(sortTypeData[position].typeId) == AnimeSortType.FOLLOW
         ) {
             ToastCenter.showWarning(R.string.tips_login_required.toResString())
@@ -196,18 +190,14 @@ class SearchAnimeFragmentViewModel : BaseViewModel() {
     }
 
     fun deleteSearchHistory(searchText: String) {
-        viewModelScope.launch(context = Dispatchers.Main) {
-            DatabaseManager.instance
-                .getAnimeSearchHistoryDao()
-                .deleteByText(searchText)
+        viewModelScope.launch {
+            AnimeSearchHistoryRepository.deleteByText(searchText)
         }
     }
 
     fun deleteAllSearchHistory() {
-        viewModelScope.launch(context = Dispatchers.Main) {
-            DatabaseManager.instance
-                .getAnimeSearchHistoryDao()
-                .deleteAll()
+        viewModelScope.launch {
+            AnimeSearchHistoryRepository.deleteAll()
         }
     }
 
@@ -216,7 +206,7 @@ class SearchAnimeFragmentViewModel : BaseViewModel() {
             animeLiveData.postValue(searchAnimeData.animes)
             return
         }
-        if (!UserConfig.isUserLoggedIn() && sortType == AnimeSortType.FOLLOW) {
+        if (!UserSessionManager.isLoggedIn() && sortType == AnimeSortType.FOLLOW) {
             animeLiveData.postValue(searchAnimeData.animes)
             return
         }

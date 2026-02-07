@@ -6,7 +6,9 @@ import com.xyoye.common_component.extension.toHexString
 import java.io.File
 import java.io.FileInputStream
 import java.security.MessageDigest
+import java.security.SecureRandom
 import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
@@ -14,7 +16,23 @@ import javax.crypto.spec.SecretKeySpec
  * Created by xyoye on 2022/1/14
  */
 object EntropyUtils {
-    private const val DEFAULT_AES_KEY = "IiHcoJPwt5TCrR2r"
+    const val AES_VERSION_LEGACY_CBC_V1 = 1
+    const val AES_VERSION_GCM_V2 = 2
+
+    private const val LEGACY_DEFAULT_AES_KEY = "IiHcoJPwt5TCrR2r"
+
+    private val secureRandom = SecureRandom()
+
+    private val v2Magic =
+        byteArrayOf(
+            'D'.code.toByte(),
+            'D'.code.toByte(),
+            'P'.code.toByte(),
+            'T'.code.toByte(),
+        )
+    private const val v2HeaderSizeBytes = 6
+    private const val v2IvSizeBytes = 12
+    private const val v2TagSizeBits = 128
 
     /**
      * md5加密字符串
@@ -53,7 +71,6 @@ object EntropyUtils {
                 "EntropyUtils.file2Md5",
                 "计算文件MD5失败: ${file.absolutePath}",
             )
-            e.printStackTrace()
         } finally {
             IOUtils.closeIO(fileInputStream)
         }
@@ -67,26 +84,38 @@ object EntropyUtils {
     fun aesEncode(
         key: String?,
         content: String,
-        base64Flag: Int = Base64.DEFAULT
+        base64Flag: Int = Base64.DEFAULT,
+        version: Int = AES_VERSION_GCM_V2,
+        allowLegacyDefaultKeyFallback: Boolean = false
     ): String? {
-        try {
-            val encodeKey = key ?: DEFAULT_AES_KEY
-            val secretKey = SecretKeySpec(encodeKey.toByteArray(), "AES")
-            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey, IvParameterSpec(ByteArray(16)))
+        val normalizedKey =
+            when {
+                key.isNullOrBlank().not() -> key!!
+                allowLegacyDefaultKeyFallback && version == AES_VERSION_LEGACY_CBC_V1 -> LEGACY_DEFAULT_AES_KEY
+                else -> null
+            } ?: run {
+                ErrorReportHelper.postCatchedException(
+                    IllegalArgumentException("AES key is empty"),
+                    "EntropyUtils.aesEncode",
+                    "AES加密失败：key为空",
+                )
+                return null
+            }
 
-            val byteEncode = content.toByteArray(Charsets.UTF_8)
-            val byteAES = cipher.doFinal(byteEncode)
-            return Base64.encodeToString(byteAES, base64Flag)
-        } catch (e: Exception) {
-            ErrorReportHelper.postCatchedException(
-                e,
-                "EntropyUtils.aesEncode",
-                "AES加密失败",
-            )
-            e.printStackTrace()
-        }
-        return null
+        return runCatching {
+            when (version) {
+                AES_VERSION_GCM_V2 -> encodeV2(normalizedKey, content)
+                AES_VERSION_LEGACY_CBC_V1 -> encodeLegacyCbc(normalizedKey, content)
+                else -> throw IllegalArgumentException("Unknown aes version: $version")
+            }
+        }.mapCatching { Base64.encodeToString(it, base64Flag) }
+            .onFailure {
+                ErrorReportHelper.postCatchedException(
+                    it,
+                    "EntropyUtils.aesEncode",
+                    "AES加密失败：version=$version",
+                )
+            }.getOrNull()
     }
 
     /**
@@ -95,26 +124,163 @@ object EntropyUtils {
     fun aesDecode(
         key: String?,
         content: String,
-        base64Flag: Int = Base64.DEFAULT
+        base64Flag: Int = Base64.DEFAULT,
+        allowLegacyDefaultKeyFallback: Boolean = false
     ): String? {
-        try {
-            val decodeKey = key ?: DEFAULT_AES_KEY
-            val secretKey = SecretKeySpec(decodeKey.toByteArray(), "AES")
-            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(ByteArray(16)))
+        val decoded =
+            runCatching { Base64.decode(content, base64Flag) }
+                .onFailure {
+                    ErrorReportHelper.postCatchedException(
+                        it,
+                        "EntropyUtils.aesDecode",
+                        "AES解密失败：Base64解码失败",
+                    )
+                }.getOrNull() ?: return null
 
-            val byteContent = Base64.decode(content, base64Flag)
-            val byteDecode = cipher.doFinal(byteContent)
+        val normalizedKey = key?.takeIf { it.isNotBlank() }
+        if (isV2Payload(decoded)) {
+            if (normalizedKey == null) {
+                ErrorReportHelper.postCatchedException(
+                    IllegalArgumentException("AES key is empty"),
+                    "EntropyUtils.aesDecode",
+                    "AES解密失败：key为空",
+                )
+                return null
+            }
+            return runCatching { decodeV2(normalizedKey, decoded) }
+                .onFailure {
+                    ErrorReportHelper.postCatchedException(
+                        it,
+                        "EntropyUtils.aesDecode",
+                        "AES解密失败：version=${AES_VERSION_GCM_V2}",
+                    )
+                }.getOrNull()
+        }
 
-            return String(byteDecode, Charsets.UTF_8)
-        } catch (e: Exception) {
+        val legacyResult =
+            runCatching {
+                if (normalizedKey != null) {
+                    decodeLegacyCbc(normalizedKey, decoded)
+                } else {
+                    throw IllegalArgumentException("Legacy key is empty")
+                }
+            }
+
+        if (legacyResult.isSuccess) {
+            return legacyResult.getOrNull()
+        }
+
+        if (allowLegacyDefaultKeyFallback) {
+            return runCatching { decodeLegacyCbc(LEGACY_DEFAULT_AES_KEY, decoded) }
+                .onFailure {
+                    ErrorReportHelper.postCatchedException(
+                        it,
+                        "EntropyUtils.aesDecode",
+                        "AES解密失败：legacy fallback",
+                    )
+                }.getOrNull()
+        }
+
+        legacyResult.exceptionOrNull()?.let {
             ErrorReportHelper.postCatchedException(
-                e,
+                it,
                 "EntropyUtils.aesDecode",
-                "AES解密失败",
+                "AES解密失败：version=${AES_VERSION_LEGACY_CBC_V1}",
             )
-            e.printStackTrace()
         }
         return null
+    }
+
+    private fun isV2Payload(payload: ByteArray): Boolean {
+        if (payload.size < v2HeaderSizeBytes) return false
+        if (payload[0] != v2Magic[0]) return false
+        if (payload[1] != v2Magic[1]) return false
+        if (payload[2] != v2Magic[2]) return false
+        if (payload[3] != v2Magic[3]) return false
+        val version = payload[4].toInt() and 0xFF
+        return version == AES_VERSION_GCM_V2
+    }
+
+    private fun encodeV2(
+        key: String,
+        content: String
+    ): ByteArray {
+        val secretKey = createV2AesKey(key)
+        val iv =
+            ByteArray(v2IvSizeBytes).apply {
+                secureRandom.nextBytes(this)
+            }
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, GCMParameterSpec(v2TagSizeBits, iv))
+        val cipherText = cipher.doFinal(content.toByteArray(Charsets.UTF_8))
+
+        val payload =
+            ByteArray(v2HeaderSizeBytes + iv.size + cipherText.size).apply {
+                System.arraycopy(v2Magic, 0, this, 0, v2Magic.size)
+                this[4] = AES_VERSION_GCM_V2.toByte()
+                this[5] = iv.size.toByte()
+                System.arraycopy(iv, 0, this, v2HeaderSizeBytes, iv.size)
+                System.arraycopy(cipherText, 0, this, v2HeaderSizeBytes + iv.size, cipherText.size)
+            }
+        return payload
+    }
+
+    private fun decodeV2(
+        key: String,
+        payload: ByteArray
+    ): String {
+        if (payload.size < v2HeaderSizeBytes) {
+            throw IllegalArgumentException("Invalid v2 payload length: ${payload.size}")
+        }
+        val ivLength = payload[5].toInt() and 0xFF
+        if (ivLength <= 0) {
+            throw IllegalArgumentException("Invalid v2 iv length: $ivLength")
+        }
+        val ivStart = v2HeaderSizeBytes
+        val cipherStart = ivStart + ivLength
+        if (cipherStart >= payload.size) {
+            throw IllegalArgumentException("Invalid v2 payload length: ${payload.size}")
+        }
+        val iv = payload.copyOfRange(ivStart, cipherStart)
+        val cipherText = payload.copyOfRange(cipherStart, payload.size)
+
+        val secretKey = createV2AesKey(key)
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(v2TagSizeBits, iv))
+        return String(cipher.doFinal(cipherText), Charsets.UTF_8)
+    }
+
+    private fun encodeLegacyCbc(
+        key: String,
+        content: String
+    ): ByteArray {
+        val secretKey = createLegacyAesKey(key)
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, IvParameterSpec(ByteArray(16)))
+        return cipher.doFinal(content.toByteArray(Charsets.UTF_8))
+    }
+
+    private fun decodeLegacyCbc(
+        key: String,
+        cipherText: ByteArray
+    ): String {
+        val secretKey = createLegacyAesKey(key)
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(ByteArray(16)))
+        return String(cipher.doFinal(cipherText), Charsets.UTF_8)
+    }
+
+    private fun createV2AesKey(key: String): SecretKeySpec {
+        val digest = MessageDigest.getInstance("SHA-256").digest(key.toByteArray(Charsets.UTF_8))
+        val aesKey = digest.copyOf(16)
+        return SecretKeySpec(aesKey, "AES")
+    }
+
+    private fun createLegacyAesKey(key: String): SecretKeySpec {
+        val rawKey = key.toByteArray(Charsets.UTF_8)
+        if (rawKey.size != 16 && rawKey.size != 24 && rawKey.size != 32) {
+            throw IllegalArgumentException("Invalid legacy AES key length: ${rawKey.size}")
+        }
+        return SecretKeySpec(rawKey, "AES")
     }
 }

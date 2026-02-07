@@ -2,9 +2,9 @@ package com.xyoye.storage_component.download
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.xyoye.common_component.media3.testing.Media3Dependent
-import com.xyoye.data_component.data.media3.DownloadValidationRequestData
-import com.xyoye.data_component.data.media3.DownloadValidationResponseData
-import com.xyoye.data_component.entity.media3.DownloadRequiredAction
+import com.xyoye.data_component.media3.dto.DownloadValidationRequestData
+import com.xyoye.data_component.media3.dto.DownloadValidationResponseData
+import com.xyoye.data_component.media3.entity.DownloadRequiredAction
 import com.xyoye.storage_component.download.validator.DownloadValidator
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals

@@ -1,6 +1,6 @@
 package com.xyoye.common_component.network.repository
 
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 
 /**
  * Created by xyoye on 2024/1/11.
@@ -13,7 +13,7 @@ object MagnetRepository : BaseRepository() {
     suspend fun getMagnetType(domain: String) =
         request()
             .doGet {
-                Retrofit.magnetService.getMagnetType(domain)
+                RetrofitManager.magnetService.getMagnetType(domain)
             }
 
     /**
@@ -22,7 +22,7 @@ object MagnetRepository : BaseRepository() {
     suspend fun getMagnetSubgroup(domain: String) =
         request()
             .doGet {
-                Retrofit.magnetService.getMagnetSubgroup(domain)
+                RetrofitManager.magnetService.getMagnetSubgroup(domain)
             }
 
     /**
@@ -38,6 +38,6 @@ object MagnetRepository : BaseRepository() {
         .param("type", type)
         .param("subgroup", subgroup)
         .doGet {
-            Retrofit.magnetService.searchMagnet(domain, it)
+            RetrofitManager.magnetService.searchMagnet(domain, it)
         }
 }

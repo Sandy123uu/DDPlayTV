@@ -4,13 +4,14 @@ import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.bilibili.BilibiliPlaybackPreferencesStore
-import com.xyoye.common_component.database.DatabaseManager
-import com.xyoye.common_component.extension.aesEncode
-import com.xyoye.common_component.extension.authorizationValue
+import com.xyoye.common_component.database.repository.MediaLibraryRepository
+import com.xyoye.common_component.database.repository.PlayHistoryRepository
 import com.xyoye.common_component.extension.toastError
 import com.xyoye.common_component.network.repository.ScreencastRepository
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanAuthStore
 import com.xyoye.common_component.storage.cloud115.auth.Cloud115AuthStore
+import com.xyoye.common_component.storage.credential.MediaLibraryCredentialResolver
+import com.xyoye.common_component.storage.credential.MediaLibraryCredentialStore
 import com.xyoye.common_component.storage.open115.auth.Open115AuthStore
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.getFileName
@@ -26,8 +27,7 @@ import kotlinx.coroutines.launch
 
 class MediaViewModel : BaseViewModel() {
     val mediaLibWithStatusLiveData =
-        DatabaseManager.instance
-            .getMediaLibraryDao()
+        MediaLibraryRepository
             .getAll()
             .map { libraries ->
                 libraries
@@ -41,9 +41,8 @@ class MediaViewModel : BaseViewModel() {
         viewModelScope.launch(context = Dispatchers.IO) {
             try {
                 // 播放历史首条记录
-                DatabaseManager.instance
-                    .getPlayHistoryDao()
-                    .gitLastPlay(
+                PlayHistoryRepository
+                    .getLastPlay(
                         MediaType.LOCAL_STORAGE,
                         MediaType.OTHER_STORAGE,
                         MediaType.FTP_SERVER,
@@ -55,23 +54,21 @@ class MediaViewModel : BaseViewModel() {
                     }
 
                 // 磁链播放首条记录
-                DatabaseManager.instance.getPlayHistoryDao().gitLastPlay(MediaType.MAGNET_LINK)?.apply {
+                PlayHistoryRepository.getLastPlay(MediaType.MAGNET_LINK)?.apply {
                     MediaLibraryEntity.TORRENT.describe = getFileName(torrentPath)
                 }
 
                 // 串流播放首条记录
-                DatabaseManager.instance.getPlayHistoryDao().gitLastPlay(MediaType.STREAM_LINK)?.apply {
+                PlayHistoryRepository.getLastPlay(MediaType.STREAM_LINK)?.apply {
                     MediaLibraryEntity.STREAM.describe = url
                 }
 
-                DatabaseManager.instance
-                    .getMediaLibraryDao()
-                    .insert(
-                        MediaLibraryEntity.LOCAL,
-                        MediaLibraryEntity.STREAM,
-                        MediaLibraryEntity.TORRENT,
-                        MediaLibraryEntity.HISTORY,
-                    )
+                MediaLibraryRepository.insert(
+                    MediaLibraryEntity.LOCAL,
+                    MediaLibraryEntity.STREAM,
+                    MediaLibraryEntity.TORRENT,
+                    MediaLibraryEntity.HISTORY,
+                )
             } catch (e: Exception) {
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
@@ -98,15 +95,17 @@ class MediaViewModel : BaseViewModel() {
                 if (data.mediaType == MediaType.CLOUD_115_STORAGE) {
                     Cloud115AuthStore.clear(Cloud115AuthStore.storageKey(data))
                 }
-                DatabaseManager.instance
-                    .getMediaLibraryDao()
-                    .delete(data.url, data.mediaType)
+                if (data.id > 0) {
+                    MediaLibraryCredentialStore.clear(data.id)
+                }
+                MediaLibraryRepository.delete(data.url, data.mediaType)
             } catch (e: Exception) {
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
                     "MediaViewModel",
                     "deleteStorage",
-                    "Failed to delete storage: ${data.url}",
+                    "mediaType" to data.mediaType.name,
+                    "url" to data.url,
                 )
             }
         }
@@ -116,10 +115,11 @@ class MediaViewModel : BaseViewModel() {
         viewModelScope.launch {
             try {
                 showLoading()
+                val resolvedReceiver = MediaLibraryCredentialResolver.resolve(receiver)
                 val result =
                     ScreencastRepository.init(
-                        "http://${receiver.screencastAddress}:${receiver.port}",
-                        receiver.password?.aesEncode()?.authorizationValue(),
+                        "http://${resolvedReceiver.screencastAddress}:${resolvedReceiver.port}",
+                        resolvedReceiver.password,
                     )
                 hideLoading()
 
@@ -129,7 +129,8 @@ class MediaViewModel : BaseViewModel() {
                         exception ?: RuntimeException("Unknown screencast connection error"),
                         "MediaViewModel",
                         "checkScreenDeviceRunning",
-                        "Screencast address: ${receiver.screencastAddress}:${receiver.port}",
+                        "address" to resolvedReceiver.screencastAddress,
+                        "port" to resolvedReceiver.port,
                     )
                     exception?.message?.toastError()
                     return@launch

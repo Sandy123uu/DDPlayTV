@@ -1,8 +1,8 @@
 package com.xyoye.player_component.media3.mapper
 
-import com.xyoye.data_component.entity.media3.MediaTrack
-import com.xyoye.data_component.entity.media3.MediaTrackType
-import com.xyoye.data_component.entity.media3.SubtitleTrack
+import com.xyoye.data_component.media3.entity.MediaTrack
+import com.xyoye.data_component.media3.entity.MediaTrackType
+import com.xyoye.data_component.media3.entity.SubtitleTrack
 import java.util.Locale
 
 class LegacyCapabilityMapper(

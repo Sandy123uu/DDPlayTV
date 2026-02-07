@@ -1,6 +1,6 @@
 package com.xyoye.player.subtitle.gpu
 
-import com.xyoye.data_component.bean.subtitle.TelemetrySample
+import com.xyoye.data_component.media3.telemetry.subtitle.TelemetrySample
 import com.xyoye.data_component.enums.SubtitleFrameStatus
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -36,4 +36,3 @@ class SubtitleLoadSheddingPolicyTest {
         assertTrue(policy.allowRender(nowMs = 1_500L))
     }
 }
-

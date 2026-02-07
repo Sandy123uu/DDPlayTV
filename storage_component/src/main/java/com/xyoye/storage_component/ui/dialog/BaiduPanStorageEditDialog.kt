@@ -4,8 +4,9 @@ import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import com.xyoye.common_component.config.PlayerActions
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.repository.MediaLibraryRepository
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanAuthStore
+import com.xyoye.common_component.storage.credential.MediaLibraryCredentialStore
 import com.xyoye.common_component.weight.BottomActionDialog
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.common_component.weight.dialog.CommonDialog
@@ -82,13 +83,13 @@ class BaiduPanStorageEditDialog(
                 SheetActionBean(
                     actionId = DisconnectAction.CLEAR_AUTH,
                     actionName = "仅清除授权",
-                    describe = "保留媒体库，可稍后重新扫码授权"
+                    describe = "保留媒体库，可稍后重新扫码授权",
                 ),
                 SheetActionBean(
                     actionId = DisconnectAction.CLEAR_AUTH_AND_DELETE_LIBRARY,
                     actionName = "清除授权并删除媒体库",
-                    describe = "从列表移除该账号（不会删除网盘文件）"
-                )
+                    describe = "从列表移除该账号（不会删除网盘文件）",
+                ),
             )
 
         BottomActionDialog(activity, actions, "断开连接") {
@@ -120,8 +121,7 @@ class BaiduPanStorageEditDialog(
                     dialog.dismiss()
                     activity.lifecycleScope.launch {
                         withContext(Dispatchers.IO) {
-                            val dao = DatabaseManager.instance.getMediaLibraryDao()
-                            val storedLibrary = dao.getById(libraryId)
+                            val storedLibrary = MediaLibraryRepository.getById(libraryId)
                             val storedKey = storedLibrary?.let { BaiduPanAuthStore.storageKey(it) }
                             val currentKey = BaiduPanAuthStore.storageKey(editLibrary)
 
@@ -133,7 +133,12 @@ class BaiduPanStorageEditDialog(
                             }
 
                             if (deleteLibrary) {
-                                storedLibrary?.let { dao.delete(it.url, it.mediaType) }
+                                storedLibrary?.let {
+                                    if (it.id > 0) {
+                                        MediaLibraryCredentialStore.clear(it.id)
+                                    }
+                                    MediaLibraryRepository.delete(it.url, it.mediaType)
+                                }
                             }
                         }
 
@@ -221,7 +226,12 @@ class BaiduPanStorageEditDialog(
             }.getOrNull()
 
         val isAuthorized = state?.isAuthorized() == true
-        val uk = state?.uk?.takeIf { it > 0 }?.toString().orEmpty()
+        val uk =
+            state
+                ?.uk
+                ?.takeIf { it > 0 }
+                ?.toString()
+                .orEmpty()
 
         binding.authStatusTv.text =
             if (isAuthorized) {

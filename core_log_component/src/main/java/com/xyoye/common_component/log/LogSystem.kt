@@ -2,7 +2,7 @@ package com.xyoye.common_component.log
 
 import android.content.Context
 import android.util.Log
-import com.tencent.mmkv.MMKV
+import androidx.annotation.VisibleForTesting
 import com.xyoye.common_component.log.model.DebugToggleState
 import com.xyoye.common_component.log.model.LogEvent
 import com.xyoye.common_component.log.model.LogLevel
@@ -18,6 +18,37 @@ import java.util.concurrent.atomic.AtomicReference
  * 日志系统单例，负责初始化、策略状态维护与写入调度。
  */
 object LogSystem {
+    private val defaultPolicyRepositoryFactory: (LogPolicy) -> LogPolicyRepository = { defaultPolicy ->
+        LogPolicyRepository(defaultPolicy)
+    }
+
+    private val defaultWriterFactory:
+        (
+            Context,
+            () -> Boolean,
+            (String) -> Unit,
+            (Throwable) -> Unit,
+        ) -> LogWriter = { context, tcpEnabledProvider, tcpSink, onFileError ->
+            LogWriter(
+                context = context,
+                onFileError = onFileError,
+                tcpLogEnabledProvider = tcpEnabledProvider,
+                tcpLogSink = tcpSink,
+            )
+        }
+
+    private val defaultTcpRunningProvider: () -> Boolean = { TcpLogServerManager.isRunning() }
+
+    private val defaultTcpEmitSink: (String) -> Unit = { line -> TcpLogServerManager.tryEmit(line) }
+
+    private val defaultTcpApplyFromStorage: () -> TcpLogServerState = { TcpLogServerManager.applyFromStorage() }
+
+    private val defaultTcpSnapshotProvider: () -> TcpLogServerState = { TcpLogServerManager.snapshot() }
+
+    private val defaultTcpSetEnabled: (Boolean, Int) -> TcpLogServerState = { enabled, port ->
+        TcpLogServerManager.setEnabled(enabled, port)
+    }
+
     private val stateRef =
         AtomicReference(
             LogRuntimeState(
@@ -27,7 +58,27 @@ object LogSystem {
     private val sequenceGenerator = AtomicLong(0)
     private val initLock = Any()
 
-    private var policyRepository: LogPolicyRepository = LogPolicyRepository()
+    internal var policyRepositoryFactory: (LogPolicy) -> LogPolicyRepository = defaultPolicyRepositoryFactory
+
+    internal var writerFactory:
+        (
+            Context,
+            () -> Boolean,
+            (String) -> Unit,
+            (Throwable) -> Unit,
+        ) -> LogWriter = defaultWriterFactory
+
+    internal var tcpRunningProvider: () -> Boolean = defaultTcpRunningProvider
+
+    internal var tcpEmitSink: (String) -> Unit = defaultTcpEmitSink
+
+    internal var tcpApplyFromStorage: () -> TcpLogServerState = defaultTcpApplyFromStorage
+
+    internal var tcpSnapshotProvider: () -> TcpLogServerState = defaultTcpSnapshotProvider
+
+    internal var tcpSetEnabled: (Boolean, Int) -> TcpLogServerState = defaultTcpSetEnabled
+
+    private var policyRepository: LogPolicyRepository = policyRepositoryFactory(LogPolicy.defaultReleasePolicy())
 
     @Volatile
     private var initialized = false
@@ -42,17 +93,17 @@ object LogSystem {
         if (initialized) return
         synchronized(initLock) {
             if (initialized) return
-            MMKV.initialize(context.applicationContext)
-            policyRepository = LogPolicyRepository(defaultPolicy)
+            policyRepository = policyRepositoryFactory(defaultPolicy)
             val initialState = policyRepository.loadFromStorage()
             stateRef.set(initialState)
             writer =
-                LogWriter(
+                writerFactory(
                     context.applicationContext,
-                    tcpLogEnabledProvider = { TcpLogServerManager.isRunning() },
-                    tcpLogSink = { line -> TcpLogServerManager.tryEmit(line) },
+                    { tcpRunningProvider() },
+                    { line -> tcpEmitSink(line) },
+                    { error -> handleWriterFileError(error) },
                 ).also { it.updateRuntimeState(initialState) }
-            TcpLogServerManager.applyFromStorage()
+            tcpApplyFromStorage()
             initialized = true
         }
     }
@@ -95,7 +146,7 @@ object LogSystem {
 
     fun isInitialized(): Boolean = initialized
 
-    fun getTcpLogServerState(): TcpLogServerState = TcpLogServerManager.snapshot()
+    fun getTcpLogServerState(): TcpLogServerState = tcpSnapshotProvider()
 
     fun setTcpLogServerEnabled(
         enabled: Boolean,
@@ -103,9 +154,9 @@ object LogSystem {
     ): TcpLogServerState {
         if (!initialized) {
             Log.w(LOG_TAG, "tcp log server state change before init, ignore")
-            return TcpLogServerManager.snapshot()
+            return tcpSnapshotProvider()
         }
-        return TcpLogServerManager.setEnabled(enabled, port)
+        return tcpSetEnabled(enabled, port)
     }
 
     fun log(event: LogEvent) {
@@ -119,6 +170,15 @@ object LogSystem {
                 sequenceId = if (event.sequenceId == 0L) sequenceGenerator.incrementAndGet() else event.sequenceId,
             )
         writer?.submit(enriched)
+    }
+
+    private fun handleWriterFileError(error: Throwable) {
+        val runtime = stateRef.get()
+        val alreadyDisabled = runtime.debugToggleState == DebugToggleState.DISABLED_DUE_TO_ERROR && !runtime.debugSessionEnabled
+        if (!alreadyDisabled) {
+            markDiskError()
+        }
+        Log.e(LOG_TAG, "log file write failed, debug file logging disabled", error)
     }
 
     private fun updateDebugState(
@@ -148,7 +208,31 @@ object LogSystem {
         stateRef.set(state)
         writer?.updateRuntimeState(state)
         SubtitleTelemetryLogger.updateFromRuntime(state)
+        // TCP 日志输出门禁：仅在“调试会话 + 显式授权”下允许运行
+        tcpApplyFromStorage()
         return state
+    }
+
+    @VisibleForTesting
+    internal fun resetForTests() {
+        synchronized(initLock) {
+            initialized = false
+            writer = null
+            sequenceGenerator.set(0)
+            policyRepositoryFactory = defaultPolicyRepositoryFactory
+            writerFactory = defaultWriterFactory
+            tcpRunningProvider = defaultTcpRunningProvider
+            tcpEmitSink = defaultTcpEmitSink
+            tcpApplyFromStorage = defaultTcpApplyFromStorage
+            tcpSnapshotProvider = defaultTcpSnapshotProvider
+            tcpSetEnabled = defaultTcpSetEnabled
+            policyRepository = policyRepositoryFactory(LogPolicy.defaultReleasePolicy())
+            stateRef.set(
+                LogRuntimeState(
+                    activePolicy = LogPolicy.defaultReleasePolicy(),
+                ),
+            )
+        }
     }
 
     private const val LOG_TAG = "LogSystem"

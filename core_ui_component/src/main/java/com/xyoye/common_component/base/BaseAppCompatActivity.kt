@@ -12,7 +12,9 @@ import java.lang.ref.WeakReference
  * Created by xyoye on 2020/7/7.
  */
 
-abstract class BaseAppCompatActivity<V : ViewDataBinding> : AppCompatActivity() {
+abstract class BaseAppCompatActivity<V : ViewDataBinding> :
+    AppCompatActivity(),
+    LoadingHost {
     protected lateinit var dataBinding: V
 
     protected var loadingReference: WeakReference<BaseLoadingDialog>? = null
@@ -51,7 +53,11 @@ abstract class BaseAppCompatActivity<V : ViewDataBinding> : AppCompatActivity() 
         mToolbar?.setNavigationOnClickListener { finish() }
     }
 
-    open fun showLoading(msg: String = "") {
+    fun showLoading() {
+        showLoading("")
+    }
+
+    override fun showLoading(msg: String) {
         hideLoading()
         loadingReference = WeakReference(BaseLoadingDialog(this, msg))
         if (!isFinishing) {
@@ -59,7 +65,7 @@ abstract class BaseAppCompatActivity<V : ViewDataBinding> : AppCompatActivity() 
         }
     }
 
-    open fun hideLoading() {
+    override fun hideLoading() {
         loadingReference?.get()?.dismiss()
     }
 

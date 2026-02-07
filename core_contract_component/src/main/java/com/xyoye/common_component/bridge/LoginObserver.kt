@@ -1,6 +1,6 @@
 package com.xyoye.common_component.bridge
 
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.LiveData
 import com.xyoye.data_component.data.LoginData
 
 /**
@@ -8,5 +8,5 @@ import com.xyoye.data_component.data.LoginData
  */
 
 interface LoginObserver {
-    fun getLoginLiveData(): MutableLiveData<LoginData>
+    fun getLoginLiveData(): LiveData<LoginData>
 }

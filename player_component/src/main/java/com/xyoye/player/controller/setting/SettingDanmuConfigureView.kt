@@ -5,8 +5,8 @@ import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import androidx.core.view.isVisible
-import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.config.DanmuConfig
+import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.utils.hideKeyboard
 import com.xyoye.data_component.enums.DanmakuLanguage
 import com.xyoye.data_component.enums.SettingViewType

@@ -87,7 +87,7 @@ class StorageVideoSource(
 
     fun getTorrentIndex(): Int {
         if (file is TorrentStorageFile) {
-            return file.getRealFile().mFileIndex
+            return file.getFileInfo().fileIndex
         }
         return -1
     }

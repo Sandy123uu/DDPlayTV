@@ -54,4 +54,3 @@ class LocalSubtitlePipelineApiTest {
             assertNotNull(recovering.lastRecoverAt)
         }
 }
-

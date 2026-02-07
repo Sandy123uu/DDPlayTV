@@ -12,4 +12,3 @@ class Open115NotConfiguredException(
     message: String
 ) : RuntimeException(message),
     PassThroughException
-

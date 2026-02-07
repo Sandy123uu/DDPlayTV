@@ -3,8 +3,9 @@ package com.xyoye.anime_component.ui.fragment.anime_episode
 import androidx.databinding.ObservableField
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.repository.EpisodeHistoryRepository
 import com.xyoye.common_component.extension.collectable
+import com.xyoye.common_component.extension.reportAndToastOnFailure
 import com.xyoye.common_component.extension.toMedia3SourceType
 import com.xyoye.common_component.extension.toText
 import com.xyoye.common_component.extension.toastError
@@ -58,7 +59,7 @@ class AnimeEpisodeFragmentViewModel : BaseViewModel() {
     @OptIn(FlowPreview::class)
     private val episodeHistoryFlow =
         episodeListFlow.flatMapConcat { episodes ->
-            DatabaseManager.instance.getPlayHistoryDao().getEpisodeHistory(episodes.map { it.episodeId })
+            EpisodeHistoryRepository.getEpisodeHistory(episodes.map { it.episodeId })
         }
 
     // 补全数据后的的剧集数据
@@ -340,15 +341,13 @@ class AnimeEpisodeFragmentViewModel : BaseViewModel() {
             val result = AnimeRepository.addEpisodePlayHistory(episodeIds)
             hideLoading()
 
-            if (result.isFailure) {
-                val exception = result.exceptionOrNull()
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    exception ?: RuntimeException("Add episode play history failed with unknown error"),
-                    "AnimeEpisodeFragmentViewModel",
-                    "submitEpisodesViewed",
-                    "剧集ID列表: ${episodeIds.joinToString(", ")}",
+            if (result.reportAndToastOnFailure(
+                    unknownErrorMessage = "Add episode play history failed with unknown error",
+                    className = "AnimeEpisodeFragmentViewModel",
+                    methodName = "submitEpisodesViewed",
+                    reportMessage = "剧集ID列表: ${episodeIds.joinToString(", ")}",
                 )
-                exception?.message?.toastError()
+            ) {
                 return@launch
             }
 

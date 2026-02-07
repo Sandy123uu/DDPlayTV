@@ -40,6 +40,7 @@ class WebDavStorageEditDialog(
             )
         setAnonymous(serverData.isAnonymous)
         setParseMode(serverData.webDavStrict)
+        setTlsMode(serverData.webDavAllowInsecureTls)
         binding.serverData = serverData
         val autoSaveHelper =
             StorageAutoSaveHelper(
@@ -75,6 +76,19 @@ class WebDavStorageEditDialog(
         binding.normalParseTv.setOnClickListener {
             serverData.webDavStrict = false
             setParseMode(false)
+            autoSaveHelper.requestSave()
+        }
+
+        binding.strictTlsTv.setOnClickListener {
+            serverData.webDavAllowInsecureTls = false
+            setTlsMode(false)
+            autoSaveHelper.requestSave()
+        }
+
+        binding.insecureTlsTv.setOnClickListener {
+            serverData.webDavAllowInsecureTls = true
+            setTlsMode(true)
+            ToastCenter.showWarning("已启用不安全TLS：将忽略证书/主机名校验，存在中间人攻击风险")
             autoSaveHelper.requestSave()
         }
 
@@ -115,7 +129,7 @@ class WebDavStorageEditDialog(
 
     private fun buildLibraryIfValid(
         serverData: MediaLibraryEntity,
-        showToast: Boolean,
+        showToast: Boolean
     ): MediaLibraryEntity? {
         val url = serverData.url.trim()
         if (url.isEmpty()) {
@@ -185,6 +199,19 @@ class WebDavStorageEditDialog(
         binding.normalParseTv.isSelected = isStrict.not()
         binding.normalParseTv.setTextColorRes(
             if (isStrict.not()) R.color.text_white else R.color.text_black,
+        )
+    }
+
+    private fun setTlsMode(allowInsecure: Boolean) {
+        val strict = !allowInsecure
+        binding.strictTlsTv.isSelected = strict
+        binding.strictTlsTv.setTextColorRes(
+            if (strict) R.color.text_white else R.color.text_black,
+        )
+
+        binding.insecureTlsTv.isSelected = allowInsecure
+        binding.insecureTlsTv.setTextColorRes(
+            if (allowInsecure) R.color.text_white else R.color.text_black,
         )
     }
 }

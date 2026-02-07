@@ -3,13 +3,12 @@ package com.xyoye.common_component.storage.impl
 import com.xyoye.common_component.config.PlayerConfig
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
-import com.xyoye.common_component.network.repository.ResourceRepository
 import com.xyoye.common_component.network.repository.Open115Repository
-import com.xyoye.common_component.storage.AuthStorage
+import com.xyoye.common_component.network.repository.ResourceRepository
 import com.xyoye.common_component.storage.AbstractStorage
+import com.xyoye.common_component.storage.AuthStorage
 import com.xyoye.common_component.storage.PagedStorage
 import com.xyoye.common_component.storage.file.StorageFile
-import com.xyoye.common_component.storage.file.helper.HttpPlayServer
 import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.common_component.storage.file.impl.Open115StorageFile
 import com.xyoye.common_component.storage.file.payloadAs
@@ -112,12 +111,13 @@ class Open115Storage(
         }
 
         val response =
-            repository.listFiles(
-                cid = cid,
-                limit = DEFAULT_PAGE_LIMIT,
-                offset = 0,
-                showDir = "1"
-            ).getOrThrow()
+            repository
+                .listFiles(
+                    cid = cid,
+                    limit = DEFAULT_PAGE_LIMIT,
+                    offset = 0,
+                    showDir = "1",
+                ).getOrThrow()
 
         val parentPath = file.filePath()
         val items = response.data.orEmpty()
@@ -140,12 +140,13 @@ class Open115Storage(
         val cid = dirItem.fid?.takeIf { it.isNotBlank() } ?: ROOT_CID
 
         val response =
-            repository.listFiles(
-                cid = cid,
-                limit = DEFAULT_PAGE_LIMIT,
-                offset = 0,
-                showDir = "1"
-            ).getOrThrow()
+            repository
+                .listFiles(
+                    cid = cid,
+                    limit = DEFAULT_PAGE_LIMIT,
+                    offset = 0,
+                    showDir = "1",
+                ).getOrThrow()
 
         val parentPath = file.filePath()
         return response
@@ -175,12 +176,13 @@ class Open115Storage(
         state = PagedStorage.State.LOADING
         return runCatching {
             val response =
-                repository.listFiles(
-                    cid = cid,
-                    limit = DEFAULT_PAGE_LIMIT,
-                    offset = pagingOffset,
-                    showDir = "1"
-                ).getOrThrow()
+                repository
+                    .listFiles(
+                        cid = cid,
+                        limit = DEFAULT_PAGE_LIMIT,
+                        offset = pagingOffset,
+                        showDir = "1",
+                    ).getOrThrow()
 
             val parentPath = currentDirectory.filePath()
             val items = response.data.orEmpty()
@@ -212,7 +214,8 @@ class Open115Storage(
         }
 
         val segments =
-            android.net.Uri.parse(normalized)
+            android.net.Uri
+                .parse(normalized)
                 .pathSegments
                 .filter { it.isNotBlank() }
         if (segments.isEmpty()) return null
@@ -321,13 +324,15 @@ class Open115Storage(
                 t,
                 "Open115Storage",
                 "createPlayUrl",
-                "storageId=${library.id} storageKey=$storageKey filePath=${runCatching { file.filePath() }.getOrNull()} fid=$fid playerType=${playerType.name}",
+                "storageId=${library.id} storageKey=$storageKey filePath=${runCatching {
+                    file.filePath()
+                }.getOrNull()} fid=$fid playerType=${playerType.name}",
             )
             throw t
         }
     }
 
-    private fun buildRangeUnsupportedRefreshSupplier(file: StorageFile): () -> HttpPlayServer.UpstreamSource? =
+    private fun buildRangeUnsupportedRefreshSupplier(file: StorageFile): () -> LocalProxy.UpstreamSource? =
         {
             synchronized(rangeUnsupportedRefreshLock) {
                 runCatching {
@@ -345,7 +350,7 @@ class Open115Storage(
                     )
                     runBlocking {
                         val upstream = resolveUpstream(file, forceRefresh = true)
-                        HttpPlayServer.UpstreamSource(
+                        LocalProxy.UpstreamSource(
                             url = upstream.url,
                             headers = getNetworkHeaders(file).orEmpty(),
                             contentLength = upstream.contentLength,
@@ -385,8 +390,7 @@ class Open115Storage(
 
     override fun preferredPlayerType(): PlayerType = PlayerType.TYPE_EXO_PLAYER
 
-    override fun getNetworkHeaders(): Map<String, String> =
-        mapOf(Open115Headers.HEADER_USER_AGENT to Open115Headers.USER_AGENT)
+    override fun getNetworkHeaders(): Map<String, String> = mapOf(Open115Headers.HEADER_USER_AGENT to Open115Headers.USER_AGENT)
 
     override fun getNetworkHeaders(file: StorageFile): Map<String, String>? = getNetworkHeaders()
 
@@ -405,14 +409,15 @@ class Open115Storage(
 
         val cid = directory?.let { resolveCid(it) } ?: ROOT_CID
         val response =
-            repository.searchFiles(
-                searchValue = trimmed,
-                cid = cid,
-                type = SEARCH_TYPE_VIDEO,
-                fc = SEARCH_FILE_CATEGORY_ONLY_FILE,
-                limit = DEFAULT_PAGE_LIMIT,
-                offset = 0,
-            ).getOrThrow()
+            repository
+                .searchFiles(
+                    searchValue = trimmed,
+                    cid = cid,
+                    type = SEARCH_TYPE_VIDEO,
+                    fc = SEARCH_FILE_CATEGORY_ONLY_FILE,
+                    limit = DEFAULT_PAGE_LIMIT,
+                    offset = 0,
+                ).getOrThrow()
 
         val files = mutableListOf<StorageFile>()
         for (item in response.data.orEmpty()) {
@@ -447,12 +452,13 @@ class Open115Storage(
         var offset = 0
         while (true) {
             val response =
-                repository.listFiles(
-                    cid = cid,
-                    limit = PATH_RESOLVE_PAGE_LIMIT,
-                    offset = offset,
-                    showDir = "1"
-                ).getOrThrow()
+                repository
+                    .listFiles(
+                        cid = cid,
+                        limit = PATH_RESOLVE_PAGE_LIMIT,
+                        offset = offset,
+                        showDir = "1",
+                    ).getOrThrow()
 
             val items = response.data.orEmpty()
             val target =
@@ -530,7 +536,11 @@ class Open115Storage(
                         ?: response.data?.values?.firstOrNull()
                         ?: throw IllegalStateException("获取播放链接失败")
 
-                val url = item.url?.url?.trim().orEmpty()
+                val url =
+                    item.url
+                        ?.url
+                        ?.trim()
+                        .orEmpty()
                 if (url.isBlank()) {
                     throw IllegalStateException("获取播放链接失败")
                 }

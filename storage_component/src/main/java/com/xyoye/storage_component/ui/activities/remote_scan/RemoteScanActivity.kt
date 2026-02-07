@@ -1,10 +1,10 @@
 package com.xyoye.storage_component.ui.activities.remote_scan
 
 import com.alibaba.android.arouter.facade.annotation.Route
-import com.gyf.immersionbar.ImmersionBar
 import com.huawei.hms.hmsscankit.RemoteView
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
+import com.xyoye.common_component.utils.StatusBarStyle
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.storage_component.BR
 import com.xyoye.storage_component.R
@@ -32,12 +32,11 @@ class RemoteScanActivity : BaseActivity<RemoteScanViewModel, ActivityRemoteScanB
     }
 
     override fun initView() {
-        ImmersionBar
-            .with(this)
-            .titleBar(dataBinding.toolbar, false)
-            .transparentBar()
-            .statusBarDarkFont(false)
-            .init()
+        StatusBarStyle.applyTransparentWithTitleBar(
+            activity = this,
+            titleBar = dataBinding.toolbar,
+            darkFont = false,
+        )
 
         title = ""
 

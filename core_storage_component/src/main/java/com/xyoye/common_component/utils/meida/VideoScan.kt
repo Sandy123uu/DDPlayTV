@@ -26,7 +26,6 @@ object VideoScan {
                 "VideoScan.traverse",
                 "遍历视频文件失败: $filePath",
             )
-            e.printStackTrace()
             emptyList()
         }
 
@@ -91,7 +90,6 @@ object VideoScan {
                 "VideoScan.getVideoDuration",
                 "获取视频时长失败: ${videoFile.absolutePath}",
             )
-            e.printStackTrace()
             0
         } finally {
             retriever.release()

@@ -105,4 +105,3 @@ object Open115AuthStore {
         fieldKey: String
     ): String = "$storageKey.$fieldKey"
 }
-

@@ -10,8 +10,8 @@ import com.xyoye.common_component.bilibili.playback.BilibiliPlaybackSession
 import com.xyoye.common_component.bilibili.playback.BilibiliPlaybackSessionStore
 import com.xyoye.common_component.bilibili.repository.BilibiliRepository
 import com.xyoye.common_component.config.PlayerConfig
-import com.xyoye.common_component.storage.AuthStorage
 import com.xyoye.common_component.storage.AbstractStorage
+import com.xyoye.common_component.storage.AuthStorage
 import com.xyoye.common_component.storage.PagedStorage
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.file.impl.BilibiliStorageFile
@@ -186,8 +186,8 @@ class BilibiliStorage(
 
             followLiveHasMore =
                 followLiveTotalLiveCount > 0 &&
-                    followLiveLoadedCount < followLiveTotalLiveCount &&
-                    (data.totalPage <= 0 || followLivePage <= data.totalPage)
+                followLiveLoadedCount < followLiveTotalLiveCount &&
+                (data.totalPage <= 0 || followLivePage <= data.totalPage)
 
             attempts++
         }
@@ -529,7 +529,7 @@ class BilibiliStorage(
                         storageId = library.id,
                         uniqueKey = file.uniqueKey(),
                         repository = repository,
-                        roomId = parsed.roomId
+                        roomId = parsed.roomId,
                     )
                 BilibiliLivePlaybackSessionStore.put(session)
                 return session
@@ -606,8 +606,7 @@ class BilibiliStorage(
 
     override fun isConnected(): Boolean = repository.isLoggedIn()
 
-    override fun requiresLogin(directory: StorageFile?): Boolean =
-        isBilibiliPagedDirectoryPath(directory?.filePath())
+    override fun requiresLogin(directory: StorageFile?): Boolean = isBilibiliPagedDirectoryPath(directory?.filePath())
 
     override fun loginActionText(directory: StorageFile?): String = "扫码登录"
 
@@ -639,8 +638,7 @@ class BilibiliStorage(
         followLiveState = PagedStorage.State.IDLE
     }
 
-    override fun shouldShowPagingItem(directory: StorageFile?): Boolean =
-        isBilibiliPagedDirectoryPath(directory?.filePath())
+    override fun shouldShowPagingItem(directory: StorageFile?): Boolean = isBilibiliPagedDirectoryPath(directory?.filePath())
 
     override fun hasMore(): Boolean =
         when (directory?.filePath()) {
@@ -723,7 +721,7 @@ class BilibiliStorage(
 
     private enum class PagedDirectory {
         HISTORY,
-        FOLLOW_LIVE,
+        FOLLOW_LIVE
     }
 
     companion object {
@@ -736,7 +734,6 @@ class BilibiliStorage(
         private const val MAX_EMPTY_PAGE_ATTEMPTS: Int = 5
         private const val FOLLOW_LIVE_PAGE_SIZE: Int = 9
 
-        fun isBilibiliPagedDirectoryPath(path: String?): Boolean =
-            path == PATH_HISTORY_DIR || path == PATH_FOLLOW_LIVE_DIR
+        fun isBilibiliPagedDirectoryPath(path: String?): Boolean = path == PATH_HISTORY_DIR || path == PATH_FOLLOW_LIVE_DIR
     }
 }

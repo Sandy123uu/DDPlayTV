@@ -1,5 +1,6 @@
 package com.xyoye.common_component.network.helper
 
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.core_network_component.BuildConfig
 import okhttp3.*
@@ -219,64 +220,14 @@ class LoggerInterceptor(
     private fun sanitizeHeader(
         name: String,
         value: String
-    ): String =
-        when {
-            name.equals("Cookie", ignoreCase = true) -> sanitizeCookieHeader(value)
-            name.equals("Set-Cookie", ignoreCase = true) -> "<redacted>"
-            name.equals("Authorization", ignoreCase = true) -> "<redacted>"
-            name.equals("Proxy-Authorization", ignoreCase = true) -> "<redacted>"
-            else -> value
-        }
+    ): String = SensitiveDataSanitizer.sanitizeHeader(name, value)
 
-    private fun sanitizeUrl(url: HttpUrl): String = sanitizeBody(url.toString())
-
-    private fun sanitizeCookieHeader(value: String): String {
-        if (value.isBlank()) return value
-        return value
-            .split(';')
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .joinToString("; ") { cookie ->
-                val equalIndex = cookie.indexOf('=')
-                if (equalIndex <= 0) cookie else cookie.substring(0, equalIndex).trim() + "=<redacted>"
-            }
-    }
+    private fun sanitizeUrl(url: HttpUrl): String =
+        SensitiveDataSanitizer.sanitizeUrl(url.toString(), SensitiveDataSanitizer.UrlMode.KEYS_ONLY)
 
     private fun sanitizeBody(body: String): String {
         if (body.isEmpty()) return body
-        var sanitized = body
-
-        // Cookie-style tokens
-        sanitized =
-            sanitized.replace("(?i)(SESSDATA=)[^;\\s\"]+".toRegex(), "$1<redacted>")
-        sanitized =
-            sanitized.replace("(?i)(bili_jct=)[^;\\s\"]+".toRegex(), "$1<redacted>")
-        sanitized =
-            sanitized.replace("(?i)(DedeUserID=)[^;\\s\"]+".toRegex(), "$1<redacted>")
-        sanitized =
-            sanitized.replace("(?i)(UID=)[^;\\s\"]+".toRegex(), "$1<redacted>")
-        sanitized =
-            sanitized.replace("(?i)(CID=)[^;\\s\"]+".toRegex(), "$1<redacted>")
-        sanitized =
-            sanitized.replace("(?i)(SEID=)[^;\\s\"]+".toRegex(), "$1<redacted>")
-        sanitized =
-            sanitized.replace("(?i)(KID=)[^;\\s\"]+".toRegex(), "$1<redacted>")
-
-        // JSON-style tokens
-        sanitized =
-            sanitized.replace("(?i)(\"refresh_token\"\\s*:\\s*\")([^\"]+)(\")".toRegex(), "$1<redacted>$3")
-        sanitized =
-            sanitized.replace("(?i)(\"access_token\"\\s*:\\s*\")([^\"]+)(\")".toRegex(), "$1<redacted>$3")
-
-        // Query / form-style tokens
-        sanitized =
-            sanitized.replace("(?i)(refresh_token=)([^&\\s]+)".toRegex(), "$1<redacted>")
-        sanitized =
-            sanitized.replace("(?i)(access_token=)([^&\\s]+)".toRegex(), "$1<redacted>")
-        sanitized =
-            sanitized.replace("(?i)(data=)([^&\\s]+)".toRegex(), "$1<redacted>")
-
-        return sanitized
+        return SensitiveDataSanitizer.sanitizeFreeText(body)
     }
 
     fun retrofit(tag: String = "Retrofit"): LoggerInterceptor {

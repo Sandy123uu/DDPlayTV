@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.config.SubtitleConfig
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.repository.PlayHistoryRepository
 import com.xyoye.common_component.extension.toastError
 import com.xyoye.common_component.network.repository.ResourceRepository
 import com.xyoye.common_component.storage.file.StorageFile
@@ -54,7 +54,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                     e,
                     "BindSubtitleSourceFragmentViewModel",
                     "matchSubtitle",
-                    "File: ${storageFile.fileName()}",
+                    "fileName" to storageFile.fileName(),
                 )
             }
         }
@@ -81,7 +81,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                         exception ?: RuntimeException("Unknown subtitle detail error"),
                         "BindSubtitleSourceFragmentViewModel",
                         "detailSearchSubtitle",
-                        "Subtitle ID: ${sourceBean.id}",
+                        "subtitleId" to sourceBean.id,
                     )
                     exception?.message?.toastError()
                     return@launch
@@ -105,7 +105,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                     e,
                     "BindSubtitleSourceFragmentViewModel",
                     "detailSearchSubtitle",
-                    "Unexpected error for subtitle ID: ${sourceBean.id}",
+                    "subtitleId" to sourceBean.id,
                 )
                 e.message?.toastError()
             }
@@ -135,7 +135,8 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                         exception ?: RuntimeException("Unknown download error"),
                         "BindSubtitleSourceFragmentViewModel",
                         "downloadSearchSubtitle",
-                        "File: $name, URL: $sourceUrl",
+                        "fileName" to name,
+                        "url" to sourceUrl,
                     )
                     exception?.message?.toastError()
                     return@launch
@@ -155,7 +156,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                     e,
                     "BindSubtitleSourceFragmentViewModel",
                     "downloadSearchSubtitle",
-                    "Unexpected error downloading subtitle: $fileName",
+                    "fileName" to fileName,
                 )
                 ToastCenter.showError("下载字幕失败")
             }
@@ -184,7 +185,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                 e,
                 "BindSubtitleSourceFragmentViewModel",
                 "unzipSaveSubtitle",
-                "File: $fileName",
+                "fileName" to fileName,
             )
             ToastCenter.showError("解压字幕文件失败，请尝试手动解压")
         }
@@ -212,7 +213,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                 e,
                 "BindSubtitleSourceFragmentViewModel",
                 "saveSubtitle",
-                "File: $fileName",
+                "fileName" to fileName,
             )
             ToastCenter.showError("保存字幕失败")
         }
@@ -227,7 +228,7 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                     e,
                     "BindSubtitleSourceFragmentViewModel",
                     "unbindSubtitle",
-                    "File: ${storageFile.fileName()}",
+                    "fileName" to storageFile.fileName(),
                 )
             }
         }
@@ -238,13 +239,11 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
             try {
                 val storageId = storageFile.storage.library.id
                 val history =
-                    DatabaseManager.instance
-                        .getPlayHistoryDao()
-                        .getPlayHistory(storageFile.uniqueKey(), storageId)
+                    PlayHistoryRepository.getPlayHistory(storageFile.uniqueKey(), storageId)
 
                 if (history != null) {
                     history.subtitlePath = filePath
-                    DatabaseManager.instance.getPlayHistoryDao().insert(history)
+                    PlayHistoryRepository.insert(history)
                     return@launch
                 }
 
@@ -258,13 +257,14 @@ class BindSubtitleSourceFragmentViewModel : BaseViewModel() {
                         subtitlePath = filePath,
                         storageId = storageId,
                     )
-                DatabaseManager.instance.getPlayHistoryDao().insert(newHistory)
+                PlayHistoryRepository.insert(newHistory)
             } catch (e: Exception) {
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
                     "BindSubtitleSourceFragmentViewModel",
                     "databaseSubtitle",
-                    "File path: $filePath, Storage file: ${storageFile.fileName()}",
+                    "path" to filePath,
+                    "fileName" to storageFile.fileName(),
                 )
             }
         }

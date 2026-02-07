@@ -36,7 +36,6 @@ class FtpStorage(
                 FtpStorageFile(this, file.filePath(), it)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
             reportError("获取文件列表失败: ${file.filePath()}", e)
             close()
         }
@@ -77,7 +76,6 @@ class FtpStorage(
         try {
             playingInputStream = mFtpClient.retrieveFileStream(file.filePath())
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "FTP", "打开文件失败: ${file.filePath()}")
             close()
         }
@@ -100,7 +98,6 @@ class FtpStorage(
             val ftpFile = mFtpClient.mlistFile(path)
             return FtpStorageFile(this, parentPath, ftpFile)
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "FTP", "获取文件信息失败: $path")
         }
 
@@ -156,8 +153,17 @@ class FtpStorage(
             mFtpClient.listHiddenFiles = true
             return true
         } catch (e: Exception) {
-            e.printStackTrace()
-            reportError("连接至FTP服务失败: ${library.ftpAddress}:${library.port}", e)
+            ErrorReportHelper.postCatchedExceptionWithContext(
+                e,
+                "FtpStorage",
+                "checkConnection",
+                params =
+                    mapOf(
+                        "address" to library.ftpAddress,
+                        "port" to library.port,
+                    ),
+                message = "连接至FTP服务失败",
+            )
             close()
         }
         return false
@@ -184,7 +190,6 @@ class FtpStorage(
         try {
             mFtpClient.changeWorkingDirectory("/")
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "FTP", "切换工作目录失败")
         }
         if (switch) {
@@ -200,7 +205,6 @@ class FtpStorage(
                 mFtpClient.login(library.account, library.password)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
             reportError("登录FTP服务失败", e)
             close()
         }
@@ -218,7 +222,6 @@ class FtpStorage(
         try {
             mFtpClient.disconnect()
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "FTP", "断开FTP连接失败")
         }
     }
@@ -236,7 +239,6 @@ class FtpStorage(
                 close()
             }
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "FTP", "完成挂起命令失败")
             close()
         }

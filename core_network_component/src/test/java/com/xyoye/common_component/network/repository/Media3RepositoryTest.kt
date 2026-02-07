@@ -1,10 +1,10 @@
 package com.xyoye.common_component.network.repository
 
 import com.xyoye.common_component.media3.testing.Media3Dependent
-import com.xyoye.data_component.data.media3.DownloadValidationRequestData
-import com.xyoye.data_component.data.media3.PlaybackSessionRequestData
-import com.xyoye.data_component.entity.media3.Media3Capability
-import com.xyoye.data_component.entity.media3.Media3SourceType
+import com.xyoye.data_component.media3.dto.DownloadValidationRequestData
+import com.xyoye.data_component.media3.dto.PlaybackSessionRequestData
+import com.xyoye.data_component.media3.entity.Media3Capability
+import com.xyoye.data_component.media3.entity.Media3SourceType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After

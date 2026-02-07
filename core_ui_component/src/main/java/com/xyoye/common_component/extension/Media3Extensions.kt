@@ -1,6 +1,6 @@
 package com.xyoye.common_component.extension
 
-import com.xyoye.data_component.entity.media3.Media3SourceType
+import com.xyoye.data_component.media3.entity.Media3SourceType
 import com.xyoye.data_component.enums.MediaType
 
 fun MediaType.toMedia3SourceType(): Media3SourceType =

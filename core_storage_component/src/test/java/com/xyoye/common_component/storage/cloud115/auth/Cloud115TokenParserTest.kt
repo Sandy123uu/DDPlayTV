@@ -48,4 +48,3 @@ class Cloud115TokenParserTest {
         assertFalse(failure == null)
     }
 }
-

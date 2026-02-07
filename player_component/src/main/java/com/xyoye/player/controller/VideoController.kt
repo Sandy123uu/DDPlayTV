@@ -8,7 +8,6 @@ import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.focus.resetDescendantFocus
 import com.xyoye.common_component.playback.addon.PlaybackSettingUpdate
 import com.xyoye.common_component.utils.formatDuration
-import com.xyoye.data_component.bean.SendDanmuBean
 import com.xyoye.data_component.bean.VideoTrackBean
 import com.xyoye.data_component.data.DanmuEpisodeData
 import com.xyoye.data_component.entity.DanmuBlockEntity
@@ -245,16 +244,6 @@ class VideoController(
      */
     fun observerTrackAdded(block: (VideoTrackBean) -> Unit) {
         trackAddedBlock = block
-    }
-
-    /**
-     * 发送弹幕回调
-     */
-    @Suppress("UNUSED_PARAMETER")
-    fun observerSendDanmu(block: (danmuData: SendDanmuBean) -> Unit) {
-        /*
-        playerBotView.setSendDanmuBlock(block)
-         */
     }
 
     /**

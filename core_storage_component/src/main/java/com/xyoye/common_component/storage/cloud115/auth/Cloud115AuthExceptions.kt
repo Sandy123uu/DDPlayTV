@@ -12,4 +12,3 @@ class Cloud115NotConfiguredException(
     message: String
 ) : RuntimeException(message),
     PassThroughException
-

@@ -6,7 +6,7 @@ import android.os.SystemClock
 import androidx.core.view.isVisible
 import com.xyoye.common_component.config.BaiduPanOpenApiConfig
 import com.xyoye.common_component.extension.toResColor
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.utils.JsonHelper
 import com.xyoye.common_component.utils.QrCodeHelper
@@ -87,7 +87,9 @@ class BaiduPanLoginDialog(
                         content = qrContent,
                         sizePx = dp2px(220),
                         logoResId = R.mipmap.ic_logo,
-                        bitmapColor = com.xyoye.core_ui_component.R.color.text_black.toResColor(activity),
+                        bitmapColor =
+                            com.xyoye.core_ui_component.R.color.text_black
+                                .toResColor(activity),
                         errorContext = "生成百度网盘授权二维码失败",
                     )
                 binding.qrCodeIv.setImageBitmap(qrCode)
@@ -102,7 +104,8 @@ class BaiduPanLoginDialog(
         val userCode = deviceCode.userCode.trim()
         val verificationUrl = deviceCode.verificationUrl?.trim()
         val baseUrl = verificationUrl?.takeIf { it.isNotEmpty() } ?: "https://openapi.baidu.com/device"
-        return Uri.parse(baseUrl)
+        return Uri
+            .parse(baseUrl)
             .buildUpon()
             .appendQueryParameter("display", "mobile")
             .appendQueryParameter("code", userCode)
@@ -184,7 +187,7 @@ class BaiduPanLoginDialog(
         withContext(Dispatchers.IO) {
             runCatching {
                 val response =
-                    Retrofit.baiduPanService.oauthDeviceCode(
+                    RetrofitManager.baiduPanService.oauthDeviceCode(
                         baseUrl = Api.BAIDU_OAUTH,
                         responseType = "device_code",
                         clientId = BaiduPanOpenApiConfig.clientId,
@@ -209,7 +212,7 @@ class BaiduPanLoginDialog(
         withContext(Dispatchers.IO) {
             runCatching {
                 val response =
-                    Retrofit.baiduPanService.oauthToken(
+                    RetrofitManager.baiduPanService.oauthToken(
                         baseUrl = Api.BAIDU_OAUTH,
                         grantType = "device_token",
                         code = deviceCode,
@@ -249,7 +252,7 @@ class BaiduPanLoginDialog(
     private suspend fun fetchUinfo(accessToken: String): Result<BaiduPanUinfoResponse> =
         withContext(Dispatchers.IO) {
             runCatching {
-                Retrofit.baiduPanService.xpanUinfo(
+                RetrofitManager.baiduPanService.xpanUinfo(
                     baseUrl = Api.BAIDU_PAN,
                     method = "uinfo",
                     accessToken = accessToken,
@@ -282,13 +285,21 @@ class BaiduPanLoginDialog(
     }
 
     private sealed class OauthTokenOutcome {
-        data class Success(val token: BaiduPanTokenResponse) : OauthTokenOutcome()
+        data class Success(
+            val token: BaiduPanTokenResponse
+        ) : OauthTokenOutcome()
 
-        data class Pending(val message: String) : OauthTokenOutcome()
+        data class Pending(
+            val message: String
+        ) : OauthTokenOutcome()
 
-        data class SlowDown(val message: String) : OauthTokenOutcome()
+        data class SlowDown(
+            val message: String
+        ) : OauthTokenOutcome()
 
-        data class TerminalError(val message: String) : OauthTokenOutcome()
+        data class TerminalError(
+            val message: String
+        ) : OauthTokenOutcome()
     }
 
     private companion object {

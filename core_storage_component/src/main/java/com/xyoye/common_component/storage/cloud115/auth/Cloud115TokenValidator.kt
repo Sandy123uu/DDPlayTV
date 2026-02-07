@@ -2,7 +2,7 @@ package com.xyoye.common_component.storage.cloud115.auth
 
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.storage.cloud115.net.Cloud115Headers
 import kotlinx.coroutines.Dispatchers
@@ -20,12 +20,12 @@ object Cloud115TokenValidator {
                 }
 
                 val resp =
-                    Retrofit.cloud115Service.cookieStatus(
+                    RetrofitManager.cloud115Service.cookieStatus(
                         baseUrl = Api.CLOUD_115_MY,
                         cookie = cookie,
                         ct = "guide",
                         ac = "status",
-                        timestamp = System.currentTimeMillis().toString()
+                        timestamp = System.currentTimeMillis().toString(),
                     )
 
                 if (!resp.state) {
@@ -38,11 +38,10 @@ object Cloud115TokenValidator {
                     "validate token failed",
                     mapOf(
                         "cookie" to Cloud115Headers.redactCookie(cookieHeader),
-                        "exception" to t::class.java.simpleName
+                        "exception" to t::class.java.simpleName,
                     ),
-                    t
+                    t,
                 )
             }
         }
 }
-

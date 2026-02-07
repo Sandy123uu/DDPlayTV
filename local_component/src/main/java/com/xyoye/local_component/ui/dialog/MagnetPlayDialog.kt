@@ -9,7 +9,7 @@ import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.common_component.weight.dialog.BaseBottomDialog
 import com.xyoye.common_component.weight.dialog.FileManagerDialog
 import com.xyoye.data_component.entity.MediaLibraryEntity
-import com.xyoye.data_component.entity.media3.Media3Capability
+import com.xyoye.data_component.media3.entity.Media3Capability
 import com.xyoye.data_component.enums.FileManagerAction
 import com.xyoye.local_component.R
 import com.xyoye.local_component.databinding.DialogMagnetPlayBinding

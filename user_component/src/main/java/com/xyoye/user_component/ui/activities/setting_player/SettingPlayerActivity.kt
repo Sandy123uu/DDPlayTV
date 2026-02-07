@@ -44,15 +44,12 @@ class SettingPlayerActivity : BaseActivity<SettingPlayerViewModel, ActivitySetti
             tab.text = pageAdapter.getItemTitle(position)
         }.attach()
 
-        if (isTelevisionUiMode()) {
-            tvFocusCoordinator =
-                TabLayoutViewPager2DpadFocusCoordinator(
-                    tabLayout = dataBinding.tabLayout,
-                    viewPager = dataBinding.viewpager,
-                    mode = TabDpadMode.SettingsIndicatorOnly,
-                    isEnabled = { isTelevisionUiMode() && !dataBinding.tabLayout.isInTouchMode },
-                ).also { it.attach() }
-        }
+        tvFocusCoordinator =
+            TabLayoutViewPager2DpadFocusCoordinator.attachIfTelevision(
+                tabLayout = dataBinding.tabLayout,
+                viewPager = dataBinding.viewpager,
+                mode = TabDpadMode.SettingsIndicatorOnly,
+            )
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

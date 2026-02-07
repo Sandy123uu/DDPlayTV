@@ -6,11 +6,11 @@ import android.view.View
 import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
 import androidx.preference.Preference
-import androidx.preference.PreferenceDataStore
 import androidx.preference.SwitchPreference
 import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.xyoye.common_component.config.SubtitleConfig
 import com.xyoye.common_component.enums.SubtitleRendererBackend
+import com.xyoye.common_component.preference.MappingPreferenceDataStore
 import com.xyoye.user_component.R
 
 /**
@@ -19,6 +19,13 @@ import com.xyoye.user_component.R
 
 class SubtitleSettingFragment : BasePreferenceFragmentCompat() {
     companion object {
+        private const val KEY_AUTO_LOAD_SAME_NAME_SUBTITLE = "auto_load_same_name_subtitle"
+        private const val KEY_AUTO_MATCH_SUBTITLE = "auto_match_subtitle"
+        private const val KEY_SUBTITLE_SHADOW_ENABLED = "subtitle_shadow_enabled"
+        private const val KEY_SAME_NAME_SUBTITLE_PRIORITY = "same_name_subtitle_priority"
+        private const val KEY_SUBTITLE_RENDERER_BACKEND = "subtitle_renderer_backend"
+        private const val KEY_SUBTITLE_RENDERER_BACKEND_NOTE = "subtitle_renderer_backend_note"
+
         fun newInstance() = SubtitleSettingFragment()
     }
 
@@ -34,11 +41,11 @@ class SubtitleSettingFragment : BasePreferenceFragmentCompat() {
         view: View,
         savedInstanceState: Bundle?
     ) {
-        val loadSameSubtitleSwitch = findPreference<SwitchPreference>("auto_load_same_name_subtitle")
-        val sameSubtitlePriority = findPreference<EditTextPreference>("same_name_subtitle_priority")
-        val backendPreference = findPreference<ListPreference>("subtitle_renderer_backend")
-        val backendNote = findPreference<Preference>("subtitle_renderer_backend_note")
-        val shadowPreference = findPreference<SwitchPreference>("subtitle_shadow_enabled")
+        val loadSameSubtitleSwitch = findPreference<SwitchPreference>(KEY_AUTO_LOAD_SAME_NAME_SUBTITLE)
+        val sameSubtitlePriority = findPreference<EditTextPreference>(KEY_SAME_NAME_SUBTITLE_PRIORITY)
+        val backendPreference = findPreference<ListPreference>(KEY_SUBTITLE_RENDERER_BACKEND)
+        val backendNote = findPreference<Preference>(KEY_SUBTITLE_RENDERER_BACKEND_NOTE)
+        val shadowPreference = findPreference<SwitchPreference>(KEY_SUBTITLE_SHADOW_ENABLED)
         backendPreference?.isVisible = false
         backendNote?.isVisible = false
         shadowPreference?.isVisible = false
@@ -60,49 +67,29 @@ class SubtitleSettingFragment : BasePreferenceFragmentCompat() {
         super.onViewCreated(view, savedInstanceState)
     }
 
-    inner class SubtitleSettingDataStore : PreferenceDataStore() {
-        override fun getBoolean(
-            key: String?,
-            defValue: Boolean
-        ): Boolean =
-            when (key) {
-                "auto_load_same_name_subtitle" -> SubtitleConfig.isAutoLoadSameNameSubtitle()
-                "auto_match_subtitle" -> SubtitleConfig.isAutoMatchSubtitle()
-                "subtitle_shadow_enabled" -> SubtitleConfig.isShadowEnabled()
-                else -> super.getBoolean(key, defValue)
-            }
-
-        override fun getString(
-            key: String?,
-            defValue: String?
-        ): String? =
-            when (key) {
-                "same_name_subtitle_priority" -> SubtitleConfig.getSubtitlePriority()
-                "subtitle_renderer_backend" -> SubtitleRendererBackend.LIBASS.name
-                else -> super.getString(key, defValue)
-            }
-
-        override fun putBoolean(
-            key: String?,
-            value: Boolean
-        ) {
-            when (key) {
-                "auto_load_same_name_subtitle" -> SubtitleConfig.putAutoLoadSameNameSubtitle(value)
-                "auto_match_subtitle" -> SubtitleConfig.putAutoMatchSubtitle(value)
-                "subtitle_shadow_enabled" -> SubtitleConfig.putShadowEnabled(value)
-                else -> super.putBoolean(key, value)
-            }
-        }
-
-        override fun putString(
-            key: String?,
-            value: String?
-        ) {
-            when (key) {
-                "same_name_subtitle_priority" -> SubtitleConfig.putSubtitlePriority(value ?: "")
-                "subtitle_renderer_backend" -> Unit
-                else -> super.putString(key, value)
-            }
-        }
-    }
+    private class SubtitleSettingDataStore : MappingPreferenceDataStore(
+        dataStoreName = "SubtitleSettingDataStore",
+        booleanReaders =
+            mapOf(
+                KEY_AUTO_LOAD_SAME_NAME_SUBTITLE to { SubtitleConfig.isAutoLoadSameNameSubtitle() },
+                KEY_AUTO_MATCH_SUBTITLE to { SubtitleConfig.isAutoMatchSubtitle() },
+                KEY_SUBTITLE_SHADOW_ENABLED to { SubtitleConfig.isShadowEnabled() },
+            ),
+        booleanWriters =
+            mapOf(
+                KEY_AUTO_LOAD_SAME_NAME_SUBTITLE to { value -> SubtitleConfig.putAutoLoadSameNameSubtitle(value) },
+                KEY_AUTO_MATCH_SUBTITLE to { value -> SubtitleConfig.putAutoMatchSubtitle(value) },
+                KEY_SUBTITLE_SHADOW_ENABLED to { value -> SubtitleConfig.putShadowEnabled(value) },
+            ),
+        stringReaders =
+            mapOf(
+                KEY_SAME_NAME_SUBTITLE_PRIORITY to { SubtitleConfig.getSubtitlePriority() },
+                KEY_SUBTITLE_RENDERER_BACKEND to { SubtitleRendererBackend.LIBASS.name },
+            ),
+        stringWriters =
+            mapOf(
+                KEY_SAME_NAME_SUBTITLE_PRIORITY to { value -> SubtitleConfig.putSubtitlePriority(value ?: "") },
+                KEY_SUBTITLE_RENDERER_BACKEND to { _ -> Unit },
+            ),
+    )
 }

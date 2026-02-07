@@ -12,6 +12,7 @@ import com.xyoye.common_component.extension.openDirectory
 import com.xyoye.common_component.extension.openFile
 import com.xyoye.common_component.extension.standardFileInfo
 import com.xyoye.common_component.storage.AbstractStorage
+import com.xyoye.common_component.storage.StorageProtocolDefaults
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.file.helper.SmbPlayServer
 import com.xyoye.common_component.storage.file.impl.SmbStorageFile
@@ -97,7 +98,6 @@ class SmbStorage(
         return try {
             mDiskShare?.openFile(file.filePath())?.inputStream
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "SMB", "打开文件失败: ${file.filePath()}")
             null
         }
@@ -130,7 +130,6 @@ class SmbStorage(
             val fileLength = if (directory) 0L else fileInfo.endOfFile
             return SmbStorageFile(this, shareName, filePath, fileLength, directory)
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "SMB", "获取文件信息失败: $filePath")
             null
         }
@@ -177,7 +176,7 @@ class SmbStorage(
         }
 
         try {
-            val port = if (library.port == 0) SMBClient.DEFAULT_PORT else library.port
+            val port = if (library.port == 0) StorageProtocolDefaults.SMB_DEFAULT_PORT else library.port
             val session =
                 mSmbClient
                     .connect(library.url, port)
@@ -187,8 +186,17 @@ class SmbStorage(
                 return true
             }
         } catch (e: Exception) {
-            e.printStackTrace()
-            ErrorReportHelper.postCatchedException(e, "SMB", "连接至SMB服务失败: ${library.url}:${library.port}")
+            ErrorReportHelper.postCatchedExceptionWithContext(
+                e,
+                "SmbStorage",
+                "checkConnection",
+                params =
+                    mapOf(
+                        "address" to library.url,
+                        "port" to library.port,
+                    ),
+                message = "连接至SMB服务失败",
+            )
             close()
         }
         return false
@@ -217,7 +225,6 @@ class SmbStorage(
                 SmbStorageFile(this, it.netName, "")
             }
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "SMB", "获取共享目录列表失败")
             emptyList()
         }
@@ -242,13 +249,11 @@ class SmbStorage(
                         val fileLength = if (isDirectory) 0L else fileInfo.endOfFile
                         return@map SmbStorageFile(this, shareName, childPath, fileLength, isDirectory)
                     } catch (e: Exception) {
-                        e.printStackTrace()
                         ErrorReportHelper.postCatchedException(e, "SMB", "列表目录文件信息获取失败: ${it.fileName}")
                         return@map SmbStorageFile(this, shareName, "")
                     }
                 }.filter { it.filePath().isNotEmpty() }
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "SMB", "获取文件列表失败: $filePath")
             emptyList()
         }
@@ -275,7 +280,6 @@ class SmbStorage(
                 return true
             }
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "SMB", "切换共享目录失败: $shareName")
 
             // 切换共享目录失败时，如果旧的共享目录不为空，切换回旧的共享目录
@@ -286,7 +290,6 @@ class SmbStorage(
                         mDiskShare = diskShare
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
                     ErrorReportHelper.postCatchedException(e, "SMB", "切换回旧共享目录失败: $currentShareName")
                 }
             }
@@ -305,7 +308,6 @@ class SmbStorage(
         try {
             mDiskShare!!.close()
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "SMB", "关闭共享目录失败")
         }
     }

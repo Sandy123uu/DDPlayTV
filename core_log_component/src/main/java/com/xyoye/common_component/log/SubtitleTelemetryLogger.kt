@@ -2,11 +2,11 @@ package com.xyoye.common_component.log
 
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.log.model.LogRuntimeState
-import com.xyoye.data_component.bean.subtitle.FallbackEvent
-import com.xyoye.data_component.bean.subtitle.SubtitlePipelineState
-import com.xyoye.data_component.bean.subtitle.TelemetrySample
 import com.xyoye.data_component.enums.SubtitleFrameStatus
 import com.xyoye.data_component.enums.SubtitlePipelineStatus
+import com.xyoye.data_component.media3.telemetry.subtitle.FallbackEvent
+import com.xyoye.data_component.media3.telemetry.subtitle.SubtitlePipelineState
+import com.xyoye.data_component.media3.telemetry.subtitle.TelemetrySample
 
 object SubtitleTelemetryLogger {
     private const val TAG = "SUB-GPU"

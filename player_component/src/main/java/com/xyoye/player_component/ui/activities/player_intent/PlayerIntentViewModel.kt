@@ -4,7 +4,7 @@ import androidx.databinding.ObservableField
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.source.VideoSourceManager
 import com.xyoye.common_component.source.factory.StorageVideoSourceFactory
 import com.xyoye.common_component.storage.StorageFactory
@@ -34,7 +34,7 @@ class PlayerIntentViewModel : BaseViewModel() {
                 return@launch
             }
 
-            val videoData = DatabaseManager.instance.getVideoDao().findVideoByPath(filePath)
+            val videoData = DatabaseProvider.instance.getVideoDao().findVideoByPath(filePath)
             if (videoData != null) {
                 return@launch
             }
@@ -42,7 +42,7 @@ class PlayerIntentViewModel : BaseViewModel() {
             val folderPath = getDirPath(filePath)
             val extendVideos = VideoScan.traverse(folderPath)
             if (extendVideos.isNotEmpty()) {
-                DatabaseManager.instance.getExtendFolderDao().insert(
+                DatabaseProvider.instance.getExtendFolderDao().insert(
                     ExtendFolderEntity(folderPath, extendVideos.size),
                 )
             }

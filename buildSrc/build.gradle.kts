@@ -2,6 +2,15 @@ plugins {
     `kotlin-dsl`
 }
 
+gradlePlugin {
+    plugins {
+        register("prebuiltAarConvention") {
+            id = "setup.prebuilt-aar"
+            implementationClass = "setup.PrebuiltAarConventionPlugin"
+        }
+    }
+}
+
 repositories {
     google()
     mavenCentral()

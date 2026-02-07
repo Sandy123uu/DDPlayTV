@@ -33,6 +33,10 @@
     <string name="strict_parse_mode">严格模式</string>
     <string name="normal_parse_mode">宽松模式</string>
 
+    <string name="tips_tls_mode">TLS校验</string>
+    <string name="strict_tls_mode">严格（推荐）</string>
+    <string name="insecure_tls_mode">不安全</string>
+
     <string name="tips_player_kernel">播放器内核</string>
     <string name="text_follow_global">跟随全局</string>
     <string name="text_player_media3">Media3</string>

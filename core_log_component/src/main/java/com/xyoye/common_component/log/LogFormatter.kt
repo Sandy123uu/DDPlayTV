@@ -5,6 +5,7 @@ import com.xyoye.common_component.log.model.LogEvent
 import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.log.model.LogTag
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -80,9 +81,10 @@ class LogFormatter(
     private fun prepareContext(event: LogEvent): ContextRender {
         val filtered = fieldFilter.filterContext(event.level, event.module, event.context)
         if (filtered.isEmpty()) return ContextRender()
+        val redacted = SensitiveDataSanitizer.sanitizeContext(filtered)
         val highlight = linkedMapOf<String, String>()
         val remaining = linkedMapOf<String, String>()
-        filtered.forEach { (rawKey, rawValue) ->
+        redacted.forEach { (rawKey, rawValue) ->
             val normalized = rawKey.lowercase(Locale.US)
             val canonicalKey = HIGHLIGHT_KEYS[normalized]
             val sanitizedValue = sanitize(rawValue, MAX_CONTEXT_VALUE_LENGTH)
@@ -135,10 +137,14 @@ class LogFormatter(
         if (!fieldFilter.includeThrowable(event.level, event.module)) return ""
         val throwable = event.throwable ?: return ""
         val stack = Log.getStackTraceString(throwable)
-        return "throwable=${sanitize(stack, MAX_THROWABLE_LENGTH)}"
+        val redacted = SensitiveDataSanitizer.sanitizeFreeText(stack)
+        return "throwable=${sanitize(redacted, MAX_THROWABLE_LENGTH)}"
     }
 
-    private fun sanitizeMessage(raw: String): String = sanitize(raw, MAX_MESSAGE_LENGTH)
+    private fun sanitizeMessage(raw: String): String {
+        val redacted = SensitiveDataSanitizer.sanitizeFreeText(raw)
+        return sanitize(redacted, MAX_MESSAGE_LENGTH)
+    }
 
     private fun sanitizeTag(tag: LogTag): String = sanitize("${tag.module.code}:${tag.value}", MAX_TAG_LENGTH)
 

@@ -1,20 +1,20 @@
 package com.okamihoro.ddplaytv.app
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.xyoye.common_component.media3.testing.Media3Dependent
+import com.okamihoro.ddplaytv.app.cast.CastSessionPrepareResult
 import com.okamihoro.ddplaytv.app.cast.Media3CastManager
-import com.xyoye.data_component.entity.media3.CastTarget
-import com.xyoye.data_component.entity.media3.CastTargetType
-import com.xyoye.data_component.entity.media3.Media3Capability
-import com.xyoye.data_component.entity.media3.Media3PlayerEngine
-import com.xyoye.data_component.entity.media3.Media3SourceType
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
+import com.xyoye.common_component.media3.testing.Media3Dependent
+import com.xyoye.data_component.media3.entity.CastTarget
+import com.xyoye.data_component.media3.entity.CastTargetType
+import com.xyoye.data_component.media3.entity.Media3Capability
+import com.xyoye.data_component.media3.entity.Media3PlayerEngine
+import com.xyoye.data_component.media3.entity.Media3SourceType
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
 import com.xyoye.player_component.media3.fallback.CodecFallbackHandler
 import com.xyoye.player_component.media3.mapper.LegacyCapabilityIssue
 import com.xyoye.player_component.media3.mapper.LegacyCapabilityResult
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Test
@@ -51,7 +51,7 @@ class Media3CastFallbackTest {
                     ),
             )
 
-        val payload =
+        val result =
             manager.prepareCastSession(
                 targetId = "living-room",
                 session = session,
@@ -59,10 +59,10 @@ class Media3CastFallbackTest {
                 capabilityResult = codecIssues,
             )
 
-        assertTrue(payload.audioOnly)
-        assertEquals("Codec h265 not supported on cast target", payload.fallbackMessage)
-        assertEquals("living-room", payload.target.id)
-        assertEquals(session.sessionId, payload.sessionId)
+        assertTrue(result is CastSessionPrepareResult.Disabled)
+        val payload = (result as CastSessionPrepareResult.Disabled)
+
+        assertEquals("TV 端不支持发起投屏，请在接收端开启投屏接收后再连接", payload.message)
     }
 
     @Test
@@ -79,7 +79,7 @@ class Media3CastFallbackTest {
                     ),
             )
 
-        val payload =
+        val result =
             manager.prepareCastSession(
                 targetId = "office",
                 session = session,
@@ -87,9 +87,10 @@ class Media3CastFallbackTest {
                 capabilityResult = null,
             )
 
-        assertFalse(payload.audioOnly)
-        assertEquals("office", payload.target.id)
-        assertEquals(null, payload.fallbackMessage)
+        assertTrue(result is CastSessionPrepareResult.Disabled)
+        val payload = (result as CastSessionPrepareResult.Disabled)
+
+        assertEquals("TV 端不支持发起投屏，请在接收端开启投屏接收后再连接", payload.message)
     }
 
     private fun playbackSession(): PlaybackSession =

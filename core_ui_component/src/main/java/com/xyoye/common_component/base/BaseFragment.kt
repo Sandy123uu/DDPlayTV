@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.ViewDataBinding
 import androidx.lifecycle.ViewModelProvider
-import com.xyoye.data_component.helper.Loading
 
 /**
  * Created by xyoye on 2020/7/10.

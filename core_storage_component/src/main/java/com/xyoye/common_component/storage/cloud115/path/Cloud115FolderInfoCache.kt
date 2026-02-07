@@ -28,7 +28,8 @@ internal class Cloud115FolderInfoCache(
     private suspend fun fetchBreadcrumbIds(folderId: String): List<String> {
         val response = repository.stat(cid = folderId).getOrThrow()
         val ids =
-            response.paths.orEmpty()
+            response.paths
+                .orEmpty()
                 .mapNotNull { it.fileId?.toString()?.trim() }
                 .filter { it.isNotBlank() && it != ROOT_CID }
 
@@ -43,4 +44,3 @@ internal class Cloud115FolderInfoCache(
         private const val ROOT_CID: String = "0"
     }
 }
-

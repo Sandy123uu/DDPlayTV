@@ -6,13 +6,13 @@ import android.text.TextUtils
 import android.view.View
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
-import androidx.preference.PreferenceDataStore
 import androidx.preference.SwitchPreference
-import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.alibaba.android.arouter.launcher.ARouter
+import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.xyoye.common_component.config.AppConfig
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.network.config.Api
+import com.xyoye.common_component.preference.MappingPreferenceDataStore
 import com.xyoye.common_component.utils.AppUtils
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.weight.ToastCenter
@@ -24,6 +24,15 @@ import com.xyoye.user_component.R
 
 class AppSettingFragment : BasePreferenceFragmentCompat() {
     companion object {
+        private const val KEY_HIDE_FILE = "hide_file"
+        private const val KEY_SPLASH_PAGE = "splash_page"
+        private const val KEY_BACKUP_DOMAIN_ENABLE = "backup_domain_enable"
+        private const val KEY_BACKUP_DOMAIN_ADDRESS = "backup_domain_address"
+        private const val KEY_DARK_MODE = "dark_mode"
+        private const val KEY_APP_VERSION = "app_version"
+        private const val KEY_LICENSE = "license"
+        private const val KEY_ABOUT_US = "about_us"
+
         fun newInstance() = AppSettingFragment()
     }
 
@@ -48,9 +57,9 @@ class AppSettingFragment : BasePreferenceFragmentCompat() {
         view: View,
         savedInstanceState: Bundle?
     ) {
-        val backupDomainAddress = findPreference<EditTextPreference>("backup_domain_address")
+        val backupDomainAddress = findPreference<EditTextPreference>(KEY_BACKUP_DOMAIN_ADDRESS)
 
-        findPreference<Preference>("dark_mode")?.apply {
+        findPreference<Preference>(KEY_DARK_MODE)?.apply {
             setOnPreferenceClickListener {
                 ARouter
                     .getInstance()
@@ -60,7 +69,7 @@ class AppSettingFragment : BasePreferenceFragmentCompat() {
             }
         }
 
-        findPreference<Preference>("app_version")?.apply {
+        findPreference<Preference>(KEY_APP_VERSION)?.apply {
             try {
                 summary = AppUtils.getVersionName()
                 isSelectable = false
@@ -74,7 +83,7 @@ class AppSettingFragment : BasePreferenceFragmentCompat() {
             }
         }
 
-        findPreference<Preference>("license")?.apply {
+        findPreference<Preference>(KEY_LICENSE)?.apply {
             setOnPreferenceClickListener {
                 ARouter
                     .getInstance()
@@ -84,7 +93,7 @@ class AppSettingFragment : BasePreferenceFragmentCompat() {
             }
         }
 
-        findPreference<Preference>("about_us")?.apply {
+        findPreference<Preference>(KEY_ABOUT_US)?.apply {
             setOnPreferenceClickListener {
                 ARouter
                     .getInstance()
@@ -94,7 +103,7 @@ class AppSettingFragment : BasePreferenceFragmentCompat() {
             }
         }
 
-        findPreference<SwitchPreference>("backup_domain_enable")?.apply {
+        findPreference<SwitchPreference>(KEY_BACKUP_DOMAIN_ENABLE)?.apply {
             setOnPreferenceChangeListener { _, newValue ->
                 backupDomainAddress?.isVisible = newValue as Boolean
                 return@setOnPreferenceChangeListener true
@@ -138,84 +147,29 @@ class AppSettingFragment : BasePreferenceFragmentCompat() {
         return true
     }
 
-    inner class AppSettingDataStore : PreferenceDataStore() {
-        override fun getBoolean(
-            key: String?,
-            defValue: Boolean
-        ): Boolean =
-            try {
-                when (key) {
-                    "hide_file" -> AppConfig.isShowHiddenFile()
-                    "splash_page" -> AppConfig.isShowSplashAnimation()
-                    "backup_domain_enable" -> AppConfig.isBackupDomainEnable()
-                    else -> super.getBoolean(key, defValue)
-                }
-            } catch (e: Exception) {
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    e,
-                    "AppSettingDataStore",
-                    "getBoolean",
-                    "Failed to get boolean value for key: $key",
-                )
-                defValue
-            }
-
-        override fun putBoolean(
-            key: String?,
-            value: Boolean
-        ) {
-            try {
-                when (key) {
-                    "hide_file" -> AppConfig.putShowHiddenFile(value)
-                    "splash_page" -> AppConfig.putShowSplashAnimation(value)
-                    "backup_domain_enable" -> AppConfig.putBackupDomainEnable(value)
-                }
-            } catch (e: Exception) {
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    e,
-                    "AppSettingDataStore",
-                    "putBoolean",
-                    "Failed to put boolean value for key: $key, value: $value",
-                )
-            }
-        }
-
-        override fun getString(
-            key: String?,
-            defValue: String?
-        ): String? =
-            try {
-                when (key) {
-                    "backup_domain_address" -> AppConfig.getBackupDomain()
-                    else -> super.getString(key, defValue)
-                }
-            } catch (e: Exception) {
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    e,
-                    "AppSettingDataStore",
-                    "getString",
-                    "Failed to get string value for key: $key",
-                )
-                defValue
-            }
-
-        override fun putString(
-            key: String?,
-            value: String?
-        ) {
-            try {
-                when (key) {
-                    "backup_domain_address" -> AppConfig.putBackupDomain(value ?: Api.DAN_DAN_SPARE)
-                    else -> super.putString(key, value)
-                }
-            } catch (e: Exception) {
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    e,
-                    "AppSettingDataStore",
-                    "putString",
-                    "Failed to put string value for key: $key, value: $value",
-                )
-            }
-        }
-    }
+    private class AppSettingDataStore : MappingPreferenceDataStore(
+        dataStoreName = "AppSettingDataStore",
+        booleanReaders =
+            mapOf(
+                KEY_HIDE_FILE to { AppConfig.isShowHiddenFile() },
+                KEY_SPLASH_PAGE to { AppConfig.isShowSplashAnimation() },
+                KEY_BACKUP_DOMAIN_ENABLE to { AppConfig.isBackupDomainEnable() },
+            ),
+        booleanWriters =
+            mapOf(
+                KEY_HIDE_FILE to { value -> AppConfig.putShowHiddenFile(value) },
+                KEY_SPLASH_PAGE to { value -> AppConfig.putShowSplashAnimation(value) },
+                KEY_BACKUP_DOMAIN_ENABLE to { value -> AppConfig.putBackupDomainEnable(value) },
+            ),
+        stringReaders =
+            mapOf(
+                KEY_BACKUP_DOMAIN_ADDRESS to { AppConfig.getBackupDomain() },
+            ),
+        stringWriters =
+            mapOf(
+                KEY_BACKUP_DOMAIN_ADDRESS to { value ->
+                    AppConfig.putBackupDomain(value ?: Api.DAN_DAN_SPARE)
+                },
+            ),
+    )
 }

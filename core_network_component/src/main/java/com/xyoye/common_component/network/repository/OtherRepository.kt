@@ -1,6 +1,6 @@
 package com.xyoye.common_component.network.repository
 
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 
 /**
  * Created by xyoye on 2024/1/6.
@@ -13,7 +13,7 @@ object OtherRepository : BaseRepository() {
     suspend fun getHomeBanner() =
         request()
             .doGet {
-                Retrofit.danDanService.getHomeBanner()
+                RetrofitManager.danDanService.getHomeBanner()
             }
 
     /**
@@ -22,7 +22,7 @@ object OtherRepository : BaseRepository() {
     suspend fun getCloudFilters() =
         request()
             .doGet {
-                Retrofit.danDanService.getCloudFilters()
+                RetrofitManager.danDanService.getCloudFilters()
             }
 
     /**
@@ -33,7 +33,7 @@ object OtherRepository : BaseRepository() {
             .param("text", text)
             .param("tasks", listOf("tok"))
             .doPost {
-                Retrofit.extendedService.segmentWords(it)
+                RetrofitManager.extendedService.segmentWords(it)
             }
 
     /**
@@ -45,6 +45,6 @@ object OtherRepository : BaseRepository() {
     ) = request()
         .param(if (isAvCode) "aid" else "bvid", id)
         .doGet {
-            Retrofit.extendedService.getCidInfo(it)
+            RetrofitManager.extendedService.getCidInfo(it)
         }
 }

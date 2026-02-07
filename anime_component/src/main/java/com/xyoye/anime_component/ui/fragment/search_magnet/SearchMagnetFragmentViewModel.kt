@@ -5,16 +5,13 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.config.AppConfig
-import com.xyoye.common_component.database.DatabaseManager
-import com.xyoye.common_component.extension.toastError
+import com.xyoye.common_component.database.repository.MagnetSearchHistoryRepository
+import com.xyoye.common_component.extension.reportAndToastOnFailure
 import com.xyoye.common_component.network.repository.MagnetRepository
-import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.data.MagnetData
 import com.xyoye.data_component.entity.MagnetScreenEntity
-import com.xyoye.data_component.entity.MagnetSearchHistoryEntity
 import com.xyoye.data_component.enums.MagnetScreenType
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class SearchMagnetFragmentViewModel : BaseViewModel() {
@@ -27,7 +24,7 @@ class SearchMagnetFragmentViewModel : BaseViewModel() {
 
     val magnetLiveData = MutableLiveData<List<MagnetData>>()
 
-    val searchHistoryLiveData = DatabaseManager.instance.getMagnetSearchHistoryDao().getAll()
+    val searchHistoryLiveData = MagnetSearchHistoryRepository.getAll()
 
     var magnetSubgroupData = MutableLiveData<List<MagnetScreenEntity>>()
     var magnetTypeData = MutableLiveData<List<MagnetScreenEntity>>()
@@ -48,9 +45,7 @@ class SearchMagnetFragmentViewModel : BaseViewModel() {
         }
 
         viewModelScope.launch {
-            DatabaseManager.instance
-                .getMagnetSearchHistoryDao()
-                .insert(MagnetSearchHistoryEntity(keyword))
+            MagnetSearchHistoryRepository.insert(keyword)
 
             val typeId = magnetTypeId.get()?.toString().orEmpty()
             val subgroupId = magnetSubgroupId.get()?.toString().orEmpty()
@@ -59,15 +54,13 @@ class SearchMagnetFragmentViewModel : BaseViewModel() {
             val result = MagnetRepository.searchMagnet(magnetDomain, keyword, typeId, subgroupId)
             hideLoading()
 
-            if (result.isFailure) {
-                val exception = result.exceptionOrNull()
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    exception ?: RuntimeException("Search magnet failed with unknown error"),
-                    "SearchMagnetFragmentViewModel",
-                    "search",
-                    "搜索关键字: $keyword, 类型ID: $typeId, 字幕组ID: $subgroupId, 域名: $magnetDomain",
+            if (result.reportAndToastOnFailure(
+                    unknownErrorMessage = "Search magnet failed with unknown error",
+                    className = "SearchMagnetFragmentViewModel",
+                    methodName = "search",
+                    reportMessage = "搜索关键字: $keyword, 类型ID: $typeId, 字幕组ID: $subgroupId, 域名: $magnetDomain",
                 )
-                exception?.message?.toastError()
+            ) {
                 return@launch
             }
 
@@ -77,18 +70,14 @@ class SearchMagnetFragmentViewModel : BaseViewModel() {
     }
 
     fun deleteSearchHistory(searchText: String) {
-        viewModelScope.launch(context = Dispatchers.Main) {
-            DatabaseManager.instance
-                .getMagnetSearchHistoryDao()
-                .deleteByText(searchText)
+        viewModelScope.launch {
+            MagnetSearchHistoryRepository.deleteByText(searchText)
         }
     }
 
     fun deleteAllSearchHistory() {
-        viewModelScope.launch(context = Dispatchers.Main) {
-            DatabaseManager.instance
-                .getMagnetSearchHistoryDao()
-                .deleteAll()
+        viewModelScope.launch {
+            MagnetSearchHistoryRepository.deleteAll()
         }
     }
 
@@ -109,15 +98,13 @@ class SearchMagnetFragmentViewModel : BaseViewModel() {
             val result = MagnetRepository.getMagnetSubgroup(magnetDomain)
             hideLoading()
 
-            if (result.isFailure) {
-                val exception = result.exceptionOrNull()
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    exception ?: RuntimeException("Get magnet subgroup failed with unknown error"),
-                    "SearchMagnetFragmentViewModel",
-                    "getMagnetSubgroup",
-                    "域名: $magnetDomain",
+            if (result.reportAndToastOnFailure(
+                    unknownErrorMessage = "Get magnet subgroup failed with unknown error",
+                    className = "SearchMagnetFragmentViewModel",
+                    methodName = "getMagnetSubgroup",
+                    reportMessage = "域名: $magnetDomain",
                 )
-                exception?.message?.toastError()
+            ) {
                 return@launch
             }
 
@@ -147,15 +134,13 @@ class SearchMagnetFragmentViewModel : BaseViewModel() {
             val result = MagnetRepository.getMagnetType(magnetDomain)
             hideLoading()
 
-            if (result.isFailure) {
-                val exception = result.exceptionOrNull()
-                ErrorReportHelper.postCatchedExceptionWithContext(
-                    exception ?: RuntimeException("Get magnet type failed with unknown error"),
-                    "SearchMagnetFragmentViewModel",
-                    "getMagnetType",
-                    "域名: $magnetDomain",
+            if (result.reportAndToastOnFailure(
+                    unknownErrorMessage = "Get magnet type failed with unknown error",
+                    className = "SearchMagnetFragmentViewModel",
+                    methodName = "getMagnetType",
+                    reportMessage = "域名: $magnetDomain",
                 )
-                exception?.message?.toastError()
+            ) {
                 return@launch
             }
 

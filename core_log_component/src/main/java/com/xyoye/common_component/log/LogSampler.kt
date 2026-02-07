@@ -1,7 +1,6 @@
 package com.xyoye.common_component.log
 
 import com.xyoye.common_component.log.model.LogEvent
-import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogPolicy
 import com.xyoye.common_component.log.model.SamplingRule
 import java.util.concurrent.ThreadLocalRandom
@@ -54,18 +53,10 @@ class LogSampler(
         policy: LogPolicy
     ): SamplingRule? =
         policy.samplingRules.firstOrNull { rule ->
-            rule.targetModule == event.module && levelPriority(event.level) >= levelPriority(rule.minLevel)
+            rule.targetModule == event.module && event.level.isAtLeast(rule.minLevel)
         }
 
     private fun ruleKey(rule: SamplingRule): String = "${rule.targetModule.code}-${rule.minLevel.name}".lowercase()
-
-    private fun levelPriority(level: LogLevel): Int =
-        when (level) {
-            LogLevel.DEBUG -> 0
-            LogLevel.INFO -> 1
-            LogLevel.WARN -> 2
-            LogLevel.ERROR -> 3
-        }
 
     companion object {
         private const val ONE_MINUTE_MS = 60_000L

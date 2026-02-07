@@ -12,7 +12,7 @@ import com.xyoye.common_component.adapter.addEmptyView
 import com.xyoye.common_component.adapter.addItem
 import com.xyoye.common_component.adapter.buildAdapter
 import com.xyoye.common_component.config.RouteTable
-import com.xyoye.common_component.config.UserConfig
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.utils.FastClickFilter
 import com.xyoye.data_component.bean.AnimeArgument
 import com.xyoye.data_component.data.AnimeData
@@ -32,7 +32,7 @@ class AnimeAdapter {
                         itemBinding.apply {
                             coverIv.loadAnimeCover(data.imageUrl)
 
-                            followTagView.isGone = !UserConfig.isUserLoggedIn() || !data.isFavorited
+                            followTagView.isGone = !UserSessionManager.isLoggedIn() || !data.isFavorited
                             animeNameTv.text = data.animeTitle
                             itemLayout.setOnClickListener {
                                 // 防止快速点击

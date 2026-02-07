@@ -12,7 +12,7 @@ object PlayerTypeOverrideBinder {
     fun bind(
         binding: LayoutPlayerTypeOverrideBinding,
         library: MediaLibraryEntity,
-        onChanged: (() -> Unit)? = null,
+        onChanged: (() -> Unit)? = null
     ) {
         val (supportedPlayerTypes, preferredPlayerType) = resolvePolicy(library)
         val allowFollowGlobal = supportedPlayerTypes.size > 1

@@ -82,4 +82,3 @@ class ViewPager2DpadPageFocusSync(
         return false
     }
 }
-

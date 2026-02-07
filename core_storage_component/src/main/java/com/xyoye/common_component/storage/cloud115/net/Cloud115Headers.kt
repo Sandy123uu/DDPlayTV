@@ -63,8 +63,7 @@ object Cloud115Headers {
                 val key = trimmed.substring(0, idx).trim()
                 val value = trimmed.substring(idx + 1).trim()
                 "$key=<redacted len=${value.length}>"
-            }
-            .joinToString(separator = "; ")
+            }.joinToString(separator = "; ")
     }
 
     fun redactHeaders(headers: Map<String, String>): Map<String, String> =
@@ -75,4 +74,3 @@ object Cloud115Headers {
             }
         }
 }
-

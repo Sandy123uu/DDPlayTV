@@ -7,6 +7,7 @@ import com.alibaba.android.arouter.launcher.ARouter
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.config.UserConfig
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.utils.UserInfoHelper
 import com.xyoye.common_component.weight.dialog.CommonDialog
 import com.xyoye.common_component.weight.dialog.CommonEditDialog
@@ -31,7 +32,7 @@ class UserInfoActivity : BaseActivity<UserInfoViewModel, ActivityUserInfoBinding
     override fun initView() {
         title = "用户信息"
 
-        val loginData = UserInfoHelper.mLoginData ?: return
+        val loginData = UserSessionManager.currentLoginData() ?: return
 
         val coverIndex = UserConfig.getUserCoverIndex()
         val typedArray = resources.obtainTypedArray(R.array.cover)
@@ -93,7 +94,7 @@ class UserInfoActivity : BaseActivity<UserInfoViewModel, ActivityUserInfoBinding
                     .apply {
                         addPositive {
                             it.dismiss()
-                            val userAccount: String? = UserInfoHelper.mLoginData?.userName
+                            val userAccount: String? = UserSessionManager.currentLoginData()?.userName
                             UserInfoHelper.exitLogin()
                             ARouter
                                 .getInstance()

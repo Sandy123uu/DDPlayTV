@@ -1,8 +1,8 @@
 package com.xyoye.common_component.network.helper
 
-import com.xyoye.common_component.config.UserConfig
 import com.xyoye.common_component.extension.authorizationValue
 import com.xyoye.common_component.network.config.HeaderKey
+import com.xyoye.common_component.session.UserSessionManager
 import okhttp3.Interceptor
 import okhttp3.Response
 
@@ -16,7 +16,7 @@ class AuthInterceptor : Interceptor {
             chain
                 .request()
                 .newBuilder()
-                .header(HeaderKey.AUTHORIZATION, UserConfig.getUserToken()?.authorizationValue().orEmpty())
+                .header(HeaderKey.AUTHORIZATION, UserSessionManager.currentToken().authorizationValue())
                 .build(),
         )
 }

@@ -13,7 +13,7 @@ data class BilibiliLiveFollowData(
     @Json(name = "never_lived_count")
     val neverLivedCount: Int = 0,
     @Json(name = "live_count")
-    val liveCount: Int = 0,
+    val liveCount: Int = 0
 )
 
 @JsonClass(generateAdapter = true)
@@ -29,5 +29,5 @@ data class BilibiliLiveFollowItem(
     @Json(name = "room_cover")
     val roomCover: String? = null,
     @Json(name = "text_small")
-    val textSmall: String? = null,
+    val textSmall: String? = null
 )

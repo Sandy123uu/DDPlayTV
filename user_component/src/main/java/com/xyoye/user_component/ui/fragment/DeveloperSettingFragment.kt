@@ -4,10 +4,11 @@ import android.os.Bundle
 import android.view.View
 import androidx.preference.ListPreference
 import androidx.preference.Preference
-import androidx.preference.PreferenceDataStore
 import androidx.preference.SwitchPreference
 import com.xyoye.common_component.base.BasePreferenceFragmentCompat
+import com.xyoye.common_component.config.BilibiliTvCredentialStore
 import com.xyoye.common_component.config.DevelopConfig
+import com.xyoye.common_component.config.DeveloperCredentialStore
 import com.xyoye.common_component.log.BuglyReporter
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.LogSystem
@@ -15,16 +16,19 @@ import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.log.model.PolicySource
 import com.xyoye.common_component.log.tcp.TcpLogServerState
+import com.xyoye.common_component.preference.MappingPreferenceDataStore
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.SecurityHelperConfig
 import com.xyoye.common_component.utils.SupervisorScope
 import com.xyoye.common_component.weight.ToastCenter
+import com.xyoye.common_component.weight.dialog.CommonDialog
 import com.xyoye.user_component.R
+import com.xyoye.user_component.ui.dialog.BilibiliTvCredentialDialog
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.net.SocketException
+import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
@@ -42,6 +46,9 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
         private const val KEY_LOG_LEVEL = "developer_log_level"
         private const val KEY_BUGLY_STATUS = "bugly_status"
         private const val KEY_BUGLY_TEST_REPORT = "bugly_test_report"
+        private const val KEY_CREDENTIAL_PLAINTEXT_FALLBACK = "developer_credential_plaintext_fallback"
+        private const val KEY_CREDENTIAL_MIGRATE_PLAINTEXT = "developer_credential_migrate_plaintext"
+        private const val KEY_BILIBILI_TV_CREDENTIAL = "bilibili_tv_credential"
         private const val KEY_SUBTITLE_SESSION_STATUS = "subtitle_session_status"
         private const val SUBTITLE_STATUS_PROVIDER =
             "com.xyoye.player.subtitle.debug.PlaybackSessionStatusProvider"
@@ -77,6 +84,8 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
         initSubtitleDebugPreferences()
         initBuglyStatusPreference()
         initBuglyTestPreference()
+        initDeveloperCredentialPreferences()
+        initBilibiliTvCredentialPreference()
     }
 
     override fun onResume() {
@@ -291,6 +300,145 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
         }
     }
 
+    private fun initBilibiliTvCredentialPreference() {
+        findPreference<Preference>(KEY_BILIBILI_TV_CREDENTIAL)?.apply {
+            title = getString(R.string.developer_bilibili_tv_credential_title)
+            summary = buildBilibiliTvCredentialSummary()
+            setOnPreferenceClickListener {
+                BilibiliTvCredentialDialog(requireActivity()) {
+                    summary = buildBilibiliTvCredentialSummary()
+                }.show()
+                true
+            }
+        }
+    }
+
+    private fun initDeveloperCredentialPreferences() {
+        initCredentialPlaintextFallbackPreference()
+        initCredentialMigratePreference()
+    }
+
+    private fun initCredentialPlaintextFallbackPreference() {
+        findPreference<SwitchPreference>(KEY_CREDENTIAL_PLAINTEXT_FALLBACK)?.apply {
+            val switchPreference = this
+            isVisible = DeveloperCredentialStore.isPlaintextFallbackSwitchVisible()
+            if (!isVisible) {
+                return@apply
+            }
+
+            isChecked = DeveloperCredentialStore.isPlaintextFallbackEnabled()
+            summary =
+                if (isChecked) {
+                    getString(R.string.developer_credential_plaintext_fallback_summary_on)
+                } else {
+                    getString(R.string.developer_credential_plaintext_fallback_summary_off)
+                }
+            setOnPreferenceChangeListener { _, newValue ->
+                val enabled = newValue as? Boolean ?: return@setOnPreferenceChangeListener false
+                if (enabled) {
+                    CommonDialog
+                        .Builder(requireActivity())
+                        .apply {
+                            content = getString(R.string.developer_credential_plaintext_fallback_confirm_message)
+                            addPositive {
+                                it.dismiss()
+                                applyCredentialPlaintextFallback(enabled = true, preference = switchPreference)
+                            }
+                            addNegative { dialog -> dialog.dismiss() }
+                        }.build()
+                        .show()
+                    return@setOnPreferenceChangeListener false
+                }
+
+                applyCredentialPlaintextFallback(enabled = false, preference = switchPreference)
+                true
+            }
+        }
+    }
+
+    private fun applyCredentialPlaintextFallback(
+        enabled: Boolean,
+        preference: SwitchPreference
+    ) {
+        DeveloperCredentialStore.setPlaintextFallbackEnabled(enabled)
+        val effectiveEnabled = DeveloperCredentialStore.isPlaintextFallbackEnabled()
+        preference.isChecked = effectiveEnabled
+        preference.summary =
+            if (effectiveEnabled) {
+                getString(R.string.developer_credential_plaintext_fallback_summary_on)
+            } else {
+                getString(R.string.developer_credential_plaintext_fallback_summary_off)
+            }
+
+        if (effectiveEnabled) {
+            ToastCenter.showWarning(getString(R.string.developer_credential_plaintext_fallback_toast_enabled))
+        } else {
+            ToastCenter.showSuccess(getString(R.string.developer_credential_plaintext_fallback_toast_disabled))
+        }
+    }
+
+    private fun initCredentialMigratePreference() {
+        findPreference<Preference>(KEY_CREDENTIAL_MIGRATE_PLAINTEXT)?.apply {
+            isVisible = DeveloperCredentialStore.isPlaintextFallbackSwitchVisible()
+            if (!isVisible) {
+                return@apply
+            }
+
+            refreshCredentialMigrateSummary(this)
+            setOnPreferenceClickListener {
+                val migrationResult = DeveloperCredentialStore.migrateLegacyPlaintextCredentials()
+                when {
+                    migrationResult.migratedCount > 0 && migrationResult.failedCount == 0 -> {
+                        ToastCenter.showSuccess(
+                            getString(
+                                R.string.developer_credential_migrate_toast_success,
+                                migrationResult.migratedCount,
+                            ),
+                        )
+                    }
+
+                    migrationResult.migratedCount > 0 -> {
+                        ToastCenter.showWarning(
+                            getString(
+                                R.string.developer_credential_migrate_toast_partial,
+                                migrationResult.migratedCount,
+                                migrationResult.failedCount,
+                            ),
+                        )
+                    }
+
+                    else -> {
+                        ToastCenter.showSuccess(getString(R.string.developer_credential_migrate_toast_no_data))
+                    }
+                }
+                refreshCredentialMigrateSummary(this)
+                true
+            }
+        }
+    }
+
+    private fun refreshCredentialMigrateSummary(preference: Preference) {
+        preference.summary =
+            if (DeveloperCredentialStore.hasLegacyPlaintextCredentials()) {
+                getString(R.string.developer_credential_migrate_summary_pending)
+            } else {
+                getString(R.string.developer_credential_migrate_summary_clean)
+            }
+    }
+
+    private fun buildBilibiliTvCredentialSummary(): String =
+        when {
+            BilibiliTvCredentialStore.isBuildCredentialInjected() ->
+                getString(R.string.developer_bilibili_tv_credential_summary_injected)
+
+            BilibiliTvCredentialStore.getAppKey().isNullOrBlank() ||
+                BilibiliTvCredentialStore.getAppSecret().isNullOrBlank() ->
+                getString(R.string.developer_bilibili_tv_credential_summary_missing)
+
+            else ->
+                getString(R.string.developer_bilibili_tv_credential_summary_local)
+        }
+
     private fun buildSubtitleStatusSummary(): String =
         runCatching {
             val providerClass = Class.forName(SUBTITLE_STATUS_PROVIDER)
@@ -481,46 +629,30 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
         return if (all.isEmpty()) "-" else all.joinToString(separator = "\n")
     }
 
-    private class DeveloperSettingDataStore : PreferenceDataStore() {
-        override fun getBoolean(
-            key: String?,
-            defValue: Boolean
-        ): Boolean =
-            when (key) {
-                KEY_APP_LOG_ENABLE -> LogSystem.getRuntimeState().debugSessionEnabled
-                KEY_TCP_LOG_SERVER_ENABLE -> LogSystem.getTcpLogServerState().enabled
-                else -> defValue
-            }
-
-        override fun putBoolean(
-            key: String?,
-            value: Boolean
-        ) {
-            when (key) {
-                KEY_APP_LOG_ENABLE -> {
+    private class DeveloperSettingDataStore : MappingPreferenceDataStore(
+        dataStoreName = "DeveloperSettingDataStore",
+        booleanReaders =
+            mapOf(
+                KEY_APP_LOG_ENABLE to { LogSystem.getRuntimeState().debugSessionEnabled },
+                KEY_TCP_LOG_SERVER_ENABLE to { LogSystem.getTcpLogServerState().enabled },
+            ),
+        booleanWriters =
+            mapOf(
+                KEY_APP_LOG_ENABLE to {
                     DevelopConfig.putDdLogEnable(LogSystem.getRuntimeState().debugSessionEnabled)
-                }
-            }
-        }
-
-        override fun getString(
-            key: String?,
-            defValue: String?
-        ): String? =
-            when (key) {
-                KEY_LOG_LEVEL ->
+                },
+            ),
+        stringReaders =
+            mapOf(
+                KEY_LOG_LEVEL to {
                     LogSystem
                         .getRuntimeState()
                         .activePolicy.defaultLevel.name
-                else -> defValue
-            }
-
-        override fun putString(
-            key: String?,
-            value: String?
-        ) {
-            when (key) {
-                KEY_LOG_LEVEL ->
+                },
+            ),
+        stringWriters =
+            mapOf(
+                KEY_LOG_LEVEL to { value ->
                     value?.let { raw ->
                         runCatching { LogLevel.valueOf(raw) }.getOrNull()?.let { level ->
                             val current = LogSystem.getRuntimeState()
@@ -530,7 +662,7 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
                             )
                         }
                     }
-            }
-        }
-    }
+                },
+            ),
+    )
 }

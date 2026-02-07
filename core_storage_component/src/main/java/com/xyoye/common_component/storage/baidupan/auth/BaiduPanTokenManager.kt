@@ -1,7 +1,7 @@
 package com.xyoye.common_component.storage.baidupan.auth
 
 import com.xyoye.common_component.config.BaiduPanOpenApiConfig
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.network.request.PassThroughException
 import com.xyoye.common_component.utils.ErrorReportHelper
@@ -25,9 +25,7 @@ class BaiduPanTokenManager(
 
     fun clearAuth() = BaiduPanAuthStore.clear(storageKey)
 
-    suspend fun requireAccessToken(
-        forceRefresh: Boolean = false
-    ): String {
+    suspend fun requireAccessToken(forceRefresh: Boolean = false): String {
         val state = BaiduPanAuthStore.read(storageKey)
         val now = System.currentTimeMillis()
         val accessToken = state.accessToken?.takeIf { it.isNotBlank() }
@@ -39,9 +37,7 @@ class BaiduPanTokenManager(
         return refreshAccessToken(forceRefresh = forceRefresh)
     }
 
-    suspend fun refreshAccessToken(
-        forceRefresh: Boolean = false
-    ): String =
+    suspend fun refreshAccessToken(forceRefresh: Boolean = false): String =
         refreshMutex(storageKey)
             .withLock {
                 val state = BaiduPanAuthStore.read(storageKey)
@@ -62,7 +58,7 @@ class BaiduPanTokenManager(
 
                 runCatching {
                     val response =
-                        Retrofit.baiduPanService.oauthToken(
+                        RetrofitManager.baiduPanService.oauthToken(
                             baseUrl = Api.BAIDU_OAUTH,
                             grantType = "refresh_token",
                             code = null,

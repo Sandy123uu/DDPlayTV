@@ -2,7 +2,7 @@ package com.xyoye.common_component.storage.open115.auth
 
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 import com.xyoye.common_component.network.config.Api
 import com.xyoye.common_component.network.request.PassThroughException
 import com.xyoye.common_component.storage.open115.net.Open115Headers
@@ -26,9 +26,7 @@ class Open115TokenManager(
 
     fun clearAuth() = Open115AuthStore.clear(storageKey)
 
-    suspend fun requireAccessToken(
-        forceRefresh: Boolean = false
-    ): String {
+    suspend fun requireAccessToken(forceRefresh: Boolean = false): String {
         val state = Open115AuthStore.read(storageKey)
         val now = System.currentTimeMillis()
         val accessToken = state.accessToken?.takeIf { it.isNotBlank() }
@@ -40,9 +38,7 @@ class Open115TokenManager(
         return refreshAccessToken(forceRefresh = forceRefresh)
     }
 
-    suspend fun refreshAccessToken(
-        forceRefresh: Boolean = false
-    ): String =
+    suspend fun refreshAccessToken(forceRefresh: Boolean = false): String =
         refreshMutex(storageKey)
             .withLock {
                 val state = Open115AuthStore.read(storageKey)
@@ -80,7 +76,7 @@ class Open115TokenManager(
                         ),
                     )
                     val response =
-                        Retrofit.open115Service.refreshToken(
+                        RetrofitManager.open115Service.refreshToken(
                             baseUrl = Api.OPEN_115_PASSPORT_API,
                             refreshToken = refreshToken,
                         )

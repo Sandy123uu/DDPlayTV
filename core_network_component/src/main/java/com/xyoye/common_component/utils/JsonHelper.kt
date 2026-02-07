@@ -4,6 +4,7 @@ import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.utils.moshi.EmptyArrayToNullAdapterFactory
 import com.xyoye.common_component.utils.moshi.NullToEmptyStringAdapter
 import com.xyoye.common_component.utils.moshi.NullToIntZeroAdapter
@@ -34,17 +35,21 @@ object JsonHelper {
             val jsonAdapter = MO_SHI.adapter(T::class.java)
             return jsonAdapter.fromJson(jsonStr)
         } catch (e: IOException) {
+            val safeSnippet = SensitiveDataSanitizer.sanitizeFreeText(jsonStr).take(512)
+            val fp = SensitiveDataSanitizer.fingerprint(jsonStr)
             ErrorReportHelper.postCatchedException(
                 e,
                 "JsonHelper.parseJson",
-                "JSON解析IO异常: $jsonStr",
+                "JSON解析IO异常: $safeSnippet (fp=$fp)",
             )
             e.printStackTrace()
         } catch (e: JsonDataException) {
+            val safeSnippet = SensitiveDataSanitizer.sanitizeFreeText(jsonStr).take(512)
+            val fp = SensitiveDataSanitizer.fingerprint(jsonStr)
             ErrorReportHelper.postCatchedException(
                 e,
                 "JsonHelper.parseJson",
-                "JSON数据格式异常: $jsonStr",
+                "JSON数据格式异常: $safeSnippet (fp=$fp)",
             )
             e.printStackTrace()
         }
@@ -61,17 +66,21 @@ object JsonHelper {
             val adapter = MO_SHI.adapter<List<T>>(type)
             return adapter.fromJson(jsonStr) ?: emptyList()
         } catch (e: IOException) {
+            val safeSnippet = SensitiveDataSanitizer.sanitizeFreeText(jsonStr).take(512)
+            val fp = SensitiveDataSanitizer.fingerprint(jsonStr)
             ErrorReportHelper.postCatchedException(
                 e,
                 "JsonHelper.parseJsonList",
-                "JSON列表解析IO异常: $jsonStr",
+                "JSON列表解析IO异常: $safeSnippet (fp=$fp)",
             )
             e.printStackTrace()
         } catch (e: JsonDataException) {
+            val safeSnippet = SensitiveDataSanitizer.sanitizeFreeText(jsonStr).take(512)
+            val fp = SensitiveDataSanitizer.fingerprint(jsonStr)
             ErrorReportHelper.postCatchedException(
                 e,
                 "JsonHelper.parseJsonList",
-                "JSON列表数据格式异常: $jsonStr",
+                "JSON列表数据格式异常: $safeSnippet (fp=$fp)",
             )
             e.printStackTrace()
         }
@@ -89,17 +98,21 @@ object JsonHelper {
             val adapter = MO_SHI.adapter<Map<String, String>>(type)
             return adapter.fromJson(jsonStr) ?: emptyMap()
         } catch (e: IOException) {
+            val safeSnippet = SensitiveDataSanitizer.sanitizeFreeText(jsonStr).take(512)
+            val fp = SensitiveDataSanitizer.fingerprint(jsonStr)
             ErrorReportHelper.postCatchedException(
                 e,
                 "JsonHelper.parseJsonMap",
-                "JSON映射解析IO异常: $jsonStr",
+                "JSON映射解析IO异常: $safeSnippet (fp=$fp)",
             )
             e.printStackTrace()
         } catch (e: JsonDataException) {
+            val safeSnippet = SensitiveDataSanitizer.sanitizeFreeText(jsonStr).take(512)
+            val fp = SensitiveDataSanitizer.fingerprint(jsonStr)
             ErrorReportHelper.postCatchedException(
                 e,
                 "JsonHelper.parseJsonMap",
-                "JSON映射数据格式异常: $jsonStr",
+                "JSON映射数据格式异常: $safeSnippet (fp=$fp)",
             )
             e.printStackTrace()
         }

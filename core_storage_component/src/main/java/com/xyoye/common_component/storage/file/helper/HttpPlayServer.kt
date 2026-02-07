@@ -3,14 +3,23 @@ package com.xyoye.common_component.storage.file.helper
 import com.xyoye.common_component.config.PlayerConfig
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
+import com.xyoye.common_component.network.config.Api
+import com.xyoye.common_component.network.helper.AgentInterceptor
+import com.xyoye.common_component.network.helper.OkHttpTlsConfigurer
+import com.xyoye.common_component.network.helper.OkHttpTlsPolicy
+import com.xyoye.common_component.network.helper.RedirectAuthorizationInterceptor
+import com.xyoye.common_component.network.helper.UnsafeTlsApi
+import com.xyoye.common_component.network.service.ExtendedService
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.RangeUtils
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import okhttp3.OkHttpClient
 import java.io.InputStream
 import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 /**
@@ -27,6 +36,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
     private var upstreamHeaders: Map<String, String> = emptyMap()
     private var contentType: String = "application/octet-stream"
     private var contentLength: Long = -1L
+    private var upstreamTlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.STRICT
 
     @Volatile
     private var prePlayRangeMinIntervalMs: Long = 1000L
@@ -64,12 +74,57 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         val instance: HttpPlayServer by lazy { HttpPlayServer() }
     }
 
+    enum class UpstreamTlsPolicy {
+        /**
+         * 严格 TLS：不忽略证书校验、不忽略主机名校验（推荐；WebDAV 默认）。
+         */
+        STRICT,
+
+        /**
+         * 不安全 TLS：信任所有证书 + 忽略主机名校验（必须由用户显式开启）。
+         */
+        UNSAFE_TRUST_ALL
+    }
+
     data class UpstreamSource(
         val url: String,
         val headers: Map<String, String> = emptyMap(),
         val contentType: String = "application/octet-stream",
-        val contentLength: Long = -1L
+        val contentLength: Long = -1L,
+        val tlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.STRICT
     )
+
+    private val strictClient: OkHttpClient by lazy {
+        OkHttpClient
+            .Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS)
+            .addInterceptor(AgentInterceptor())
+            .addNetworkInterceptor(RedirectAuthorizationInterceptor())
+            .build()
+    }
+
+    @OptIn(UnsafeTlsApi::class)
+    private val unsafeTrustAllClient: OkHttpClient by lazy {
+        OkHttpTlsConfigurer
+            .apply(strictClient.newBuilder(), OkHttpTlsPolicy.UnsafeTrustAll)
+            .build()
+    }
+
+    private val strictService: ExtendedService by lazy {
+        RetrofitManager.createService(Api.PLACEHOLDER, strictClient, ExtendedService::class.java)
+    }
+
+    private val unsafeTrustAllService: ExtendedService by lazy {
+        RetrofitManager.createService(Api.PLACEHOLDER, unsafeTrustAllClient, ExtendedService::class.java)
+    }
+
+    private fun selectExtendedService(tlsPolicy: UpstreamTlsPolicy): ExtendedService =
+        when (tlsPolicy) {
+            UpstreamTlsPolicy.STRICT -> strictService
+            UpstreamTlsPolicy.UNSAFE_TRUST_ALL -> unsafeTrustAllService
+        }
 
     override fun serve(session: IHTTPSession): Response = serveInternal(session, allowRetry = true)
 
@@ -187,6 +242,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
                             upstreamHeaders = refreshed.headers
                             contentType = refreshed.contentType
                             contentLength = refreshed.contentLength
+                            upstreamTlsPolicy = refreshed.tlsPolicy
                             return serveInternal(session, allowRetry = false)
                         }
                     }
@@ -454,7 +510,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         headers: Map<String, String>
     ): retrofit2.Response<okhttp3.ResponseBody>? =
         runCatching {
-            Retrofit.extendedService.getResourceResponseCall(url, headers).execute()
+            selectExtendedService(upstreamTlsPolicy).getResourceResponseCall(url, headers).execute()
         }.getOrElse { throwable ->
             ErrorReportHelper.postCatchedException(
                 throwable,
@@ -512,6 +568,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         contentLength: Long = -1L,
         prePlayRangeMinIntervalMs: Long = runCatching { PlayerConfig.getMpvProxyRangeMinIntervalMs() }.getOrDefault(1000).toLong(),
         fileName: String = "video",
+        upstreamTlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.STRICT,
         onRangeUnsupported: (() -> UpstreamSource?)? = null
     ): String {
         this.upstreamUrl = upstreamUrl
@@ -519,6 +576,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
         this.contentType = contentType
         this.contentLength = contentLength
         this.prePlayRangeMinIntervalMs = prePlayRangeMinIntervalMs
+        this.upstreamTlsPolicy = upstreamTlsPolicy
         this.rangeRetryDone = false
         this.rangeRetrySupplier = onRangeUnsupported
         this.seekEnabled = false

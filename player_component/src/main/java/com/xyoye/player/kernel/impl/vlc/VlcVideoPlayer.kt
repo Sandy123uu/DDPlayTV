@@ -7,8 +7,7 @@ import android.graphics.Point
 import android.net.Uri
 import android.support.v4.media.session.PlaybackStateCompat
 import android.view.Surface
-import com.xyoye.common_component.storage.file.helper.HttpPlayServer
-import com.xyoye.common_component.utils.ErrorReportHelper
+import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.common_component.utils.IOUtils
 import com.xyoye.common_component.utils.SupervisorScope
 import com.xyoye.data_component.bean.VideoTrackBean
@@ -20,6 +19,7 @@ import com.xyoye.player.kernel.inter.AbstractVideoPlayer
 import com.xyoye.player.kernel.subtitle.SubtitleKernelBridge
 import com.xyoye.player.utils.PlayerConstant
 import com.xyoye.player.utils.VideoLog
+import com.xyoye.player_component.utils.PlayerErrorReporter
 import kotlinx.coroutines.launch
 import org.videolan.libvlc.LibVLC
 import org.videolan.libvlc.Media
@@ -75,9 +75,7 @@ class VlcVideoPlayer(
         isBufferEnd = false
         dataSource = path
         runCatching {
-            val playServer = HttpPlayServer.getInstance()
-            if (playServer.isServingUrl(path)) {
-                playServer.setSeekEnabled(false)
+            if (LocalProxy.setSeekEnabledIfServing(path, enabled = false)) {
                 proxySeekEnabled = false
             }
         }
@@ -316,9 +314,7 @@ class VlcVideoPlayer(
                         val path = dataSource
                         if (!proxySeekEnabled && !path.isNullOrEmpty()) {
                             runCatching {
-                                val playServer = HttpPlayServer.getInstance()
-                                if (playServer.isServingUrl(path)) {
-                                    playServer.setSeekEnabled(true)
+                                if (LocalProxy.setSeekEnabledIfServing(path, enabled = true)) {
                                     proxySeekEnabled = true
                                 }
                             }
@@ -370,13 +366,12 @@ class VlcVideoPlayer(
                 try {
                     mContext.contentResolver.openAssetFileDescriptor(videoUri, "r")
                 } catch (e: Exception) {
-                    ErrorReportHelper.postCatchedExceptionWithContext(
+                    PlayerErrorReporter.report(
                         e,
                         "VlcVideoPlayer",
                         "createVlcMedia",
                         "Failed to open asset file descriptor for URI: $videoUri",
                     )
-                    e.printStackTrace()
                     null
                 }
 

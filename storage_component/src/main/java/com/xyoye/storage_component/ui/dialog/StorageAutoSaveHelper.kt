@@ -10,7 +10,7 @@ class StorageAutoSaveHelper(
     private val coroutineScope: CoroutineScope,
     private val debounceMillis: Long = 400L,
     private val buildLibrary: () -> MediaLibraryEntity?,
-    private val onSave: (MediaLibraryEntity) -> Job,
+    private val onSave: (MediaLibraryEntity) -> Job
 ) {
     private var lastSavedConfig: MediaLibraryEntity? = null
     private var debounceJob: Job? = null

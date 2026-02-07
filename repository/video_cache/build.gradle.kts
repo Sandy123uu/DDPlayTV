@@ -1,2 +1,7 @@
-configurations.maybeCreate("default")
-artifacts.add("default", file("library-release.aar"))
+plugins {
+    id("setup.prebuilt-aar")
+}
+
+prebuiltAar {
+    aarFileName = "library-release.aar"
+}

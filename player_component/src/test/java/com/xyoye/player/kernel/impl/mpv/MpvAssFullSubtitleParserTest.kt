@@ -79,4 +79,3 @@ class MpvAssFullSubtitleParserTest {
         assertEquals(10L, samples[0].durationMs)
     }
 }
-

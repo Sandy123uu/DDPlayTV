@@ -7,5 +7,7 @@ enum class LogLevel {
     DEBUG,
     INFO,
     WARN,
-    ERROR
+    ERROR;
+
+    fun isAtLeast(threshold: LogLevel): Boolean = ordinal >= threshold.ordinal
 }

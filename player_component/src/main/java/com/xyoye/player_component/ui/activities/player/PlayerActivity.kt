@@ -18,8 +18,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.launcher.ARouter
-import com.gyf.immersionbar.BarHide
-import com.gyf.immersionbar.ImmersionBar
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.bridge.PlayTaskBridge
 import com.xyoye.common_component.config.DanmuConfig
@@ -40,11 +38,12 @@ import com.xyoye.common_component.playback.addon.PlaybackUrlRecoverableAddon
 import com.xyoye.common_component.receiver.HeadsetBroadcastReceiver
 import com.xyoye.common_component.receiver.PlayerReceiverListener
 import com.xyoye.common_component.receiver.ScreenBroadcastReceiver
-import com.xyoye.common_component.service.Media3SessionServiceProvider
+import com.xyoye.common_component.services.Media3SessionServiceProvider
 import com.xyoye.common_component.source.VideoSourceManager
 import com.xyoye.common_component.source.base.BaseVideoSource
 import com.xyoye.common_component.source.factory.StorageVideoSourceFactory
 import com.xyoye.common_component.source.media.StorageVideoSource
+import com.xyoye.common_component.utils.StatusBarStyle
 import com.xyoye.common_component.utils.danmu.StorageDanmuMatcher
 import com.xyoye.common_component.utils.screencast.ScreencastHandler
 import com.xyoye.common_component.weight.ToastCenter
@@ -52,9 +51,9 @@ import com.xyoye.common_component.weight.dialog.CommonDialog
 import com.xyoye.data_component.bean.PlaybackProfile
 import com.xyoye.data_component.bean.PlaybackProfileSource
 import com.xyoye.data_component.bean.VideoTrackBean
-import com.xyoye.data_component.entity.media3.Media3BackgroundMode
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.Media3BackgroundMode
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
 import com.xyoye.data_component.enums.DanmakuLanguage
 import com.xyoye.data_component.enums.MediaType
 import com.xyoye.data_component.enums.PlayerType
@@ -186,11 +185,7 @@ class PlayerActivity :
     override fun getLayoutId() = R.layout.activity_player
 
     override fun initStatusBar() {
-        ImmersionBar
-            .with(this)
-            .fullScreen(true)
-            .hideBar(BarHide.FLAG_HIDE_BAR)
-            .init()
+        StatusBarStyle.applyFullscreenHideAllBars(this)
     }
 
     override fun initView() {
@@ -596,13 +591,6 @@ class PlayerActivity :
                 "start title=${source.getVideoTitle()} type=${source.getMediaType()} position=${source.getCurrentPosition()} speed=${PlayerConfig.getNewVideoSpeed()}",
             )
         }
-        /*
-        //发送弹幕
-        videoController.observerSendDanmu {
-            LogFacade.d(LogModule.PLAYER, TAG_DANMAKU, "send request text=${it.text}")
-            viewModel.sendDanmu(source.getDanmu(), it)
-        }
-         */
 
         videoController.setSwitchVideoSourceBlock {
             LogFacade.i(LogModule.PLAYER, TAG_SOURCE, "switch request index=$it title=${source.getVideoTitle()}")

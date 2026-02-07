@@ -1,32 +1,34 @@
 package com.xyoye.common_component.storage.file.impl
 
 import android.net.Uri
-import com.xunlei.downloadlib.parameter.TorrentFileInfo
 import com.xyoye.common_component.extension.toMd5String
 import com.xyoye.common_component.storage.file.AbstractStorageFile
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.impl.TorrentStorage
 import com.xyoye.common_component.utils.getFileNameNoExtension
+import com.xyoye.common_component.utils.thunder.model.ThunderTorrentFileInfo
 
 /**
  * Created by xyoye on 2023/4/3
  */
 
-class TorrentStorageFile(
+internal class TorrentStorageFile(
     storage: TorrentStorage,
-    private val fileInfo: TorrentFileInfo
+    private val fileInfo: ThunderTorrentFileInfo
 ) : AbstractStorageFile(storage) {
-    override fun getRealFile(): TorrentFileInfo = fileInfo
+    override fun getRealFile(): Any = fileInfo
 
-    override fun filePath(): String = fileInfo.mSubPath
+    fun getFileInfo(): ThunderTorrentFileInfo = fileInfo
 
-    override fun fileUrl(): String = Uri.parse(fileInfo.mSubPath).toString()
+    override fun filePath(): String = fileInfo.subPath
 
-    override fun isDirectory(): Boolean = fileInfo.mFileIndex == -1
+    override fun fileUrl(): String = Uri.parse(fileInfo.subPath).toString()
 
-    override fun fileName(): String = fileInfo.mFileName
+    override fun isDirectory(): Boolean = fileInfo.fileIndex == -1
 
-    override fun fileLength(): Long = fileInfo.mFileSize
+    override fun fileName(): String = fileInfo.fileName
+
+    override fun fileLength(): Long = fileInfo.fileSize
 
     override fun clone(): StorageFile =
         TorrentStorageFile(storage as TorrentStorage, fileInfo).also {
@@ -34,7 +36,7 @@ class TorrentStorageFile(
         }
 
     override fun uniqueKey(): String {
-        val hash = getFileNameNoExtension(fileInfo.mSubPath)
-        return (hash + "_" + fileInfo.mFileIndex).toMd5String()
+        val hash = getFileNameNoExtension(fileInfo.subPath)
+        return (hash + "_" + fileInfo.fileIndex).toMd5String()
     }
 }

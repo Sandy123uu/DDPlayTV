@@ -4,12 +4,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.xyoye.common_component.base.BaseViewModel
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.repository.MediaLibraryRepository
+import com.xyoye.common_component.database.repository.PlayHistoryRepository
 import com.xyoye.common_component.source.VideoSourceManager
 import com.xyoye.common_component.source.factory.StorageVideoSourceFactory
 import com.xyoye.common_component.storage.StorageFactory
 import com.xyoye.common_component.storage.impl.LinkStorage
 import com.xyoye.common_component.utils.ErrorReportHelper
+import com.xyoye.common_component.utils.thunder.ThunderManager
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.entity.MediaLibraryEntity
 import com.xyoye.data_component.entity.PlayHistoryEntity
@@ -33,9 +35,9 @@ class PlayHistoryViewModel : BaseViewModel() {
             try {
                 val historyData =
                     if (mediaType == MediaType.OTHER_STORAGE) {
-                        DatabaseManager.instance.getPlayHistoryDao().getAll()
+                        PlayHistoryRepository.getAll()
                     } else {
-                        DatabaseManager.instance.getPlayHistoryDao().getSingleMediaType(mediaType)
+                        PlayHistoryRepository.getSingleMediaType(mediaType)
                     }
                 _historyLiveData.postValue(historyData)
             } catch (e: Exception) {
@@ -43,7 +45,7 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "updatePlayHistory",
-                    "Media type: $mediaType",
+                    "mediaType" to mediaType.name,
                 )
             }
         }
@@ -52,14 +54,15 @@ class PlayHistoryViewModel : BaseViewModel() {
     fun removeHistory(history: PlayHistoryEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                DatabaseManager.instance.getPlayHistoryDao().delete(history.id)
+                PlayHistoryRepository.delete(history.id)
                 updatePlayHistory()
             } catch (e: Exception) {
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
                     "PlayHistoryViewModel",
                     "removeHistory",
-                    "History ID: ${history.id}, URL: ${history.url}",
+                    "historyId" to history.id,
+                    "url" to history.url,
                 )
             }
         }
@@ -68,11 +71,10 @@ class PlayHistoryViewModel : BaseViewModel() {
     fun clearHistory() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val historyDao = DatabaseManager.instance.getPlayHistoryDao()
                 if (mediaType == MediaType.STREAM_LINK || mediaType == MediaType.MAGNET_LINK) {
-                    historyDao.deleteTypeAll(listOf(mediaType))
+                    PlayHistoryRepository.deleteTypeAll(listOf(mediaType))
                 } else {
-                    historyDao.deleteAll()
+                    PlayHistoryRepository.deleteAll()
                 }
                 updatePlayHistory()
             } catch (e: Exception) {
@@ -80,7 +82,7 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "clearHistory",
-                    "Media type: $mediaType",
+                    "mediaType" to mediaType.name,
                 )
             }
         }
@@ -103,7 +105,7 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "changeSortOption",
-                    "Sort option: ${option.javaClass.simpleName}",
+                    "sortOption" to option.javaClass.simpleName,
                 )
             }
         }
@@ -113,14 +115,15 @@ class PlayHistoryViewModel : BaseViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val newHistory = history.copy(danmuPath = null, episodeId = null)
-                DatabaseManager.instance.getPlayHistoryDao().insert(newHistory)
+                PlayHistoryRepository.insert(newHistory)
                 updatePlayHistory()
             } catch (e: Exception) {
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
                     "PlayHistoryViewModel",
                     "unbindDanmu",
-                    "History ID: ${history.id}, URL: ${history.url}",
+                    "historyId" to history.id,
+                    "url" to history.url,
                 )
             }
         }
@@ -130,14 +133,15 @@ class PlayHistoryViewModel : BaseViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val newHistory = history.copy(subtitlePath = null)
-                DatabaseManager.instance.getPlayHistoryDao().insert(newHistory)
+                PlayHistoryRepository.insert(newHistory)
                 updatePlayHistory()
             } catch (e: Exception) {
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     e,
                     "PlayHistoryViewModel",
                     "unbindSubtitle",
-                    "History ID: ${history.id}, URL: ${history.url}",
+                    "historyId" to history.id,
+                    "url" to history.url,
                 )
             }
         }
@@ -154,7 +158,8 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "openHistory",
-                    "History ID: ${history.id}, URL: ${history.url}",
+                    "historyId" to history.id,
+                    "url" to history.url,
                 )
             }
         }
@@ -174,7 +179,7 @@ class PlayHistoryViewModel : BaseViewModel() {
                     e,
                     "PlayHistoryViewModel",
                     "openStreamLink",
-                    "Link: $link",
+                    "url" to link,
                 )
             }
         }
@@ -183,10 +188,27 @@ class PlayHistoryViewModel : BaseViewModel() {
     private suspend fun setupHistorySource(history: PlayHistoryEntity): Boolean {
         return try {
             showLoading()
-            val mediaSource =
+            val library =
                 history.storageId
-                    ?.run { DatabaseManager.instance.getMediaLibraryDao().getById(this) }
-                    ?.run { StorageFactory.createStorage(this) }
+                    ?.run { MediaLibraryRepository.getById(this) }
+            if (library == null) {
+                hideLoading()
+                ToastCenter.showError("播放失败，找不到播放资源")
+                return false
+            }
+
+            if (library.mediaType == MediaType.MAGNET_LINK) {
+                val errorMessage = ThunderManager.ensureInitializedOrErrorMessage()
+                if (errorMessage != null) {
+                    hideLoading()
+                    ToastCenter.showError(errorMessage)
+                    return false
+                }
+            }
+
+            val mediaSource =
+                StorageFactory
+                    .createStorage(library)
                     ?.run { historyFile(history) }
                     ?.run { StorageVideoSourceFactory.create(this) }
             hideLoading()
@@ -203,7 +225,8 @@ class PlayHistoryViewModel : BaseViewModel() {
                 e,
                 "PlayHistoryViewModel",
                 "setupHistorySource",
-                "History ID: ${history.id}, Storage ID: ${history.storageId}",
+                "historyId" to history.id,
+                "storageId" to history.storageId,
             )
             ToastCenter.showError("播放失败，找不到播放资源")
             false
@@ -238,7 +261,7 @@ class PlayHistoryViewModel : BaseViewModel() {
                 e,
                 "PlayHistoryViewModel",
                 "setupLinkSource",
-                "Link: $link",
+                "url" to link,
             )
             ToastCenter.showError("播放失败，找不到播放资源")
             false

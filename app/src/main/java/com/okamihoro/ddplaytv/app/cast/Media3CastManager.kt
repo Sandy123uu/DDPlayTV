@@ -1,8 +1,9 @@
 package com.okamihoro.ddplaytv.app.cast
 
-import com.xyoye.data_component.entity.media3.CastTarget
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.CastTarget
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
+import com.xyoye.player_component.media3.fallback.CodecFallbackDecision
 import com.xyoye.player_component.media3.fallback.CodecFallbackHandler
 import com.xyoye.player_component.media3.mapper.LegacyCapabilityResult
 
@@ -13,6 +14,20 @@ data class CastSessionPayload(
     val fallbackMessage: String?
 )
 
+sealed class CastSessionPrepareResult {
+    data class Ready(
+        val payload: CastSessionPayload
+    ) : CastSessionPrepareResult()
+
+    data class UnsupportedTarget(
+        val targetId: String
+    ) : CastSessionPrepareResult()
+
+    data class Disabled(
+        val message: String
+    ) : CastSessionPrepareResult()
+}
+
 /**
  * Prepares metadata for Cast handoffs so PiP/background/capability state stays in sync with Media3.
  *
@@ -21,17 +36,22 @@ data class CastSessionPayload(
  * - 若目标平台仅面向TV，可整体裁剪该管理器及其入口，避免无效依赖。
  */
 class Media3CastManager(
-    private val codecFallbackHandler: CodecFallbackHandler
+    private val codecFallbackHandler: CodecFallbackHandler,
+    private val castSenderEnabled: Boolean = false
 ) {
-    /*
     fun prepareCastSession(
         targetId: String,
         session: PlaybackSession,
         capability: PlayerCapabilityContract,
         capabilityResult: LegacyCapabilityResult?
-    ): CastSessionPayload {
+    ): CastSessionPrepareResult {
+        if (!castSenderEnabled) {
+            return CastSessionPrepareResult.Disabled(DISABLED_REASON)
+        }
+
         val target = capability.castTargets.firstOrNull { it.id == targetId }
-            ?: throw IllegalArgumentException("Cast target $targetId missing from capability contract")
+            ?: return CastSessionPrepareResult.UnsupportedTarget(targetId)
+
         val decision = capabilityResult?.let { codecFallbackHandler.evaluate(it) }
             ?: CodecFallbackDecision.None
         val (audioOnly, message) = when (decision) {
@@ -39,18 +59,17 @@ class Media3CastManager(
             is CodecFallbackDecision.BlockPlayback -> false to decision.reason
             CodecFallbackDecision.None -> false to null
         }
-        return CastSessionPayload(
-            target = target,
-            sessionId = session.sessionId,
-            audioOnly = audioOnly,
-            fallbackMessage = message
+        return CastSessionPrepareResult.Ready(
+            CastSessionPayload(
+                target = target,
+                sessionId = session.sessionId,
+                audioOnly = audioOnly,
+                fallbackMessage = message
+            )
         )
     }
-     */
-    fun prepareCastSession(
-        targetId: String,
-        session: PlaybackSession,
-        capability: PlayerCapabilityContract,
-        capabilityResult: LegacyCapabilityResult?
-    ): CastSessionPayload = throw UnsupportedOperationException("Cast sender is disabled for TV builds")
+
+    private companion object {
+        const val DISABLED_REASON = "TV 端不支持发起投屏，请在接收端开启投屏接收后再连接"
+    }
 }

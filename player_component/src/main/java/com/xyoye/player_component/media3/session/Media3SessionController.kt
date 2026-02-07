@@ -1,11 +1,11 @@
 package com.xyoye.player_component.media3.session
 
 import com.xyoye.common_component.network.repository.Media3Repository
-import com.xyoye.data_component.data.media3.CapabilityCommandResponseData
-import com.xyoye.data_component.data.media3.PlaybackSessionRequestData
-import com.xyoye.data_component.entity.media3.Media3Capability
-import com.xyoye.data_component.entity.media3.Media3SessionBundle
-import com.xyoye.data_component.entity.media3.Media3SourceType
+import com.xyoye.data_component.media3.dto.CapabilityCommandResponseData
+import com.xyoye.data_component.media3.dto.PlaybackSessionRequestData
+import com.xyoye.data_component.media3.entity.Media3Capability
+import com.xyoye.data_component.media3.entity.Media3SessionBundle
+import com.xyoye.data_component.media3.entity.Media3SourceType
 import kotlin.jvm.JvmSuppressWildcards
 
 /**

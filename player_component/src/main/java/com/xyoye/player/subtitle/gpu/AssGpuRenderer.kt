@@ -4,7 +4,7 @@ import android.os.Handler
 import android.view.Surface
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
-import com.xyoye.data_component.bean.subtitle.SubtitleOutputTarget
+import com.xyoye.data_component.media3.telemetry.subtitle.SubtitleOutputTarget
 import com.xyoye.data_component.enums.SubtitlePipelineFallbackReason
 import com.xyoye.data_component.enums.SubtitlePipelineMode
 import com.xyoye.data_component.enums.SubtitlePipelineStatus

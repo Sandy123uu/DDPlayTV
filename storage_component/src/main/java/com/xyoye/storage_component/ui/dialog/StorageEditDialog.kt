@@ -37,7 +37,7 @@ abstract class StorageEditDialog<T : ViewDataBinding>(
 
     protected fun saveStorage(
         library: MediaLibraryEntity,
-        showToast: Boolean = true,
+        showToast: Boolean = true
     ): Job {
         val job = activity.addStorage(library, showToast)
         lastSaveJob = job

@@ -4,10 +4,11 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import androidx.lifecycle.LifecycleService
+import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.media3.Media3SessionClient
-import com.xyoye.data_component.entity.media3.Media3BackgroundMode
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.Media3BackgroundMode
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -22,6 +23,9 @@ class Media3SessionService : LifecycleService() {
     private val capabilityState = MutableStateFlow<PlayerCapabilityContract?>(null)
     private val backgroundModesState = MutableStateFlow<Set<Media3BackgroundMode>>(emptySet())
     private val sessionCommandsState = MutableStateFlow<Set<String>>(emptySet())
+    private val isTelevisionUiMode: Boolean by lazy(LazyThreadSafetyMode.NONE) {
+        applicationContext.isTelevisionUiMode()
+    }
 
     private val commandBridge =
         StateFlowCommandBridge(
@@ -30,14 +34,16 @@ class Media3SessionService : LifecycleService() {
         )
 
     private val coordinator = Media3BackgroundCoordinator(commandBridge)
-    private val binder =
+    private val binder: IBinder by lazy(LazyThreadSafetyMode.NONE) {
         Media3SessionBinder(
             sessionState = sessionState,
             capabilityState = capabilityState,
             backgroundModesState = backgroundModesState,
             sessionCommandsState = sessionCommandsState,
             coordinator = coordinator,
+            isTelevisionUiMode = isTelevisionUiMode,
         )
+    }
 
     override fun onBind(intent: Intent): IBinder {
         super.onBind(intent)
@@ -45,7 +51,7 @@ class Media3SessionService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        coordinator.sync(null)
+        coordinator.sync(null, isTelevisionUiMode)
         sessionState.value = null
         capabilityState.value = null
         backgroundModesState.value = emptySet()
@@ -58,7 +64,8 @@ class Media3SessionService : LifecycleService() {
         private val capabilityState: MutableStateFlow<PlayerCapabilityContract?>,
         private val backgroundModesState: MutableStateFlow<Set<Media3BackgroundMode>>,
         private val sessionCommandsState: MutableStateFlow<Set<String>>,
-        private val coordinator: Media3BackgroundCoordinator
+        private val coordinator: Media3BackgroundCoordinator,
+        private val isTelevisionUiMode: Boolean
     ) : Binder(),
         Media3SessionClient {
         override fun updateSession(
@@ -67,7 +74,7 @@ class Media3SessionService : LifecycleService() {
         ) {
             sessionState.value = session
             capabilityState.value = capability
-            coordinator.sync(capability)
+            coordinator.sync(capability, isTelevisionUiMode)
         }
 
         override fun session(): StateFlow<PlaybackSession?> = sessionState

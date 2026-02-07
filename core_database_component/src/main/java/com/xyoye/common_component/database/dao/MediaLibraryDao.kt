@@ -15,12 +15,21 @@ interface MediaLibraryDao {
     @Query("SELECT * FROM media_library ORDER BY id ASC")
     fun getAll(): LiveData<MutableList<MediaLibraryEntity>>
 
+    @Query("SELECT * FROM media_library ORDER BY id ASC")
+    suspend fun getAllSuspend(): List<MediaLibraryEntity>
+
     @Query("SELECT * FROM media_library WHERE media_type = (:mediaType)")
     @TypeConverters(MediaTypeConverter::class)
     fun getByMediaType(mediaType: MediaType): LiveData<MediaLibraryEntity>
 
     @Query("SELECT * FROM media_library WHERE id = (:libraryId)")
     suspend fun getById(libraryId: Int): MediaLibraryEntity?
+
+    @Query("UPDATE media_library SET password = NULL WHERE id = (:libraryId)")
+    suspend fun clearPassword(libraryId: Int)
+
+    @Query("UPDATE media_library SET remote_secret = NULL WHERE id = (:libraryId)")
+    suspend fun clearRemoteSecret(libraryId: Int)
 
     @Query("SELECT * FROM media_library WHERE media_type = (:mediaType)")
     @TypeConverters(MediaTypeConverter::class)

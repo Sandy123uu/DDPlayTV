@@ -2,11 +2,10 @@ package com.xyoye.player_component.ui.activities.player_interceptor
 
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.launcher.ARouter
-import com.gyf.immersionbar.BarHide
-import com.gyf.immersionbar.ImmersionBar
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.source.VideoSourceManager
+import com.xyoye.common_component.utils.StatusBarStyle
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.player_component.BR
 import com.xyoye.player_component.R
@@ -23,11 +22,7 @@ class PlayerInterceptorActivity : BaseActivity<PlayerInterceptorViewModel, Activ
     override fun getLayoutId() = R.layout.activity_player_interceptor
 
     override fun initStatusBar() {
-        ImmersionBar
-            .with(this)
-            .fullScreen(true)
-            .hideBar(BarHide.FLAG_HIDE_STATUS_BAR)
-            .init()
+        StatusBarStyle.applyFullscreenHideStatusBar(this)
     }
 
     override fun initView() {

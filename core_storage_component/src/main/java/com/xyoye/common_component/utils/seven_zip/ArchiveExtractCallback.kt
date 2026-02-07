@@ -1,16 +1,25 @@
 package com.xyoye.common_component.utils.seven_zip
 
 import com.xyoye.common_component.utils.getFileName
-import net.sf.sevenzipjbinding.*
+import net.sf.sevenzipjbinding.ExtractAskMode
+import net.sf.sevenzipjbinding.ExtractOperationResult
+import net.sf.sevenzipjbinding.IArchiveExtractCallback
+import net.sf.sevenzipjbinding.IInArchive
+import net.sf.sevenzipjbinding.ISequentialOutStream
+import net.sf.sevenzipjbinding.PropID
+import net.sf.sevenzipjbinding.SevenZipException
+import java.io.Closeable
 import java.io.File
 
-class ArchiveExtractCallback constructor(
+class ArchiveExtractCallback(
     private val inArchive: IInArchive,
     private val destDir: File,
     private val callback: (destDirPath: String?) -> Unit
-) : IArchiveExtractCallback {
+) : IArchiveExtractCallback,
+    Closeable {
     private var totalProgress: Long = 0
     private var isCompleted = false
+    private var currentOutStream: SequentialOutStream? = null
 
     @Throws(SevenZipException::class)
     override fun getStream(
@@ -19,13 +28,18 @@ class ArchiveExtractCallback constructor(
     ): ISequentialOutStream {
         val fileName: String =
             getFileName(inArchive.getProperty(index, PropID.PATH) as String)
-        return SequentialOutStream(destDir, fileName)
+        val outStream = SequentialOutStream(destDir, fileName)
+        currentOutStream = outStream
+        return outStream
     }
 
     override fun prepareOperation(extractAskMode: ExtractAskMode?) {}
 
     override fun setOperationResult(extractOperationResult: ExtractOperationResult) {
-        if (extractOperationResult !== ExtractOperationResult.OK) {
+        currentOutStream?.close()
+        currentOutStream = null
+        if (!isCompleted && extractOperationResult !== ExtractOperationResult.OK) {
+            isCompleted = true
             callback.invoke(null)
         }
     }
@@ -38,8 +52,15 @@ class ArchiveExtractCallback constructor(
         if (complete == totalProgress) {
             if (!isCompleted) {
                 isCompleted = true
+                currentOutStream?.close()
+                currentOutStream = null
                 callback.invoke(destDir.absolutePath)
             }
         }
+    }
+
+    override fun close() {
+        currentOutStream?.close()
+        currentOutStream = null
     }
 }

@@ -2,11 +2,12 @@ package com.xyoye.storage_component.ui.dialog
 
 import android.content.Intent
 import android.net.Uri
-import androidx.documentfile.provider.DocumentFile
 import androidx.core.widget.addTextChangedListener
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.lifecycleScope
 import com.xyoye.common_component.extension.toResColor
 import com.xyoye.common_component.extension.toResDrawable
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.entity.MediaLibraryEntity
@@ -192,14 +193,26 @@ class ExternalStorageEditDialog(
             activity.contentResolver.takePersistableUriPermission(uri, modeFlags)
             return true
         } catch (e: Exception) {
+            val safeUriContext =
+                buildString {
+                    append("scheme=")
+                    append(uri.scheme.orEmpty())
+                    append(", authority=")
+                    append(uri.authority.orEmpty())
+                    getTreeDocumentId(uri)?.let { treeId ->
+                        append(", treeIdHash=")
+                        append(SensitiveDataSanitizer.fingerprint(treeId))
+                    }
+                    append(", uriHash=")
+                    append(SensitiveDataSanitizer.fingerprint(uri.toString()))
+                }
             // 上报URI权限获取异常
             ErrorReportHelper.postCatchedExceptionWithContext(
                 e,
                 "ExternalStorageEditDialog",
                 "takePersistableUriPermission",
-                "获取URI持久访问权限失败，uri=$uri",
+                "获取URI持久访问权限失败，$safeUriContext",
             )
-            e.printStackTrace()
         }
         return false
     }

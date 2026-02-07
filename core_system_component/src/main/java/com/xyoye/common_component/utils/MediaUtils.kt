@@ -187,7 +187,6 @@ object MediaUtils {
                 "MediaUtils.saveImage",
                 "保存图片到ContentResolver时IO异常",
             )
-            e.printStackTrace()
         } finally {
             IOUtils.closeIO(fileOutputStream)
             IOUtils.closeIO(fileDescriptor)
@@ -210,7 +209,6 @@ object MediaUtils {
                 "MediaUtils.saveImage",
                 "保存图片到文件时IO异常: ${file.absolutePath}",
             )
-            e.printStackTrace()
         } finally {
             IOUtils.closeIO(fileOutputStream)
         }

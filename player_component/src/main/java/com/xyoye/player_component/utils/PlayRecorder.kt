@@ -12,16 +12,15 @@ import android.view.SurfaceView
 import android.view.TextureView
 import android.view.View
 import androidx.annotation.RequiresApi
-import com.xyoye.common_component.config.UserConfig
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.extension.resumeWhenAlive
 import com.xyoye.common_component.network.repository.AnimeRepository
 import com.xyoye.common_component.network.repository.ResourceRepository
+import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.source.base.BaseVideoSource
 import com.xyoye.common_component.source.media.StorageVideoSource
 import com.xyoye.common_component.storage.file.impl.ScreencastStorageFile
 import com.xyoye.common_component.storage.helper.ScreencastConstants
-import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.JsonHelper
 import com.xyoye.common_component.utils.MediaUtils
 import com.xyoye.common_component.utils.PathHelper
@@ -78,7 +77,7 @@ object PlayRecorder {
                 )
 
             // 保存播放历史到数据库
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getPlayHistoryDao()
                 .insert(history)
             // 上报剧集播放进度到投屏端
@@ -88,7 +87,7 @@ object PlayRecorder {
 
             // 部分视频无法获取到视频时长，播放后再更新时长
             if (source.getMediaType() == MediaType.LOCAL_STORAGE) {
-                DatabaseManager.instance
+                DatabaseProvider.instance
                     .getVideoDao()
                     .updateDuration(duration, source.getVideoUrl())
             }
@@ -110,13 +109,12 @@ object PlayRecorder {
                 try {
                     generateRenderImage(view)
                 } catch (e: Exception) {
-                    ErrorReportHelper.postCatchedExceptionWithContext(
+                    PlayerErrorReporter.report(
                         e,
                         "PlayRecorder",
                         "recordImage",
                         "Failed to generate render image for key: $key",
                     )
-                    e.printStackTrace()
                     null
                 } ?: return@launch
 
@@ -194,7 +192,7 @@ object PlayRecorder {
                 }
             }, Handler(Looper.getMainLooper()))
         } catch (e: IllegalArgumentException) {
-            ErrorReportHelper.postCatchedExceptionWithContext(
+            PlayerErrorReporter.report(
                 e,
                 "PlayRecorder",
                 "recordSurfaceView",
@@ -202,7 +200,7 @@ object PlayRecorder {
             )
             it.resumeWhenAlive(null)
         } catch (e: Exception) {
-            ErrorReportHelper.postCatchedExceptionWithContext(
+            PlayerErrorReporter.report(
                 e,
                 "PlayRecorder",
                 "recordSurfaceView",
@@ -256,7 +254,7 @@ object PlayRecorder {
                 }
             }, Handler(Looper.getMainLooper()))
         } catch (e: IllegalArgumentException) {
-            ErrorReportHelper.postCatchedExceptionWithContext(
+            PlayerErrorReporter.report(
                 e,
                 "PlayRecorder",
                 "recordTextureView",
@@ -264,7 +262,7 @@ object PlayRecorder {
             )
             it.resumeWhenAlive(null)
         } catch (e: Exception) {
-            ErrorReportHelper.postCatchedExceptionWithContext(
+            PlayerErrorReporter.report(
                 e,
                 "PlayRecorder",
                 "recordTextureView",
@@ -316,7 +314,7 @@ object PlayRecorder {
             return
         }
 
-        if (UserConfig.isUserLoggedIn().not()) {
+        if (UserSessionManager.isLoggedIn().not()) {
             return
         }
 

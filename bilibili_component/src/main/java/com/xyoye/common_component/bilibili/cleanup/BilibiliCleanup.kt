@@ -7,7 +7,7 @@ import com.xyoye.common_component.bilibili.auth.BilibiliAuthStore
 import com.xyoye.common_component.bilibili.auth.BilibiliCookieJarStore
 import com.xyoye.common_component.bilibili.playback.BilibiliLivePlaybackSessionStore
 import com.xyoye.common_component.bilibili.playback.BilibiliPlaybackSessionStore
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.PathHelper
 import com.xyoye.data_component.entity.MediaLibraryEntity
@@ -23,7 +23,7 @@ object BilibiliCleanup {
         val storageKey = BilibiliPlaybackPreferencesStore.storageKey(library)
         withContext(Dispatchers.IO) {
             runCatching {
-                val playHistoryDao = DatabaseManager.instance.getPlayHistoryDao()
+                val playHistoryDao = DatabaseProvider.instance.getPlayHistoryDao()
 
                 val danmuPaths = playHistoryDao.getDanmuPathsByStorageId(storageId)
                 deleteBilibiliDanmuFiles(danmuPaths)

@@ -88,7 +88,7 @@ class AlistStorageEditDialog(
 
     private fun buildLibraryIfValid(
         serverData: MediaLibraryEntity,
-        showToast: Boolean,
+        showToast: Boolean
     ): MediaLibraryEntity? {
         val url = serverData.url.trim()
         if (url.isEmpty()) {

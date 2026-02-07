@@ -5,15 +5,14 @@ import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.network.repository.BaiduPanRepository
 import com.xyoye.common_component.network.repository.ResourceRepository
-import com.xyoye.common_component.storage.AuthStorage
 import com.xyoye.common_component.storage.AbstractStorage
+import com.xyoye.common_component.storage.AuthStorage
 import com.xyoye.common_component.storage.PagedStorage
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanAuthStore
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanReAuthRequiredException
 import com.xyoye.common_component.storage.baidupan.auth.BaiduPanTokenManager
 import com.xyoye.common_component.storage.baidupan.play.BaiduPanDlinkCache
 import com.xyoye.common_component.storage.file.StorageFile
-import com.xyoye.common_component.storage.file.helper.HttpPlayServer
 import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.common_component.storage.file.impl.BaiduPanStorageFile
 import com.xyoye.common_component.storage.file.payloadAs
@@ -93,11 +92,12 @@ class BaiduPanStorage(
         }
 
         val response =
-            repository.xpanList(
-                dir = dirPath,
-                start = 0,
-                limit = DEFAULT_PAGE_LIMIT,
-            ).getOrThrow()
+            repository
+                .xpanList(
+                    dir = dirPath,
+                    start = 0,
+                    limit = DEFAULT_PAGE_LIMIT,
+                ).getOrThrow()
 
         val items = response.list.orEmpty()
         pagingStart = items.size
@@ -111,11 +111,12 @@ class BaiduPanStorage(
     override suspend fun listFiles(file: StorageFile): List<StorageFile> {
         val dirPath = normalizePath(file.filePath())
         val response =
-            repository.xpanList(
-                dir = dirPath,
-                start = 0,
-                limit = DEFAULT_PAGE_LIMIT,
-            ).getOrThrow()
+            repository
+                .xpanList(
+                    dir = dirPath,
+                    start = 0,
+                    limit = DEFAULT_PAGE_LIMIT,
+                ).getOrThrow()
         return response.list.orEmpty().map { BaiduPanStorageFile(it, this) }
     }
 
@@ -133,11 +134,12 @@ class BaiduPanStorage(
         var start = 0
         while (true) {
             val response =
-                repository.xpanList(
-                    dir = parentDir,
-                    start = start,
-                    limit = DEFAULT_PAGE_LIMIT,
-                ).getOrThrow()
+                repository
+                    .xpanList(
+                        dir = parentDir,
+                        start = start,
+                        limit = DEFAULT_PAGE_LIMIT,
+                    ).getOrThrow()
 
             val items = response.list.orEmpty()
             val item =
@@ -249,13 +251,15 @@ class BaiduPanStorage(
                 t,
                 "BaiduPanStorage",
                 "createPlayUrl",
-                "storageId=${library.id} storageKey=$storageKey filePath=${runCatching { file.filePath() }.getOrNull()} fsId=$fsId playerType=$playerType",
+                "storageId=${library.id} storageKey=$storageKey filePath=${runCatching {
+                    file.filePath()
+                }.getOrNull()} fsId=$fsId playerType=$playerType",
             )
             throw t
         }
     }
 
-    private fun buildRangeUnsupportedRefreshSupplier(file: StorageFile): () -> HttpPlayServer.UpstreamSource? =
+    private fun buildRangeUnsupportedRefreshSupplier(file: StorageFile): () -> LocalProxy.UpstreamSource? =
         {
             synchronized(rangeUnsupportedRefreshLock) {
                 runCatching {
@@ -270,7 +274,7 @@ class BaiduPanStorage(
                     )
                     runBlocking {
                         val upstream = resolveUpstream(file, forceRefresh = true)
-                        HttpPlayServer.UpstreamSource(
+                        LocalProxy.UpstreamSource(
                             url = upstream.url,
                             contentLength = upstream.contentLength,
                         )
@@ -334,8 +338,9 @@ class BaiduPanStorage(
     }
 
     override suspend fun loadMore(): Result<List<StorageFile>> {
-        val dirPath = directory?.filePath()?.takeIf { it.isNotBlank() }?.let(::normalizePath)
-            ?: "/"
+        val dirPath =
+            directory?.filePath()?.takeIf { it.isNotBlank() }?.let(::normalizePath)
+                ?: "/"
 
         if (pagingDir != dirPath) {
             resetPaging(dirPath)
@@ -348,11 +353,12 @@ class BaiduPanStorage(
         state = PagedStorage.State.LOADING
         return runCatching {
             val response =
-                repository.xpanList(
-                    dir = dirPath,
-                    start = pagingStart,
-                    limit = DEFAULT_PAGE_LIMIT,
-                ).getOrThrow()
+                repository
+                    .xpanList(
+                        dir = dirPath,
+                        start = pagingStart,
+                        limit = DEFAULT_PAGE_LIMIT,
+                    ).getOrThrow()
 
             val items = response.list.orEmpty()
             pagingStart += items.size
@@ -403,8 +409,9 @@ class BaiduPanStorage(
                 forceRefresh = forceRefresh,
             ) {
                 val response = repository.xpanFileMetas(fsIds = listOf(payload.fsId)).getOrThrow()
-                val meta = response.list.orEmpty().firstOrNull { it.fsId == payload.fsId }
-                    ?: throw IllegalStateException("获取播放链接失败")
+                val meta =
+                    response.list.orEmpty().firstOrNull { it.fsId == payload.fsId }
+                        ?: throw IllegalStateException("获取播放链接失败")
 
                 val dlink = meta.dlink?.trim().orEmpty()
                 if (dlink.isBlank()) {

@@ -60,4 +60,3 @@ object EmptyArrayToNullAdapterFactory : JsonAdapter.Factory {
         }
     }
 }
-

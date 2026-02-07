@@ -1,2 +1,7 @@
-configurations.maybeCreate("default")
-artifacts.add("default", file("immersionbar.aar"))
+plugins {
+    id("setup.prebuilt-aar")
+}
+
+prebuiltAar {
+    aarFileName = "immersionbar.aar"
+}

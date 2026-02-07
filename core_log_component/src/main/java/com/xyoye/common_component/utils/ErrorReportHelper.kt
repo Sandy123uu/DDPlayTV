@@ -1,19 +1,26 @@
 package com.xyoye.common_component.utils
 
-import com.tencent.bugly.crashreport.CrashReport
+import android.util.Log
+import com.xyoye.common_component.log.BuglyReporter
+import com.xyoye.common_component.log.LogFacade
+import com.xyoye.common_component.log.model.LogModule
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 import com.xyoye.core_log_component.BuildConfig
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * 错误上报工具类
- * 统一处理异常上报，遵循 CLAUDE.md 中的 Bugly 上报约定
- *
- * Created by Claude Code on 2025-08-30.
+ * 统一处理异常上报：脱敏 + 过滤 CancellationException + 委托给 [BuglyReporter]。
  */
 object ErrorReportHelper {
+    private const val LOG_TAG = "ErrorReportHelper"
+    private const val BUGLY_VALUE_LIMIT = 200
+    private const val BUGLY_KEY_TAG = "err.tag"
+    private const val BUGLY_KEY_EXTRA = "err.extra"
+    private const val BUGLY_KEY_MESSAGE = "err.message"
+
     /**
      * 上报捕获的异常
-     * 使用 CrashReport.postCatchedException() 方法，符合约定
      *
      * @param throwable 捕获的异常
      * @param tag 错误标签，用于分类
@@ -25,32 +32,56 @@ object ErrorReportHelper {
         extraInfo: String = ""
     ) {
         try {
+            val safeTag = SensitiveDataSanitizer.sanitizeFreeText(tag).trim()
+            val safeExtraInfo = SensitiveDataSanitizer.sanitizeFreeText(extraInfo).trim()
+
             // 过滤掉 CancellationException，这是协程正常取消的标志，不应当作错误上报
             if (throwable is CancellationException) {
-                // 在调试模式下仍然打印信息，便于本地调试
                 if (BuildConfig.DEBUG) {
-                    println("[$tag] CancellationException ignored: $extraInfo")
+                    LogFacade.w(
+                        module = LogModule.CORE,
+                        tag = LOG_TAG,
+                        message = "CancellationException ignored",
+                        context =
+                            buildMap {
+                                if (safeTag.isNotBlank()) put("tag", safeTag.take(BUGLY_VALUE_LIMIT))
+                                if (safeExtraInfo.isNotBlank()) put("extra", safeExtraInfo.take(BUGLY_VALUE_LIMIT))
+                            },
+                        throwable = throwable,
+                    )
                 }
                 return
             }
 
-            // 遵循 CLAUDE.md 约定：统一使用 CrashReport.postCatchedException()
-            CrashReport.postCatchedException(throwable)
+            if (safeTag.isNotBlank()) {
+                BuglyReporter.putUserData(BUGLY_KEY_TAG, safeTag.take(BUGLY_VALUE_LIMIT))
+            }
+            if (safeExtraInfo.isNotBlank()) {
+                BuglyReporter.putUserData(BUGLY_KEY_EXTRA, safeExtraInfo.take(BUGLY_VALUE_LIMIT))
+            }
+            BuglyReporter.postCatchedException(throwable)
 
-            // 在调试模式下仍然打印堆栈信息，便于本地调试
             if (BuildConfig.DEBUG) {
-                println("[$tag] Exception reported: $extraInfo")
-                throwable.printStackTrace()
+                LogFacade.e(
+                    module = LogModule.CORE,
+                    tag = LOG_TAG,
+                    message = "Exception reported",
+                    context =
+                        buildMap {
+                            if (safeTag.isNotBlank()) put("tag", safeTag.take(BUGLY_VALUE_LIMIT))
+                            if (safeExtraInfo.isNotBlank()) put("extra", safeExtraInfo.take(BUGLY_VALUE_LIMIT))
+                        },
+                    throwable = throwable,
+                )
             }
         } catch (e: Exception) {
             // 防止错误上报本身出现异常
-            e.printStackTrace()
+            Log.w(LOG_TAG, "postCatchedException failed", e)
         }
     }
 
     /**
      * 上报自定义异常
-     * 使用 CrashReport.postCatchedException() 方法，符合约定
      *
      * @param message 错误信息
      * @param tag 错误标签
@@ -62,24 +93,39 @@ object ErrorReportHelper {
         cause: Throwable? = null
     ) {
         try {
+            val safeTag = SensitiveDataSanitizer.sanitizeFreeText(tag).trim()
+            val safeMessage = SensitiveDataSanitizer.sanitizeFreeText(message).trim()
             val exception =
                 if (cause != null) {
-                    RuntimeException("[$tag] $message", cause)
+                    RuntimeException("[$safeTag] $safeMessage", cause)
                 } else {
-                    RuntimeException("[$tag] $message")
+                    RuntimeException("[$safeTag] $safeMessage")
                 }
 
-            // 遵循 CLAUDE.md 约定：统一使用 CrashReport.postCatchedException()
-            CrashReport.postCatchedException(exception)
+            if (safeTag.isNotBlank()) {
+                BuglyReporter.putUserData(BUGLY_KEY_TAG, safeTag.take(BUGLY_VALUE_LIMIT))
+            }
+            if (safeMessage.isNotBlank()) {
+                BuglyReporter.putUserData(BUGLY_KEY_MESSAGE, safeMessage.take(BUGLY_VALUE_LIMIT))
+            }
+            BuglyReporter.postCatchedException(exception)
 
-            // 在调试模式下打印信息
             if (BuildConfig.DEBUG) {
-                println("[$tag] Custom exception reported: $message")
-                exception.printStackTrace()
+                LogFacade.e(
+                    module = LogModule.CORE,
+                    tag = LOG_TAG,
+                    message = "Custom exception reported",
+                    context =
+                        buildMap {
+                            if (safeTag.isNotBlank()) put("tag", safeTag.take(BUGLY_VALUE_LIMIT))
+                            if (safeMessage.isNotBlank()) put("message", safeMessage.take(BUGLY_VALUE_LIMIT))
+                        },
+                    throwable = exception,
+                )
             }
         } catch (e: Exception) {
             // 防止错误上报本身出现异常
-            e.printStackTrace()
+            Log.w(LOG_TAG, "postException failed", e)
         }
     }
 
@@ -97,23 +143,57 @@ object ErrorReportHelper {
         methodName: String,
         extraInfo: String = ""
     ) {
-        // 过滤掉 CancellationException，这是协程正常取消的标志，不应当作错误上报
-        if (throwable is CancellationException) {
-            if (BuildConfig.DEBUG) {
-                println("[$className.$methodName] CancellationException ignored: $extraInfo")
-            }
-            return
-        }
+        postCatchedExceptionWithContext(
+            throwable = throwable,
+            className = className,
+            methodName = methodName,
+            params = emptyMap(),
+            message = extraInfo,
+        )
+    }
 
-        val contextInfo = "Class: $className, Method: $methodName"
-        val fullInfo =
-            if (extraInfo.isNotEmpty()) {
-                "$contextInfo, Extra: $extraInfo"
-            } else {
-                contextInfo
+    fun postCatchedExceptionWithContext(
+        throwable: Throwable,
+        className: String,
+        methodName: String,
+        vararg params: Pair<String, Any?>
+    ) {
+        postCatchedExceptionWithContext(
+            throwable = throwable,
+            className = className,
+            methodName = methodName,
+            params = params.toMap(),
+        )
+    }
+
+    fun postCatchedExceptionWithContext(
+        throwable: Throwable,
+        className: String,
+        methodName: String,
+        params: Map<String, Any?>,
+        message: String = ""
+    ) {
+        val safeParams = SensitiveDataSanitizer.sanitizeParams(params)
+        val safeMessage = SensitiveDataSanitizer.sanitizeFreeText(message).trim()
+        val extra =
+            buildString {
+                if (safeParams.isNotEmpty()) {
+                    append(
+                        safeParams.entries.joinToString(separator = ", ") { (k, v) ->
+                            "$k=$v"
+                        },
+                    )
+                }
+                if (safeMessage.isNotBlank()) {
+                    if (isNotEmpty()) {
+                        append(", ")
+                    }
+                    append(safeMessage)
+                }
             }
 
-        postCatchedException(throwable, "Context", fullInfo)
+        val tag = "$className#$methodName"
+        postCatchedException(throwable, tag, extra)
     }
 
     /**

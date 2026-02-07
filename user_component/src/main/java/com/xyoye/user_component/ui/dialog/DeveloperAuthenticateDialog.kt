@@ -101,9 +101,20 @@ class DeveloperAuthenticateDialog(
         appId: String,
         appSecret: String
     ) {
-        DeveloperCredentialStore.putAppId(appId)
-        DeveloperCredentialStore.putAppSecret(appSecret)
-        ToastCenter.showSuccess("认证成功")
+        when (DeveloperCredentialStore.putCredentials(appId, appSecret)) {
+            DeveloperCredentialStore.SaveResult.REJECTED_ENCRYPTION_FAILED -> {
+                ToastCenter.showError(activity.getString(R.string.developer_auth_save_failed_encrypt))
+                return
+            }
+
+            DeveloperCredentialStore.SaveResult.SAVED_WITH_PLAINTEXT_FALLBACK -> {
+                ToastCenter.showWarning(activity.getString(R.string.developer_auth_save_success_with_plaintext))
+            }
+
+            DeveloperCredentialStore.SaveResult.SAVED_ENCRYPTED -> {
+                ToastCenter.showSuccess("认证成功")
+            }
+        }
         onAuthenticate.invoke()
         dismiss()
     }

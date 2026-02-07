@@ -5,9 +5,9 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import com.gyf.immersionbar.ImmersionBar
 import com.xyoye.common_component.extension.isNightMode
 import com.xyoye.common_component.extension.toResColor
+import com.xyoye.common_component.utils.StatusBarStyle
 import com.xyoye.storage_component.R
 import com.xyoye.storage_component.databinding.ActivityStorageFileBinding
 import com.xyoye.storage_component.ui.activities.storage_file.StorageFileActivity
@@ -85,12 +85,12 @@ class StorageFileStyleHelper(
     }
 
     private fun changeStyle(color: Int) {
-        ImmersionBar
-            .with(activity)
-            .statusBarColorInt(color)
-            .fitsSystemWindows(true)
-            .statusBarDarkFont(!activity.isNightMode())
-            .init()
+        StatusBarStyle.applyStatusBarColorInt(
+            activity = activity,
+            statusBarColor = color,
+            darkFont = !activity.isNightMode(),
+            fitsSystemWindows = true,
+        )
         binding.appbarLayout.setBackgroundColor(color)
     }
 

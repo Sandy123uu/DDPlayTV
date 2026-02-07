@@ -1,0 +1,118 @@
+package com.xyoye.common_component.storage.screencast.receiver
+
+import com.xyoye.common_component.storage.helper.ScreencastConstants
+import com.xyoye.common_component.utils.ErrorReportHelper
+import com.xyoye.common_component.utils.JsonHelper
+import com.xyoye.data_component.data.CommonJsonData
+import com.xyoye.data_component.data.screeencast.ScreencastData
+import fi.iki.elonen.NanoHTTPD
+import java.io.IOException
+
+/**
+ * <pre>
+ *     author: xyoye1997@outlook.com
+ *     time  : 2022/7/22
+ *     desc  :
+ * </pre>
+ */
+
+object ServerController {
+    fun handleGetRequest(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response? =
+        when (session.uri) {
+            ScreencastConstants.ReceiverApi.init -> init(session)
+            else -> null
+        }
+
+    fun handlePostRequest(
+        session: NanoHTTPD.IHTTPSession,
+        handler: ScreencastReceiveHandler?
+    ): NanoHTTPD.Response? {
+        val postData: Map<String, String?> = HashMap()
+        try {
+            session.parseBody(postData)
+        } catch (ioe: IOException) {
+            // 上报I/O异常
+            ErrorReportHelper.postCatchedExceptionWithContext(
+                ioe,
+                "ServerController",
+                "handlePostRequest",
+                "解析POST请求体时发生I/O异常，uri=${session.uri}",
+            )
+            return NanoHTTPD.newFixedLengthResponse(
+                NanoHTTPD.Response.Status.INTERNAL_ERROR,
+                NanoHTTPD.MIME_PLAINTEXT,
+                "SERVER INTERNAL ERROR: IOException: " + ioe.message,
+            )
+        } catch (re: NanoHTTPD.ResponseException) {
+            // 上报响应异常
+            ErrorReportHelper.postCatchedExceptionWithContext(
+                re,
+                "ServerController",
+                "handlePostRequest",
+                "解析POST请求体时发生响应异常，uri=${session.uri}, status=${re.status}",
+            )
+            return NanoHTTPD.newFixedLengthResponse(re.status, NanoHTTPD.MIME_PLAINTEXT, re.message)
+        }
+
+        return when (session.uri) {
+            ScreencastConstants.ReceiverApi.play -> play(session, postData, handler)
+            else -> null
+        }
+    }
+
+    /**
+     * 初始化
+     */
+    private fun init(session: NanoHTTPD.IHTTPSession): NanoHTTPD.Response {
+        val version = session.headers[ScreencastConstants.Header.versionKey]?.toIntOrNull() ?: 0
+        if (version != ScreencastConstants.version) {
+            return createResponse(
+                NanoHTTPD.Response.Status.CONFLICT.requestStatus,
+                false,
+                "投屏版本不匹配，请更新双端至相同APP版本。\n" +
+                    "接收端: ${ScreencastConstants.version}，投屏端: $version",
+            )
+        }
+
+        return createResponse().apply {
+            addHeader(ScreencastConstants.Header.versionKey, ScreencastConstants.version.toString())
+        }
+    }
+
+    /**
+     * 播放视频
+     */
+    private fun play(
+        session: NanoHTTPD.IHTTPSession,
+        postData: Map<String, String?>,
+        handler: ScreencastReceiveHandler?
+    ): NanoHTTPD.Response {
+        // about postData see NanoHTTPD#parseBody(Map<String, String>)
+        val screencastData =
+            postData["postData"]?.run {
+                JsonHelper.parseJson<ScreencastData>(this)
+            } ?: return createResponse(
+                code = 502,
+                success = false,
+                message = "无法读取资源",
+            )
+        screencastData.apply { ip = session.remoteIpAddress }
+        handler?.onReceiveVideo(screencastData)
+        return createResponse()
+    }
+
+    private fun createResponse(
+        code: Int = NanoHTTPD.Response.Status.OK.requestStatus,
+        success: Boolean = true,
+        message: String? = null
+    ): NanoHTTPD.Response {
+        val jsonData =
+            CommonJsonData(
+                errorCode = code,
+                success = success,
+                errorMessage = message,
+            )
+        val json = JsonHelper.toJson(jsonData)
+        return NanoHTTPD.newFixedLengthResponse(json)
+    }
+}

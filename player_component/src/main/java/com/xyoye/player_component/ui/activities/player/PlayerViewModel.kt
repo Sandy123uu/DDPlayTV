@@ -6,13 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.alibaba.android.arouter.launcher.ARouter
 import com.xyoye.common_component.base.BaseViewModel
 import com.xyoye.common_component.config.Media3ToggleProvider
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.extension.toMedia3SourceType
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.media3.Media3SessionStore
 import com.xyoye.common_component.network.repository.ResourceRepository
-import com.xyoye.common_component.service.Media3CapabilityProvider
+import com.xyoye.common_component.services.Media3CapabilityProvider
 import com.xyoye.common_component.source.base.BaseVideoSource
 import com.xyoye.common_component.source.media3.Media3LaunchParams
 import com.xyoye.common_component.utils.DanmuUtils
@@ -22,10 +22,10 @@ import com.xyoye.data_component.bean.LocalDanmuBean
 import com.xyoye.data_component.bean.SendDanmuBean
 import com.xyoye.data_component.bean.VideoTrackBean
 import com.xyoye.data_component.entity.DanmuBlockEntity
-import com.xyoye.data_component.entity.media3.Media3Capability
-import com.xyoye.data_component.entity.media3.PlaybackSession
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
-import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
+import com.xyoye.data_component.media3.entity.Media3Capability
+import com.xyoye.data_component.media3.entity.PlaybackSession
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.RolloutToggleSnapshot
 import com.xyoye.data_component.enums.TrackType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,8 +37,8 @@ class PlayerViewModel : BaseViewModel() {
         private const val LOG_TAG = "PlayerViewModel"
     }
 
-    val localDanmuBlockLiveData = DatabaseManager.instance.getDanmuBlockDao().getAll(false)
-    val cloudDanmuBlockLiveData = DatabaseManager.instance.getDanmuBlockDao().getAll(true)
+    val localDanmuBlockLiveData = DatabaseProvider.instance.getDanmuBlockDao().getAll(false)
+    val cloudDanmuBlockLiveData = DatabaseProvider.instance.getDanmuBlockDao().getAll(true)
 
     private val media3Provider: Media3CapabilityProvider? by lazy {
         ARouter.getInstance().navigation(Media3CapabilityProvider::class.java)
@@ -121,7 +121,7 @@ class PlayerViewModel : BaseViewModel() {
     ) {
         val uniqueKey = videoSource.getUniqueKey()
         val storageId = videoSource.getStorageId()
-        val historyDao = DatabaseManager.instance.getPlayHistoryDao()
+        val historyDao = DatabaseProvider.instance.getPlayHistoryDao()
 
         viewModelScope.launch {
             when (track.type) {
@@ -159,7 +159,7 @@ class PlayerViewModel : BaseViewModel() {
         isRegex: Boolean
     ) {
         viewModelScope.launch {
-            DatabaseManager.instance.getDanmuBlockDao().insert(
+            DatabaseProvider.instance.getDanmuBlockDao().insert(
                 DanmuBlockEntity(0, keyword, isRegex),
             )
         }
@@ -167,7 +167,7 @@ class PlayerViewModel : BaseViewModel() {
 
     fun removeDanmuBlock(id: Int) {
         viewModelScope.launch {
-            DatabaseManager.instance.getDanmuBlockDao().delete(id)
+            DatabaseProvider.instance.getDanmuBlockDao().delete(id)
         }
     }
 

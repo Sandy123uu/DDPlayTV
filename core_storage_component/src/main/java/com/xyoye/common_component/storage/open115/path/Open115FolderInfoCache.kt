@@ -60,9 +60,10 @@ internal class Open115FolderInfoCache(
 
     private suspend fun fetchParentId(folderId: String): String {
         val response = repository.folderGetInfo(fileId = folderId).getOrThrow()
-        return response.data?.parentId?.trim()
+        return response.data
+            ?.parentId
+            ?.trim()
             ?.takeIf { it.isNotBlank() }
             ?: Open115Storage.ROOT_CID
     }
 }
-

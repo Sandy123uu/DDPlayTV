@@ -2,7 +2,7 @@ package com.xyoye.common_component.utils.danmu
 
 import com.xyoye.common_component.bilibili.BilibiliKeys
 import com.xyoye.common_component.bilibili.danmaku.BilibiliDanmakuDownloader
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.source.base.BaseVideoSource
 import com.xyoye.data_component.bean.DanmuTrackResource
 import com.xyoye.data_component.enums.MediaType
@@ -29,7 +29,7 @@ object StorageDanmuMatcher {
             return null
         }
 
-        val library = DatabaseManager.instance.getMediaLibraryDao().getById(source.getStorageId()) ?: return null
+        val library = DatabaseProvider.instance.getMediaLibraryDao().getById(source.getStorageId()) ?: return null
         val storageKey = storageKey(library.mediaType.value, library.url)
 
         if (cid != null) {

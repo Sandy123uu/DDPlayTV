@@ -6,6 +6,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.mediacodec.MediaCodecInfo
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
+import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
 
 @UnstableApi
 object Media3Diagnostics {
@@ -23,6 +24,14 @@ object Media3Diagnostics {
     /** 外部可控制是否输出详细日志，必要时可关闭减少噪音。 */
     @JvmStatic
     var loggingEnabled: Boolean = true
+
+    /**
+     * URL 细节开关：
+     * - 默认仅输出 host/path（不包含 query/fragment）
+     * - 可选追加 fingerprint 便于定位“过期直链/签名变化”等问题，但不泄露 query 明文
+     */
+    @JvmStatic
+    var includeUrlFingerprint: Boolean = true
 
     /** 预留遥测回调，后续可挂到日志/埋点管线。 */
     @JvmStatic
@@ -149,11 +158,16 @@ object Media3Diagnostics {
 
     fun logPlaybackDescriptor(descriptor: Media3CodecPolicy.PlaybackDescriptor?) {
         descriptor ?: return
+        val safeUri =
+            SensitiveDataSanitizer.sanitizeUrl(
+                descriptor.uri.toString(),
+                SensitiveDataSanitizer.UrlMode.SAFE,
+            )
         log {
             LogFacade.d(
                 MODULE,
                 TAG,
-                "Playback descriptor: uri=${descriptor.uri} container=${descriptor.containerHint} ext=${descriptor.extension} declaredMime=${descriptor.declaredMimeType}",
+                "Playback descriptor: uri=$safeUri container=${descriptor.containerHint} ext=${descriptor.extension} declaredMime=${descriptor.declaredMimeType}",
             )
         }
     }
@@ -184,15 +198,18 @@ object Media3Diagnostics {
         code: Int?,
         contentType: String?
     ) {
+        val safeUrl = SensitiveDataSanitizer.sanitizeUrl(url, SensitiveDataSanitizer.UrlMode.SAFE)
+        val urlFp = url?.takeIf { includeUrlFingerprint }?.let { SensitiveDataSanitizer.fingerprint(it) }
+        val urlForLog = if (urlFp.isNullOrBlank()) safeUrl else "$safeUrl (fp=$urlFp)"
         lastHttpOpenSnapshot =
             HttpOpenSnapshot(
-                url = url,
+                url = safeUrl,
                 code = code,
                 contentType = contentType,
                 timestampMs = System.currentTimeMillis(),
             )
         log {
-            val message = "HTTP open: url=${url ?: "<null>"} code=${code ?: -1} contentType=${contentType ?: ""}"
+            val message = "HTTP open: url=$urlForLog code=${code ?: -1} contentType=${contentType ?: ""}"
             if (code != null && code >= 400) {
                 LogFacade.w(MODULE, TAG, message)
             } else {
@@ -202,7 +219,8 @@ object Media3Diagnostics {
         emit(
             "http_open",
             mapOf(
-                "url" to (url ?: ""),
+                "url" to safeUrl,
+                "urlFp" to (urlFp ?: ""),
                 "code" to (code?.toString() ?: ""),
                 "contentType" to (contentType ?: ""),
             ),
@@ -214,12 +232,13 @@ object Media3Diagnostics {
         contentType: String,
         reason: String
     ) {
+        val safeUrl = SensitiveDataSanitizer.sanitizeUrl(url, SensitiveDataSanitizer.UrlMode.SAFE)
         log {
-            LogFacade.i(MODULE, TAG, "Content type override: url=$url contentType=$contentType reason=$reason")
+            LogFacade.i(MODULE, TAG, "Content type override: url=$safeUrl contentType=$contentType reason=$reason")
         }
         emit(
             "content_type_override",
-            mapOf("url" to url, "contentType" to contentType, "reason" to reason),
+            mapOf("url" to safeUrl, "contentType" to contentType, "reason" to reason),
         )
     }
 

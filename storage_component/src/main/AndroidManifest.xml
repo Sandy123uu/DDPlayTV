@@ -24,25 +24,11 @@
             android:name=".ui.activities.screencast.receiver.ScreencastActivity"
             android:configChanges="screenSize" />
 
-        <!-- TV adaptation: 投屏发送服务不再在 Manifest 中注册
-        <service
-            android:name=".services.ScreencastProvideService"
-            android:exported="false" />
-        -->
         <service
             android:name=".services.ScreencastReceiveService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
-        <provider
-            android:name="androidx.startup.InitializationProvider"
-            android:authorities="${applicationId}.androidx-startup"
-            android:exported="false"
-            tools:node="merge">
-            <meta-data
-                android:name="com.xyoye.storage_component.providers.ThunderInitializer"
-                android:value="androidx.startup" />
-        </provider>
     </application>
 
 </manifest>

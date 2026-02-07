@@ -5,6 +5,8 @@ import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.launcher.ARouter
 import com.xyoye.common_component.base.BaseActivity
 import com.xyoye.common_component.config.RouteTable
+import com.xyoye.common_component.storage.credential.MediaLibraryCredentialResolver
+import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.entity.MediaLibraryEntity
 import com.xyoye.data_component.enums.MediaType
 import com.xyoye.storage_component.BR
@@ -18,7 +20,6 @@ import com.xyoye.storage_component.ui.dialog.ExternalStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.FTPStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.Open115StorageEditDialog
 import com.xyoye.storage_component.ui.dialog.RemoteStorageEditDialog
-import com.xyoye.storage_component.ui.dialog.ScreencastStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.SmbStorageEditDialog
 import com.xyoye.storage_component.ui.dialog.StorageEditDialog
 import com.xyoye.storage_component.ui.dialog.WebDavStorageEditDialog
@@ -81,19 +82,24 @@ class StoragePlusActivity : BaseActivity<StoragePlusViewModel, ActivityStoragePl
     }
 
     private fun showDialog() {
+        val resolvedEditData = editData?.let { MediaLibraryCredentialResolver.resolve(it) }
         val dialog =
             when (mediaType) {
-                MediaType.EXTERNAL_STORAGE -> ExternalStorageEditDialog(this, editData)
-                MediaType.REMOTE_STORAGE -> RemoteStorageEditDialog(this, editData)
-                MediaType.FTP_SERVER -> FTPStorageEditDialog(this, editData)
-                MediaType.WEBDAV_SERVER -> WebDavStorageEditDialog(this, editData)
-                MediaType.SMB_SERVER -> SmbStorageEditDialog(this, editData)
-                MediaType.SCREEN_CAST -> ScreencastStorageEditDialog(this, editData)
-                MediaType.ALSIT_STORAGE -> AlistStorageEditDialog(this, editData)
-                MediaType.BAIDU_PAN_STORAGE -> BaiduPanStorageEditDialog(this, editData)
-                MediaType.OPEN_115_STORAGE -> Open115StorageEditDialog(this, editData)
-                MediaType.CLOUD_115_STORAGE -> Cloud115StorageEditDialog(this, editData)
-                MediaType.BILIBILI_STORAGE -> BilibiliStorageEditDialog(this, editData)
+                MediaType.EXTERNAL_STORAGE -> ExternalStorageEditDialog(this, resolvedEditData)
+                MediaType.REMOTE_STORAGE -> RemoteStorageEditDialog(this, resolvedEditData)
+                MediaType.FTP_SERVER -> FTPStorageEditDialog(this, resolvedEditData)
+                MediaType.WEBDAV_SERVER -> WebDavStorageEditDialog(this, resolvedEditData)
+                MediaType.SMB_SERVER -> SmbStorageEditDialog(this, resolvedEditData)
+                MediaType.SCREEN_CAST -> {
+                    ToastCenter.showWarning("电视端不支持发起投屏发送")
+                    finish()
+                    null
+                }
+                MediaType.ALSIT_STORAGE -> AlistStorageEditDialog(this, resolvedEditData)
+                MediaType.BAIDU_PAN_STORAGE -> BaiduPanStorageEditDialog(this, resolvedEditData)
+                MediaType.OPEN_115_STORAGE -> Open115StorageEditDialog(this, resolvedEditData)
+                MediaType.CLOUD_115_STORAGE -> Cloud115StorageEditDialog(this, resolvedEditData)
+                MediaType.BILIBILI_STORAGE -> BilibiliStorageEditDialog(this, resolvedEditData)
                 else -> {
                     finish()
                     null
@@ -104,16 +110,12 @@ class StoragePlusActivity : BaseActivity<StoragePlusViewModel, ActivityStoragePl
         storageEditDialog = dialog
     }
 
-    fun addStorage(library: MediaLibraryEntity): Job {
-        return viewModel.addStorage(editData, library)
-    }
+    fun addStorage(library: MediaLibraryEntity): Job = viewModel.addStorage(editData, library)
 
     fun addStorage(
         library: MediaLibraryEntity,
-        showToast: Boolean,
-    ): Job {
-        return viewModel.addStorage(editData, library, showToast)
-    }
+        showToast: Boolean
+    ): Job = viewModel.addStorage(editData, library, showToast)
 
     fun testStorage(library: MediaLibraryEntity) {
         viewModel.testStorage(library)

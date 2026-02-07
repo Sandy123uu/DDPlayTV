@@ -1,7 +1,7 @@
 package com.xyoye.common_component.utils
 
-import com.xyoye.common_component.config.UserConfig
 import com.xyoye.common_component.network.request.NetworkException
+import com.xyoye.common_component.session.UserSessionManager
 
 /**
  * 认证状态诊断和帮助工具类
@@ -15,8 +15,8 @@ object AuthenticationHelper {
      * @return 认证状态信息和是否有效
      */
     fun checkAuthenticationStatus(): AuthenticationStatus {
-        val userToken = UserConfig.getUserToken()
-        val isLoggedIn = UserConfig.isUserLoggedIn()
+        val userToken = UserSessionManager.currentToken().takeIf { it.isNotBlank() }
+        val isLoggedIn = UserSessionManager.isLoggedIn()
 
         val status =
             AuthenticationStatus(

@@ -75,7 +75,6 @@ class PermissionManager : Fragment() {
                 "PermissionManager.onRequestComplete",
                 "移除权限请求Fragment失败",
             )
-            e.printStackTrace()
         }
     }
 

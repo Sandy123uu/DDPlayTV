@@ -4,10 +4,11 @@ import android.content.Context
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.xyoye.common_component.config.AppConfig
 import com.xyoye.common_component.config.RouteTable
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.network.repository.OtherRepository
 import com.xyoye.common_component.services.CloudDanmuBlockService
 import com.xyoye.data_component.entity.DanmuBlockEntity
+import com.xyoye.player_component.utils.PlayerErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.w3c.dom.Element
@@ -72,7 +73,12 @@ class CloudDanmuBlockServiceImpl : CloudDanmuBlockService {
                 .map { it.trim() }
                 .filter { it.isNotBlank() }
         }.getOrElse {
-            it.printStackTrace()
+            PlayerErrorReporter.report(
+                it,
+                "CloudDanmuBlockServiceImpl",
+                "parseFilterData",
+                "Failed to parse cloud filter data",
+            )
             emptyList()
         }
 
@@ -87,7 +93,7 @@ class CloudDanmuBlockServiceImpl : CloudDanmuBlockService {
                     true,
                 )
             }
-        val dao = DatabaseManager.instance.getDanmuBlockDao()
+        val dao = DatabaseProvider.instance.getDanmuBlockDao()
         dao.deleteByType(true)
         dao.insert(*blockEntities.toTypedArray())
     }

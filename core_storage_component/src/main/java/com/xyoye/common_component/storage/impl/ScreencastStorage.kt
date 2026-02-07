@@ -1,9 +1,7 @@
 package com.xyoye.common_component.storage.impl
 
 import android.net.Uri
-import com.xyoye.common_component.database.DatabaseManager
-import com.xyoye.common_component.extension.aesEncode
-import com.xyoye.common_component.extension.authorizationValue
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.network.repository.ResourceRepository
 import com.xyoye.common_component.network.repository.ScreencastRepository
 import com.xyoye.common_component.storage.AbstractStorage
@@ -127,7 +125,6 @@ class ScreencastStorage(
                 directoryName = "screencast",
             )
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "Screencast", "缓存字幕失败: $subtitleFileName")
         }
         return null
@@ -137,14 +134,20 @@ class ScreencastStorage(
         val result =
             ScreencastRepository.init(
                 "http://${library.screencastAddress}:${library.port}",
-                library.password?.aesEncode()?.authorizationValue(),
+                library.password,
             )
         if (result.isFailure) {
             val exception = result.exceptionOrNull()
-            ErrorReportHelper.postCatchedException(
+            ErrorReportHelper.postCatchedExceptionWithContext(
                 exception ?: RuntimeException("Unknown screencast init error"),
-                "Screencast",
-                "初始化投屏服务失败: ${library.screencastAddress}:${library.port}",
+                "ScreencastStorage",
+                "test",
+                params =
+                    mapOf(
+                        "address" to library.screencastAddress,
+                        "port" to library.port,
+                    ),
+                message = "初始化投屏服务失败",
             )
             return false
         }
@@ -169,7 +172,7 @@ class ScreencastStorage(
      */
     private suspend fun findPlayHistory(videoData: ScreencastVideoData): PlayHistoryEntity? {
         val playHistory =
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getPlayHistoryDao()
                 .getPlayHistory(videoData.uniqueKey, library.id)
 
@@ -192,7 +195,7 @@ class ScreencastStorage(
                 videoPosition = videoData.position,
                 videoDuration = videoData.duration,
             ).also {
-                DatabaseManager.instance.getPlayHistoryDao().insert(it)
+                DatabaseProvider.instance.getPlayHistoryDao().insert(it)
             }
     }
 }

@@ -1,6 +1,6 @@
 package com.xyoye.common_component.storage.impl
 
-import com.xyoye.common_component.database.DatabaseManager
+import com.xyoye.common_component.database.DatabaseProvider
 import com.xyoye.common_component.extension.toFile
 import com.xyoye.common_component.resolver.MediaResolver
 import com.xyoye.common_component.storage.AbstractStorage
@@ -66,7 +66,7 @@ class VideoStorage(
     ): StorageFile? {
         if (isDirectory.not()) {
             val videoEntity =
-                DatabaseManager.instance.getVideoDao().getVideo(path)
+                DatabaseProvider.instance.getVideoDao().getVideo(path)
                     ?: return null
             return VideoStorageFile(this, videoEntity)
         }
@@ -111,7 +111,7 @@ class VideoStorage(
         if (keyword.isEmpty()) {
             return openDirectory(directory ?: getRootFile(), false)
         }
-        return DatabaseManager.instance
+        return DatabaseProvider.instance
             .getVideoDao()
             .getAll()
             .filter { it.filePath.contains(keyword) }
@@ -120,12 +120,12 @@ class VideoStorage(
 
     private suspend fun openStorageDirectory(storageFile: StorageFile): List<StorageFile> =
         if (storageFile.isRootFile()) {
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getVideoDao()
                 .getFolderByFilter()
                 .map { VideoStorageFile(this, it) }
         } else {
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getVideoDao()
                 .getVideoInFolder(storageFile.filePath())
                 .map { VideoStorageFile(this, it) }
@@ -134,7 +134,7 @@ class VideoStorage(
     private suspend fun deepRefresh() {
         // 系统视频数据 = 自定义扫描目录视频 + MediaStore中系统视频
         val systemVideos =
-            DatabaseManager.instance
+            DatabaseProvider.instance
                 .getExtendFolderDao()
                 .getAll()
                 .flatMap { VideoScan.traverse(it.folderPath) }
@@ -142,17 +142,17 @@ class VideoStorage(
                 .distinctBy { it.filePath }
 
         // 数据库视频数据
-        val databaseVideos = DatabaseManager.instance.getVideoDao().getAll()
+        val databaseVideos = DatabaseProvider.instance.getVideoDao().getAll()
 
         // 从数据库中移除，不在系统视频数据中的数据库视频
         databaseVideos
             .map { it.filePath }
             .filterNot { filePath -> systemVideos.any { it.filePath == filePath } }
-            .let { DatabaseManager.instance.getVideoDao().deleteByPaths(it) }
+            .let { DatabaseProvider.instance.getVideoDao().deleteByPaths(it) }
 
         // 往数据库中添加，不在数据库视频中的系统视频数据
         systemVideos
             .filterNot { video -> databaseVideos.any { it.filePath == video.filePath } }
-            .let { DatabaseManager.instance.getVideoDao().insert(*it.toTypedArray()) }
+            .let { DatabaseProvider.instance.getVideoDao().insert(*it.toTypedArray()) }
     }
 }

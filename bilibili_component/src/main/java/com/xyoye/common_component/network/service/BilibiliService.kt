@@ -8,8 +8,8 @@ import com.xyoye.data_component.data.bilibili.BilibiliGaiaVgateRegisterData
 import com.xyoye.data_component.data.bilibili.BilibiliGaiaVgateValidateData
 import com.xyoye.data_component.data.bilibili.BilibiliHistoryCursorData
 import com.xyoye.data_component.data.bilibili.BilibiliJsonModel
-import com.xyoye.data_component.data.bilibili.BilibiliLiveFollowData
 import com.xyoye.data_component.data.bilibili.BilibiliLiveDanmuInfoData
+import com.xyoye.data_component.data.bilibili.BilibiliLiveFollowData
 import com.xyoye.data_component.data.bilibili.BilibiliLivePlayUrlData
 import com.xyoye.data_component.data.bilibili.BilibiliLiveRoomInfoData
 import com.xyoye.data_component.data.bilibili.BilibiliNavData

@@ -1,6 +1,6 @@
 package com.xyoye.common_component.network.repository
 
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 
 /**
  * Created by xyoye on 2024/1/6.
@@ -18,7 +18,7 @@ object ResourceRepository : BaseRepository() {
             .param("videoDuration", 0)
             .param("matchMode", "hashOnly")
             .doPost {
-                Retrofit.danDanService.matchDanmu(it)
+                RetrofitManager.danDanService.matchDanmu(it)
             }
 
     /**
@@ -28,7 +28,7 @@ object ResourceRepository : BaseRepository() {
         request()
             .param("anime", anime)
             .doGet {
-                Retrofit.danDanService.searchDanmu(it)
+                RetrofitManager.danDanService.searchDanmu(it)
             }
 
     /**
@@ -40,7 +40,7 @@ object ResourceRepository : BaseRepository() {
     ) = request()
         .param("withRelated", withRelated)
         .doGet {
-            Retrofit.danDanService.getDanmuContent(episodeId, it)
+            RetrofitManager.danDanService.getDanmuContent(episodeId, it)
         }
 
     /**
@@ -49,7 +49,7 @@ object ResourceRepository : BaseRepository() {
     suspend fun getRelatedDanmu(episodeId: String) =
         request()
             .doGet {
-                Retrofit.danDanService.getRelatedDanmu(episodeId)
+                RetrofitManager.danDanService.getRelatedDanmu(episodeId)
             }
 
     /**
@@ -59,7 +59,7 @@ object ResourceRepository : BaseRepository() {
         request()
             .param("url", url)
             .doGet {
-                Retrofit.danDanService.getRelatedDanmuContent(it)
+                RetrofitManager.danDanService.getRelatedDanmuContent(it)
             }
 
     /**
@@ -77,7 +77,7 @@ object ResourceRepository : BaseRepository() {
         .param("color", color)
         .param("comment", comment)
         .doPost {
-            Retrofit.danDanService.sendOneDanmu(episodeId, it)
+            RetrofitManager.danDanService.sendOneDanmu(episodeId, it)
         }
 
     /**
@@ -86,7 +86,7 @@ object ResourceRepository : BaseRepository() {
     suspend fun matchSubtitleFormThunder(hash: String) =
         request()
             .doGet {
-                Retrofit.extendedService.matchSubtitleFormThunder(hash)
+                RetrofitManager.extendedService.matchSubtitleFormThunder(hash)
             }
 
     /**
@@ -101,7 +101,7 @@ object ResourceRepository : BaseRepository() {
         .param("format", "json")
         .param("lang", "Chn")
         .doPost {
-            Retrofit.extendedService.matchSubtitleFormShooter(it)
+            RetrofitManager.extendedService.matchSubtitleFormShooter(it)
         }
 
     /**
@@ -116,7 +116,7 @@ object ResourceRepository : BaseRepository() {
         .param("q", keyword)
         .param("pos", page)
         .doGet {
-            Retrofit.extendedService.searchSubtitle(it)
+            RetrofitManager.extendedService.searchSubtitle(it)
         }
 
     /**
@@ -129,7 +129,7 @@ object ResourceRepository : BaseRepository() {
         .param("token", token)
         .param("id", id)
         .doGet {
-            Retrofit.extendedService.searchSubtitleDetail(it)
+            RetrofitManager.extendedService.searchSubtitleDetail(it)
         }
 
     /**
@@ -140,7 +140,7 @@ object ResourceRepository : BaseRepository() {
         headers: Map<String, String> = emptyMap()
     ) = request()
         .doGet {
-            Retrofit.extendedService.getResourceResponse(url, headers)
+            RetrofitManager.extendedService.getResourceResponse(url, headers)
         }
 
     /**
@@ -151,6 +151,6 @@ object ResourceRepository : BaseRepository() {
         headers: Map<String, String> = emptyMap()
     ) = request()
         .doGet {
-            Retrofit.extendedService.getResourceResponseBody(url, headers)
+            RetrofitManager.extendedService.getResourceResponseBody(url, headers)
         }
 }

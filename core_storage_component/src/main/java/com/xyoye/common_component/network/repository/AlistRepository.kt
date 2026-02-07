@@ -1,6 +1,6 @@
 package com.xyoye.common_component.network.repository
 
-import com.xyoye.common_component.network.Retrofit
+import com.xyoye.common_component.network.RetrofitManager
 
 /**
  * Created by xyoye on 2024/1/20.
@@ -18,7 +18,7 @@ object AlistRepository : BaseRepository() {
         .param("username", userName)
         .param("password", password)
         .doPost {
-            Retrofit.alistService.login(url, it)
+            RetrofitManager.alistService.login(url, it)
         }
 
     /**
@@ -29,7 +29,7 @@ object AlistRepository : BaseRepository() {
         token: String
     ) = request()
         .doGet {
-            Retrofit.alistService.getUserInfo(url, token)
+            RetrofitManager.alistService.getUserInfo(url, token)
         }
 
     /**
@@ -42,7 +42,7 @@ object AlistRepository : BaseRepository() {
     ) = request()
         .param("path", path)
         .doPost {
-            Retrofit.alistService.openDirectory(url, token, it)
+            RetrofitManager.alistService.openDirectory(url, token, it)
         }
 
     /**
@@ -55,6 +55,6 @@ object AlistRepository : BaseRepository() {
     ) = request()
         .param("path", path)
         .doPost {
-            Retrofit.alistService.openFile(url, token, it)
+            RetrofitManager.alistService.openFile(url, token, it)
         }
 }

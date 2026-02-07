@@ -38,7 +38,7 @@ description: "Task list for 115 Open 存储库在线播放"
 **Purpose**: 115 Open API/鉴权/授权态持久化的通用基础设施；在完成前不应开始任何用户故事 UI/浏览/播放开发
 
 - [X] T005 [P] 新增 115 Open API Moshi 模型 `data_component/src/main/java/com/xyoye/data_component/data/open115/Open115Models.kt`（按 `specs/001-115-open-storage/contracts/115-open-openapi.yaml` 覆盖 ProApiEnvelope/PassportEnvelope/UserInfo/ListFiles/Search/DownUrl/RefreshToken）
-- [X] T006 [P] 新增 Retrofit Service `core_network_component/src/main/java/com/xyoye/common_component/network/service/Open115Service.kt` 并在 `core_network_component/src/main/java/com/xyoye/common_component/network/Retrofit.kt` 注册 `open115Service`（使用 `HeaderKey.BASE_URL` 动态切域；proapi Bearer；refreshToken/downurl 用 form-url-encoded）
+- [X] T006 [P] 新增 Retrofit Service `core_network_component/src/main/java/com/xyoye/common_component/network/service/Open115Service.kt` 并在 `core_network_component/src/main/java/com/xyoye/common_component/network/RetrofitManager.kt` 注册 `open115Service`（使用 `HeaderKey.BASE_URL` 动态切域；proapi Bearer；refreshToken/downurl 用 form-url-encoded）
 - [X] T007 [P] 新增 115 Open Header 约定 `core_storage_component/src/main/java/com/xyoye/common_component/storage/open115/net/Open115Headers.kt`（OpenList 风格 UA 常量、`Authorization: Bearer` 拼装、token 脱敏工具）
 - [X] T008 [P] 新增授权态持久化 `core_storage_component/src/main/java/com/xyoye/common_component/storage/open115/auth/Open115AuthStore.kt`（storageKey 规则按 `data-model.md`：`${mediaType.value}:${url.trim().removeSuffix("/")}`；读写 access/refresh/expiresAt/uid/userName/avatar；清理）
 - [X] T009 [P] 新增可识别异常 `core_storage_component/src/main/java/com/xyoye/common_component/storage/open115/auth/Open115AuthExceptions.kt`（`Open115ReAuthRequiredException`/`Open115NotConfiguredException` 实现 `PassThroughException`，错误文案不含 token）

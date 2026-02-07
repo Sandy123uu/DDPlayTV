@@ -69,6 +69,10 @@ object PlayerConfigTable {
     @MMKVFiled
     val vlcLocalProxyMode = LocalProxyMode.AUTO.value
 
+    // VLC 代理拉流 TLS 降级：仅当用户显式开启时，允许信任所有证书 + 忽略主机名校验（强警告）
+    @MMKVFiled
+    val vlcProxyAllowInsecureTls = false
+
     // Media3(Exo) 本地 HTTP 代理：Range 请求最小间隔（毫秒），用于降低上游风控触发概率
     @MMKVFiled
     val exoProxyRangeMinIntervalMs = 200

@@ -1,2 +1,7 @@
-configurations.maybeCreate("default")
-artifacts.add("default", file("panelSwitchHelper-androidx.aar"))
+plugins {
+    id("setup.prebuilt-aar")
+}
+
+prebuiltAar {
+    aarFileName = "panelSwitchHelper-androidx.aar"
+}

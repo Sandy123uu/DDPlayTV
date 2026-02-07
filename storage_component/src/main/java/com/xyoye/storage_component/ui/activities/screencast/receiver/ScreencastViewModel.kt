@@ -50,7 +50,6 @@ class ScreencastViewModel : BaseViewModel() {
                     "initIpPort",
                     "获取网络接口IP地址时发生Socket异常",
                 )
-                e.printStackTrace()
             }
             hideLoading()
 

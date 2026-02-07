@@ -43,7 +43,7 @@ object Cloud115TokenParser {
                     uid = uid,
                     cid = cid,
                     seid = seid,
-                    kid = kid
+                    kid = kid,
                 )
             if (cookieHeader.isBlank()) {
                 throw IllegalArgumentException("token 解析失败")
@@ -51,7 +51,7 @@ object Cloud115TokenParser {
 
             ParsedToken(
                 userId = uid,
-                cookieHeader = cookieHeader
+                cookieHeader = cookieHeader,
             )
         }
 
@@ -75,4 +75,3 @@ object Cloud115TokenParser {
         return map
     }
 }
-

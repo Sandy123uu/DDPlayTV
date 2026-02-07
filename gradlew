@@ -114,6 +114,14 @@ case "$( uname )" in                #(
   NONSTOP* )        nonstop=true ;;
 esac
 
+# On WSL2, UTP may fail to connect adb when ADB_SERVER_SOCKET is empty.
+# Keep default daemon socket explicit so connectedAndroidTest can receive test results.
+if [ -z "${ADB_SERVER_SOCKET:-}" ]     && { [ -n "${WSL_DISTRO_NAME:-}" ] || grep -qi microsoft /proc/version 2>/dev/null; }
+then
+    ADB_SERVER_SOCKET='tcp:127.0.0.1:5037'
+    export ADB_SERVER_SOCKET
+fi
+
 CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
 
 

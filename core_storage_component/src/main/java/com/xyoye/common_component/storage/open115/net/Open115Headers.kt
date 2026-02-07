@@ -18,9 +18,7 @@ object Open115Headers {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " +
             "Safari/537.36 Chrome/142.0.0.0 OpenList/425.6.30"
 
-    fun bearer(
-        accessToken: String
-    ): String = "Bearer $accessToken"
+    fun bearer(accessToken: String): String = "Bearer $accessToken"
 
     fun redactToken(token: String?): String =
         if (token.isNullOrBlank()) {
@@ -32,7 +30,9 @@ object Open115Headers {
     fun redactAuthorization(authorization: String?): String {
         val raw = authorization?.trim().orEmpty()
         val token =
-            raw.removePrefix("Bearer").trim()
+            raw
+                .removePrefix("Bearer")
+                .trim()
                 .takeIf { it.isNotBlank() }
         return if (token.isNullOrBlank()) {
             ""
@@ -49,4 +49,3 @@ object Open115Headers {
             }
         }
 }
-

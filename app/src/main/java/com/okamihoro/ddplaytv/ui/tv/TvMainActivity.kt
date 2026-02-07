@@ -2,21 +2,19 @@ package com.okamihoro.ddplaytv.ui.tv
 
 import android.view.KeyEvent
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentTransaction
 import com.alibaba.android.arouter.launcher.ARouter
-import com.xyoye.common_component.adapter.addItem
-import com.xyoye.common_component.adapter.buildAdapter
-import com.xyoye.common_component.config.RouteTable
-import com.xyoye.common_component.extension.findAndRemoveFragment
-import com.xyoye.common_component.extension.hideFragment
-import com.xyoye.common_component.extension.requestIndexChildFocus
-import com.xyoye.common_component.extension.setData
-import com.xyoye.common_component.extension.showFragment
-import com.xyoye.common_component.extension.vertical
 import com.okamihoro.ddplaytv.R
 import com.okamihoro.ddplaytv.databinding.ActivityTvMainBinding
 import com.okamihoro.ddplaytv.databinding.ItemTvMainNavBinding
 import com.okamihoro.ddplaytv.ui.shell.BaseShellActivity
+import com.okamihoro.ddplaytv.ui.shell.ShellFragmentSwitcher
+import com.xyoye.common_component.adapter.addItem
+import com.xyoye.common_component.adapter.buildAdapter
+import com.xyoye.common_component.config.RouteTable
+import com.xyoye.common_component.extension.findAndRemoveFragment
+import com.xyoye.common_component.extension.requestIndexChildFocus
+import com.xyoye.common_component.extension.setData
+import com.xyoye.common_component.extension.vertical
 
 class TvMainActivity : BaseShellActivity<ActivityTvMainBinding>() {
     companion object {
@@ -24,8 +22,13 @@ class TvMainActivity : BaseShellActivity<ActivityTvMainBinding>() {
         private const val TAG_FRAGMENT_PERSONAL = "tag_fragment_tv_personal"
     }
 
-    private lateinit var previousFragment: Fragment
-    private var fragmentTag = ""
+    private val fragmentSwitcher by lazy {
+        ShellFragmentSwitcher(
+            fragmentManager = supportFragmentManager,
+            containerId = R.id.fragment_container,
+            fragmentProvider = ::getFragment,
+        )
+    }
 
     private val navItems = TvNavItem.entries.toList()
     private var selectedSection: TvNavItem = TvNavItem.MEDIA
@@ -140,39 +143,7 @@ class TvMainActivity : BaseShellActivity<ActivityTvMainBinding>() {
         tag: String,
         fragmentPath: String
     ) {
-        // 重复打开当前页面，不进行任何操作
-        if (tag == fragmentTag) {
-            return
-        }
-
-        // 隐藏上一个布局，fragmentTag不为空代表上一个布局已存在
-        if (fragmentTag.isNotEmpty()) {
-            supportFragmentManager.hideFragment(previousFragment)
-        }
-
-        val fragment = supportFragmentManager.findFragmentByTag(tag)
-        if (fragment == null) {
-            getFragment(fragmentPath)?.also {
-                addFragment(it, tag)
-                previousFragment = it
-                fragmentTag = tag
-            }
-        } else {
-            supportFragmentManager.showFragment(fragment)
-            previousFragment = fragment
-            fragmentTag = tag
-        }
-    }
-
-    private fun addFragment(
-        fragment: Fragment,
-        tag: String
-    ) {
-        supportFragmentManager
-            .beginTransaction()
-            .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-            .add(R.id.fragment_container, fragment, tag)
-            .commit()
+        fragmentSwitcher.switchFragment(tag, fragmentPath)
     }
 
     private fun getFragment(path: String) =

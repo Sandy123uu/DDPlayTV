@@ -3,7 +3,10 @@ package com.xyoye.common_component.storage.impl
 import android.net.Uri
 import com.xyoye.common_component.config.PlayerConfig
 import com.xyoye.common_component.network.config.HeaderKey
-import com.xyoye.common_component.network.helper.UnsafeOkHttpClient
+import com.xyoye.common_component.network.helper.OkHttpTlsPolicy
+import com.xyoye.common_component.network.helper.UnsafeTlsApi
+import com.xyoye.common_component.network.helper.WebDavOkHttpClient
+import com.xyoye.common_component.network.helper.WebDavOkHttpClientFactory
 import com.xyoye.common_component.storage.AbstractStorage
 import com.xyoye.common_component.storage.file.StorageFile
 import com.xyoye.common_component.storage.file.helper.LocalProxy
@@ -29,7 +32,15 @@ import java.util.Date
 class WebDavStorage(
     library: MediaLibraryEntity
 ) : AbstractStorage(library) {
-    private val sardine = OkHttpSardine(UnsafeOkHttpClient.client)
+    @OptIn(UnsafeTlsApi::class)
+    private val sardine =
+        OkHttpSardine(
+            if (this.library.webDavAllowInsecureTls) {
+                WebDavOkHttpClientFactory.create(OkHttpTlsPolicy.UnsafeTrustAll)
+            } else {
+                WebDavOkHttpClient.client
+            },
+        )
 
     init {
         SardineConfig.isXmlStrictMode = this.library.webDavStrict
@@ -47,7 +58,6 @@ class WebDavStorage(
         try {
             sardine.get(file.fileUrl())
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "WebDAV", "打开文件失败: ${file.fileUrl()}")
             null
         }
@@ -59,7 +69,6 @@ class WebDavStorage(
                 .filter { isChildFile(file.fileUrl(), it.href) }
                 .map { WebDavStorageFile(it, this) }
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "WebDAV", "获取文件列表失败: ${file.fileUrl()}")
             emptyList()
         }
@@ -124,6 +133,12 @@ class WebDavStorage(
             prePlayRangeMinIntervalMs = interval,
             fileName = fileName,
             autoEnabled = autoEnabled,
+            upstreamTlsPolicy =
+                if (this.library.webDavAllowInsecureTls) {
+                    LocalProxy.UpstreamTlsPolicy.UNSAFE_TRUST_ALL
+                } else {
+                    LocalProxy.UpstreamTlsPolicy.STRICT
+                },
         )
     }
 
@@ -140,7 +155,6 @@ class WebDavStorage(
             sardine.list(getRootFile().fileUrl())
             true
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "WebDAV", "连接测试失败: ${library.url}")
             false
         }
@@ -161,7 +175,6 @@ class WebDavStorage(
             val childPath = child.path
             return parentPath != childPath
         } catch (e: Exception) {
-            e.printStackTrace()
             ErrorReportHelper.postCatchedException(e, "WebDAV", "路径解析失败: parent=$parent, child=$child")
         }
         return false

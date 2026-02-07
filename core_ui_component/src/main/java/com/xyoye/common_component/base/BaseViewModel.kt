@@ -2,7 +2,6 @@ package com.xyoye.common_component.base
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.xyoye.data_component.helper.Loading
 
 /**
  * Created by xyoye on 2020/4/13.

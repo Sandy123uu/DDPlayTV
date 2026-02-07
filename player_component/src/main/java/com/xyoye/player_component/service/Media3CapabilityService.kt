@@ -5,14 +5,14 @@ import com.alibaba.android.arouter.facade.annotation.Route
 import com.xyoye.common_component.config.Media3ToggleProvider
 import com.xyoye.common_component.config.RouteTable
 import com.xyoye.common_component.network.repository.Media3Repository
-import com.xyoye.common_component.service.Media3CapabilityProvider
-import com.xyoye.data_component.data.media3.CapabilityCommandResponseData
-import com.xyoye.data_component.data.media3.PlaybackSessionRequestData
-import com.xyoye.data_component.entity.media3.Media3Capability
-import com.xyoye.data_component.entity.media3.Media3SessionBundle
-import com.xyoye.data_component.entity.media3.Media3SourceType
-import com.xyoye.data_component.entity.media3.PlayerCapabilityContract
-import com.xyoye.data_component.entity.media3.RolloutToggleSnapshot
+import com.xyoye.common_component.services.Media3CapabilityProvider
+import com.xyoye.data_component.media3.dto.CapabilityCommandResponseData
+import com.xyoye.data_component.media3.dto.PlaybackSessionRequestData
+import com.xyoye.data_component.media3.entity.Media3Capability
+import com.xyoye.data_component.media3.entity.Media3SessionBundle
+import com.xyoye.data_component.media3.entity.Media3SourceType
+import com.xyoye.data_component.media3.entity.PlayerCapabilityContract
+import com.xyoye.data_component.media3.entity.RolloutToggleSnapshot
 import kotlin.jvm.JvmSuppressWildcards
 
 @Route(

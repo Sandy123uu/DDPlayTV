@@ -11,6 +11,7 @@ import androidx.core.view.children
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
+import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.extension.requestIndexChildFocus
 import com.xyoye.common_component.extension.toResString
 import com.xyoye.core_ui_component.R
@@ -25,7 +26,7 @@ enum class TabDpadMode {
     /**
      * 设置页模式：Tab 行仅作选中指示（TV/非触摸模式下不可聚焦），内容内通过 DPAD_LEFT/RIGHT 切页。
      */
-    SettingsIndicatorOnly,
+    SettingsIndicatorOnly
 }
 
 /**
@@ -43,6 +44,32 @@ class TabLayoutViewPager2DpadFocusCoordinator(
     private val mode: TabDpadMode = TabDpadMode.Default,
     private val isEnabled: () -> Boolean = { !tabLayout.isInTouchMode }
 ) {
+    companion object {
+        /**
+         * 在 TV UI mode 下自动 attach，并返回已 attach 的 coordinator；非 TV 设备返回 null。
+         *
+         * 注意：默认只在“非触摸模式”下启用（`!tabLayout.isInTouchMode`），以避免误伤移动端触控交互。
+         */
+        @MainThread
+        fun attachIfTelevision(
+            tabLayout: TabLayout,
+            viewPager: ViewPager2,
+            mode: TabDpadMode = TabDpadMode.Default,
+            isEnabled: (() -> Boolean)? = null
+        ): TabLayoutViewPager2DpadFocusCoordinator? {
+            if (!tabLayout.context.isTelevisionUiMode()) {
+                return null
+            }
+
+            return TabLayoutViewPager2DpadFocusCoordinator(
+                tabLayout = tabLayout,
+                viewPager = viewPager,
+                mode = mode,
+                isEnabled = isEnabled ?: { !tabLayout.isInTouchMode },
+            ).also { it.attach() }
+        }
+    }
+
     private val pageFocusSync =
         ViewPager2DpadPageFocusSync(
             viewPager = viewPager,
@@ -244,9 +271,7 @@ class TabLayoutViewPager2DpadFocusCoordinator(
 
     private fun viewPagerRecyclerView(): RecyclerView? = viewPager.getChildAt(0) as? RecyclerView
 
-    private fun currentPageItemView(): View? {
-        return pageItemView(pageIndex = viewPager.currentItem)
-    }
+    private fun currentPageItemView(): View? = pageItemView(pageIndex = viewPager.currentItem)
 
     private fun pageItemView(pageIndex: Int): View? {
         val rv = viewPagerRecyclerView() ?: return null
