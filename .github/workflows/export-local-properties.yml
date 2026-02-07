@@ -1,0 +1,79 @@
+name: export local.properties from secrets
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    name: Export Local Properties
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: generate local.properties file
+        shell: bash
+        env:
+          BUGLY_APP_ID: ${{ secrets.BUGLY_APP_ID }}
+          DANDAN_APP_ID: ${{ secrets.DANDAN_APP_ID }}
+          DANDAN_APP_SECRET: ${{ secrets.DANDAN_APP_SECRET }}
+          BILIBILI_TV_APP_KEY: ${{ secrets.BILIBILI_TV_APP_KEY }}
+          BILIBILI_TV_APP_SECRET: ${{ secrets.BILIBILI_TV_APP_SECRET }}
+          BAIDU_PAN_CLIENT_ID: ${{ secrets.BAIDU_PAN_CLIENT_ID }}
+          BAIDU_PAN_CLIENT_SECRET: ${{ secrets.BAIDU_PAN_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+
+          required=(
+            BUGLY_APP_ID
+            DANDAN_APP_ID
+            DANDAN_APP_SECRET
+            BILIBILI_TV_APP_KEY
+            BILIBILI_TV_APP_SECRET
+            BAIDU_PAN_CLIENT_ID
+            BAIDU_PAN_CLIENT_SECRET
+          )
+
+          missing=0
+          for key in "${required[@]}"; do
+            value="${!key:-}"
+            if [[ -z "$value" ]]; then
+              echo "::error::Missing required secret: $key"
+              missing=1
+            fi
+            # Extra protection: make sure accidental output is masked in logs.
+            echo "::add-mask::$value"
+          done
+
+          if [[ "$missing" -ne 0 ]]; then
+            exit 1
+          fi
+
+          mkdir -p out
+          cat > out/local.properties <<EOF
+BUGLY_APP_ID=${BUGLY_APP_ID}
+DANDAN_APP_ID=${DANDAN_APP_ID}
+DANDAN_APP_SECRET=${DANDAN_APP_SECRET}
+BILIBILI_TV_APP_KEY=${BILIBILI_TV_APP_KEY}
+BILIBILI_TV_APP_SECRET=${BILIBILI_TV_APP_SECRET}
+BAIDU_PAN_CLIENT_ID=${BAIDU_PAN_CLIENT_ID}
+BAIDU_PAN_CLIENT_SECRET=${BAIDU_PAN_CLIENT_SECRET}
+EOF
+
+          chmod 600 out/local.properties
+
+          {
+            echo "### local.properties export ready"
+            echo "- Generated from GitHub Secrets"
+            echo "- Download the artifact and copy values into your local file"
+            echo "- Secret values are intentionally not printed in logs"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: upload local.properties artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-properties-from-secrets
+          retention-days: 1
+          if-no-files-found: error
+          path: out/local.properties
