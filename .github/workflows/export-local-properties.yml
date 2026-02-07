@@ -1,9 +1,6 @@
 name: export local.properties from secrets
 
 on:
-  push:
-    branches:
-      - 001-code-quality-audit
   workflow_dispatch:
 
 permissions:
