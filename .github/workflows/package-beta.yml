@@ -63,15 +63,15 @@ jobs:
           fi
 
           mkdir -p out
-          {
-            printf 'BUGLY_APP_ID=%s\n' "$BUGLY_APP_ID"
-            printf 'DANDAN_APP_ID=%s\n' "$DANDAN_APP_ID"
-            printf 'DANDAN_APP_SECRET=%s\n' "$DANDAN_APP_SECRET"
-            printf 'BILIBILI_TV_APP_KEY=%s\n' "$BILIBILI_TV_APP_KEY"
-            printf 'BILIBILI_TV_APP_SECRET=%s\n' "$BILIBILI_TV_APP_SECRET"
-            printf 'BAIDU_PAN_CLIENT_ID=%s\n' "$BAIDU_PAN_CLIENT_ID"
-            printf 'BAIDU_PAN_CLIENT_SECRET=%s\n' "$BAIDU_PAN_CLIENT_SECRET"
-          } > out/local.properties
+          cat > out/local.properties <<EOF
+BUGLY_APP_ID=${BUGLY_APP_ID}
+DANDAN_APP_ID=${DANDAN_APP_ID}
+DANDAN_APP_SECRET=${DANDAN_APP_SECRET}
+BILIBILI_TV_APP_KEY=${BILIBILI_TV_APP_KEY}
+BILIBILI_TV_APP_SECRET=${BILIBILI_TV_APP_SECRET}
+BAIDU_PAN_CLIENT_ID=${BAIDU_PAN_CLIENT_ID}
+BAIDU_PAN_CLIENT_SECRET=${BAIDU_PAN_CLIENT_SECRET}
+EOF
 
           chmod 600 out/local.properties
 
