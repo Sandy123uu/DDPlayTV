@@ -61,6 +61,13 @@ val jacocoClassExcludes =
         "**/R$*.class",
         "**/BuildConfig.*",
         "**/Manifest*.*",
+        "**/BR.class",
+        "**/BR$*.class",
+        "**/DataBinderMapperImpl.class",
+        "**/DataBinderMapperImpl$*.class",
+        "**/databinding/**",
+        "**/*Binding.class",
+        "**/*Binding$*.class",
         "**/*Test*.*",
         "android/**/*.*",
         "**/*\$Lambda$*.*",
@@ -171,16 +178,11 @@ gradle.projectsEvaluated {
         executionData.setFrom(execData)
 
         doFirst {
-            val existingExecData = executionData.files.filter { it.exists() }
-            if (existingExecData.isEmpty()) {
+            if (executionData.files.none { it.exists() }) {
                 throw GradleException(
                     "No JaCoCo execution data found. Run debug unit tests before jacocoTestReport.",
                 )
             }
-
-            executionData.setFrom(existingExecData)
-            sourceDirectories.setFrom(sourceDirectories.files.filter { it.exists() })
-            classDirectories.setFrom(classDirectories.files.filter { it.exists() })
         }
     }
 

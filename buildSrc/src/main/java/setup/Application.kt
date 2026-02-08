@@ -34,7 +34,7 @@ fun Project.applicationSetup() {
             unitTests.isIncludeAndroidResources = true
             unitTests.isReturnDefaultValues = true
             unitTests.all {
-                it.systemProperty("robolectric.enabledSdks", "34")
+                it.systemProperty("robolectric.enabledSdks", Versions.targetSdkVersion.toString())
             }
         }
 

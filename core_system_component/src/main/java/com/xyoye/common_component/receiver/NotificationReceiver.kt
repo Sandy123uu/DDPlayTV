@@ -42,20 +42,24 @@ class NotificationReceiver : BroadcastReceiver() {
         }
     }
 
-    init {
-        ARouter.getInstance().inject(this)
+    private fun ensureInjected() {
+        if (!::screencastReceiveService.isInitialized) {
+            ARouter.getInstance().inject(this)
+        }
     }
 
     override fun onReceive(
         context: Context,
         intent: Intent
     ) {
+        ensureInjected()
         when (intent.action) {
-            cancelScreencastReceiveAction(context) ->
+            cancelScreencastReceiveAction(context) -> {
                 cancelScreencastReceive(
                     context,
                     Notifications.Id.SCREENCAST_RECEIVE,
                 )
+            }
         }
     }
 

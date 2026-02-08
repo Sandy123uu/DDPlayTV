@@ -9,6 +9,7 @@ object Dependencies {
         const val exoplayer = "2.19.1"
         const val lifecycle = "2.5.1"
         const val navigation = "2.3.0"
+        const val robolectric = "4.16.1"
     }
 
     object Alibaba {
@@ -110,6 +111,12 @@ object Dependencies {
     object Tencent {
         const val mmkv = "com.tencent:mmkv-static:1.2.14"
         const val bugly = "com.tencent.bugly:crashreport:4.1.9"
+    }
+
+
+    object Testing {
+        const val androidx_test_core = "androidx.test:core:1.7.0"
+        const val robolectric = "org.robolectric:robolectric:${Versions.robolectric}"
     }
 
     object VLC {

@@ -34,8 +34,8 @@ dependencies {
     implementation(files("../repository/mmkv/mmkv-annotation.jar"))
     kapt(files("../repository/mmkv/mmkv-compiler.jar"))
 
-    testImplementation("androidx.test:core:1.7.0")
-    testImplementation("org.robolectric:robolectric:4.12.2")
+    testImplementation(Dependencies.Testing.androidx_test_core)
+    testImplementation(Dependencies.Testing.robolectric)
 }
 
 android {
