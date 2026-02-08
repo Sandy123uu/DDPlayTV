@@ -943,34 +943,86 @@ public class NumberPicker extends LinearLayout {
                 break;
             case KeyEvent.KEYCODE_DPAD_DOWN:
             case KeyEvent.KEYCODE_DPAD_UP:
-                if (!mHasSelectorWheel) {
-                    break;
+                if (handleDpadKeyEvent(event, keyCode)) {
+                    return true;
                 }
-                switch (event.getAction()) {
-                    case KeyEvent.ACTION_DOWN:
-                        if (mWrapSelectorWheel || (keyCode == KeyEvent.KEYCODE_DPAD_DOWN)
-                                ? getValue() < getMaxValue() : getValue() > getMinValue()) {
-                            // 修复焦点问题：确保View已正确附加到窗口且具有有效父容器
-                            if (isAttachedToWindow() && getParent() != null) {
-                                requestFocus();
-                            }
-                            mLastHandledDownDpadKeyCode = keyCode;
-                            removeAllCallbacks();
-                            if (mFlingScroller.isFinished()) {
-                                changeValueByOne(keyCode == KeyEvent.KEYCODE_DPAD_DOWN);
-                            }
-                            return true;
-                        }
-                        break;
-                    case KeyEvent.ACTION_UP:
-                        if (mLastHandledDownDpadKeyCode == keyCode) {
-                            mLastHandledDownDpadKeyCode = -1;
-                            return true;
-                        }
-                        break;
-                }
+                break;
+            default:
+                break;
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    private boolean handleDpadKeyEvent(KeyEvent event, int keyCode) {
+        if (!mHasSelectorWheel) {
+            return false;
+        }
+
+        switch (event.getAction()) {
+            case KeyEvent.ACTION_DOWN:
+                return handleDpadKeyDown(keyCode);
+            case KeyEvent.ACTION_UP:
+                return handleDpadKeyUp(keyCode);
+            default:
+                return false;
+        }
+    }
+
+    private boolean handleDpadKeyDown(int keyCode) {
+        if (!canChangeValueByDpad(keyCode)) {
+            return false;
+        }
+
+        // 修复焦点问题：仅在视图附着且父容器有效时申请焦点
+        if (canRequestFocusSafely(isAttachedToWindow(), getParent() != null)) {
+            requestFocus();
+        }
+
+        mLastHandledDownDpadKeyCode = keyCode;
+        removeAllCallbacks();
+        if (mFlingScroller.isFinished()) {
+            changeValueByOne(keyCode == KeyEvent.KEYCODE_DPAD_DOWN);
+        }
+        return true;
+    }
+
+    private boolean handleDpadKeyUp(int keyCode) {
+        if (mLastHandledDownDpadKeyCode != keyCode) {
+            return false;
+        }
+
+        mLastHandledDownDpadKeyCode = -1;
+        return true;
+    }
+
+    private boolean canChangeValueByDpad(int keyCode) {
+        return canChangeValueByDpad(
+                mWrapSelectorWheel,
+                keyCode,
+                getValue(),
+                getMinValue(),
+                getMaxValue()
+        );
+    }
+
+    static boolean canChangeValueByDpad(
+            boolean wrapSelectorWheel,
+            int keyCode,
+            int value,
+            int minValue,
+            int maxValue
+    ) {
+        if (wrapSelectorWheel) {
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+            return value < maxValue;
+        }
+        return value > minValue;
+    }
+
+    static boolean canRequestFocusSafely(boolean attachedToWindow, boolean hasParent) {
+        return attachedToWindow && hasParent;
     }
 
     @Override
@@ -2302,168 +2354,145 @@ public class NumberPicker extends LinearLayout {
         @SuppressLint("AccessibilityFocus")
         public boolean performAction(int virtualViewId, int action, Bundle arguments) {
             switch (virtualViewId) {
-                case View.NO_ID: {
-                    switch (action) {
-                        case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS: {
-                            if (mAccessibilityFocusedView != virtualViewId) {
-                                mAccessibilityFocusedView = virtualViewId;
-                                // requestAccessibilityFocus();
-                                performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
-                                return true;
-                            }
-                        }
-                        return false;
-                        case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS: {
-                            if (mAccessibilityFocusedView == virtualViewId) {
-                                mAccessibilityFocusedView = UNDEFINED;
-                                // clearAccessibilityFocus();
-                                performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS, null);
-                                return true;
-                            }
-                            return false;
-                        }
-                        case AccessibilityNodeInfo.ACTION_SCROLL_FORWARD: {
-                            if (NumberPicker.this.isEnabled()
-                                    && (getWrapSelectorWheel() || getValue() < getMaxValue())) {
-                                changeValueByOne(true);
-                                return true;
-                            }
-                        }
-                        return false;
-                        case AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD: {
-                            if (NumberPicker.this.isEnabled()
-                                    && (getWrapSelectorWheel() || getValue() > getMinValue())) {
-                                changeValueByOne(false);
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                }
-                break;
-                case VIRTUAL_VIEW_ID_INPUT: {
-                    switch (action) {
-                        case AccessibilityNodeInfo.ACTION_FOCUS: {
-                            if (NumberPicker.this.isEnabled() && !mInputText.isFocused()) {
-                                // 修复焦点问题：确保View已正确附加到窗口且具有有效父容器
-                                if (mInputText.isAttachedToWindow() && mInputText.getParent() != null) {
-                                    return mInputText.requestFocus();
-                                }
-                                return false;
-                            }
-                        }
-                        break;
-                        case AccessibilityNodeInfo.ACTION_CLEAR_FOCUS: {
-                            if (NumberPicker.this.isEnabled() && mInputText.isFocused()) {
-                                mInputText.clearFocus();
-                                return true;
-                            }
-                            return false;
-                        }
-                        case AccessibilityNodeInfo.ACTION_CLICK: {
-                            if (NumberPicker.this.isEnabled()) {
-                                showSoftInput();
-                                return true;
-                            }
-                            return false;
-                        }
-                        case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS: {
-                            if (mAccessibilityFocusedView != virtualViewId) {
-                                mAccessibilityFocusedView = virtualViewId;
-                                sendAccessibilityEventForVirtualView(virtualViewId,
-                                        AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
-                                mInputText.invalidate();
-                                return true;
-                            }
-                        }
-                        return false;
-                        case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS: {
-                            if (mAccessibilityFocusedView == virtualViewId) {
-                                mAccessibilityFocusedView = UNDEFINED;
-                                sendAccessibilityEventForVirtualView(virtualViewId,
-                                        AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
-                                mInputText.invalidate();
-                                return true;
-                            }
-                        }
-                        return false;
-                        default: {
-                            return mInputText.performAccessibilityAction(action, arguments);
-                        }
-                    }
-                }
-                return false;
-                case VIRTUAL_VIEW_ID_INCREMENT: {
-                    switch (action) {
-                        case AccessibilityNodeInfo.ACTION_CLICK: {
-                            if (NumberPicker.this.isEnabled()) {
-                                NumberPicker.this.changeValueByOne(true);
-                                sendAccessibilityEventForVirtualView(virtualViewId,
-                                        AccessibilityEvent.TYPE_VIEW_CLICKED);
-                                return true;
-                            }
-                        }
-                        return false;
-                        case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS: {
-                            if (mAccessibilityFocusedView != virtualViewId) {
-                                mAccessibilityFocusedView = virtualViewId;
-                                sendAccessibilityEventForVirtualView(virtualViewId,
-                                        AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
-                                invalidate(0, mBottomSelectionDividerBottom, getRight(), getBottom());
-                                return true;
-                            }
-                        }
-                        return false;
-                        case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS: {
-                            if (mAccessibilityFocusedView == virtualViewId) {
-                                mAccessibilityFocusedView = UNDEFINED;
-                                sendAccessibilityEventForVirtualView(virtualViewId,
-                                        AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
-                                invalidate(0, mBottomSelectionDividerBottom, getRight(), getBottom());
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                }
-                return false;
-                case VIRTUAL_VIEW_ID_DECREMENT: {
-                    switch (action) {
-                        case AccessibilityNodeInfo.ACTION_CLICK: {
-                            if (NumberPicker.this.isEnabled()) {
-                                final boolean increment = (virtualViewId == VIRTUAL_VIEW_ID_INCREMENT);
-                                NumberPicker.this.changeValueByOne(increment);
-                                sendAccessibilityEventForVirtualView(virtualViewId,
-                                        AccessibilityEvent.TYPE_VIEW_CLICKED);
-                                return true;
-                            }
-                        }
-                        return false;
-                        case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS: {
-                            if (mAccessibilityFocusedView != virtualViewId) {
-                                mAccessibilityFocusedView = virtualViewId;
-                                sendAccessibilityEventForVirtualView(virtualViewId,
-                                        AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
-                                invalidate(0, 0, getRight(), mTopSelectionDividerTop);
-                                return true;
-                            }
-                        }
-                        return false;
-                        case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS: {
-                            if (mAccessibilityFocusedView == virtualViewId) {
-                                mAccessibilityFocusedView = UNDEFINED;
-                                sendAccessibilityEventForVirtualView(virtualViewId,
-                                        AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
-                                invalidate(0, 0, getRight(), mTopSelectionDividerTop);
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                }
-                return false;
+                case View.NO_ID:
+                    return handlePickerAccessibilityAction(virtualViewId, action);
+                case VIRTUAL_VIEW_ID_INPUT:
+                    return handleInputAccessibilityAction(virtualViewId, action, arguments);
+                case VIRTUAL_VIEW_ID_INCREMENT:
+                    return handleVirtualButtonAccessibilityAction(virtualViewId, action, true);
+                case VIRTUAL_VIEW_ID_DECREMENT:
+                    return handleVirtualButtonAccessibilityAction(virtualViewId, action, false);
+                default:
+                    return super.performAction(virtualViewId, action, arguments);
             }
-            return super.performAction(virtualViewId, action, arguments);
+        }
+
+        private boolean handlePickerAccessibilityAction(int virtualViewId, int action) {
+            switch (action) {
+                case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS:
+                    if (mAccessibilityFocusedView != virtualViewId) {
+                        mAccessibilityFocusedView = virtualViewId;
+                        performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
+                        return true;
+                    }
+                    return false;
+                case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS:
+                    if (mAccessibilityFocusedView == virtualViewId) {
+                        mAccessibilityFocusedView = UNDEFINED;
+                        performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS, null);
+                        return true;
+                    }
+                    return false;
+                case AccessibilityNodeInfo.ACTION_SCROLL_FORWARD:
+                    if (NumberPicker.this.isEnabled()
+                            && (getWrapSelectorWheel() || getValue() < getMaxValue())) {
+                        changeValueByOne(true);
+                        return true;
+                    }
+                    return false;
+                case AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD:
+                    if (NumberPicker.this.isEnabled()
+                            && (getWrapSelectorWheel() || getValue() > getMinValue())) {
+                        changeValueByOne(false);
+                        return true;
+                    }
+                    return false;
+                default:
+                    return false;
+            }
+        }
+
+        private boolean handleInputAccessibilityAction(int virtualViewId, int action, Bundle arguments) {
+            switch (action) {
+                case AccessibilityNodeInfo.ACTION_FOCUS:
+                    if (NumberPicker.this.isEnabled() && !mInputText.isFocused()) {
+                        // 修复焦点问题：确保View已正确附加到窗口且具有有效父容器
+                        if (canRequestFocusSafely(mInputText.isAttachedToWindow(), mInputText.getParent() != null)) {
+                            return mInputText.requestFocus();
+                        }
+                    }
+                    return false;
+                case AccessibilityNodeInfo.ACTION_CLEAR_FOCUS:
+                    if (NumberPicker.this.isEnabled() && mInputText.isFocused()) {
+                        mInputText.clearFocus();
+                        return true;
+                    }
+                    return false;
+                case AccessibilityNodeInfo.ACTION_CLICK:
+                    if (NumberPicker.this.isEnabled()) {
+                        showSoftInput();
+                        return true;
+                    }
+                    return false;
+                case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS:
+                    if (mAccessibilityFocusedView != virtualViewId) {
+                        mAccessibilityFocusedView = virtualViewId;
+                        sendAccessibilityEventForVirtualView(
+                                virtualViewId,
+                                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED
+                        );
+                        mInputText.invalidate();
+                        return true;
+                    }
+                    return false;
+                case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS:
+                    if (mAccessibilityFocusedView == virtualViewId) {
+                        mAccessibilityFocusedView = UNDEFINED;
+                        sendAccessibilityEventForVirtualView(
+                                virtualViewId,
+                                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED
+                        );
+                        mInputText.invalidate();
+                        return true;
+                    }
+                    return false;
+                default:
+                    return mInputText.performAccessibilityAction(action, arguments);
+            }
+        }
+
+        private boolean handleVirtualButtonAccessibilityAction(int virtualViewId, int action, boolean increment) {
+            switch (action) {
+                case AccessibilityNodeInfo.ACTION_CLICK:
+                    if (NumberPicker.this.isEnabled()) {
+                        NumberPicker.this.changeValueByOne(increment);
+                        sendAccessibilityEventForVirtualView(virtualViewId, AccessibilityEvent.TYPE_VIEW_CLICKED);
+                        return true;
+                    }
+                    return false;
+                case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS:
+                    if (mAccessibilityFocusedView != virtualViewId) {
+                        mAccessibilityFocusedView = virtualViewId;
+                        sendAccessibilityEventForVirtualView(
+                                virtualViewId,
+                                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED
+                        );
+                        invalidateVirtualButtonBounds(increment);
+                        return true;
+                    }
+                    return false;
+                case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS:
+                    if (mAccessibilityFocusedView == virtualViewId) {
+                        mAccessibilityFocusedView = UNDEFINED;
+                        sendAccessibilityEventForVirtualView(
+                                virtualViewId,
+                                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED
+                        );
+                        invalidateVirtualButtonBounds(increment);
+                        return true;
+                    }
+                    return false;
+                default:
+                    return false;
+            }
+        }
+
+        private void invalidateVirtualButtonBounds(boolean increment) {
+            if (increment) {
+                invalidate(0, mBottomSelectionDividerBottom, getRight(), getBottom());
+                return;
+            }
+            invalidate(0, 0, getRight(), mTopSelectionDividerTop);
         }
 
         public void sendAccessibilityEventForVirtualView(int virtualViewId, int eventType) {

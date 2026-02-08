@@ -188,7 +188,7 @@ class BaiduPanLoginDialog(
             runCatching {
                 val response =
                     RetrofitManager.baiduPanService.oauthDeviceCode(
-                        baseUrl = Api.BAIDU_OAUTH,
+                        baseUrl = Api.BAIDU_ACCOUNT_API,
                         responseType = "device_code",
                         clientId = BaiduPanOpenApiConfig.clientId,
                         scope = DEFAULT_SCOPE,
@@ -213,7 +213,7 @@ class BaiduPanLoginDialog(
             runCatching {
                 val response =
                     RetrofitManager.baiduPanService.oauthToken(
-                        baseUrl = Api.BAIDU_OAUTH,
+                        baseUrl = Api.BAIDU_ACCOUNT_API,
                         grantType = "device_token",
                         code = deviceCode,
                         refreshToken = null,

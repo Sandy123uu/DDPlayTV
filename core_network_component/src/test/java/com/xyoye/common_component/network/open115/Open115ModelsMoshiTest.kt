@@ -13,10 +13,9 @@ import org.junit.Test
 
 class Open115ModelsMoshiTest {
     @Test
-    fun userInfo_allowsArrayData_whenError() {
-        val json = """{"state":false,"code":401001,"message":"invalid","data":[]}"""
+    fun userInfoAllowsArrayDataWhenError() {
         val adapter = JsonHelper.MO_SHI.adapter(Open115UserInfoResponse::class.java)
-        val parsed = adapter.fromJson(json)
+        val parsed = adapter.fromJson(ERROR_WITH_ARRAY_DATA_JSON)
 
         assertNotNull(parsed)
         assertEquals(false, parsed!!.state)
@@ -26,7 +25,7 @@ class Open115ModelsMoshiTest {
     }
 
     @Test
-    fun userInfo_allowsSingleObjectWrappedInArray() {
+    fun userInfoAllowsSingleObjectWrappedInArray() {
         val json =
             """
             {
@@ -53,10 +52,9 @@ class Open115ModelsMoshiTest {
     }
 
     @Test
-    fun downUrl_allowsArrayData_whenError() {
-        val json = """{"state":false,"code":401001,"message":"invalid","data":[]}"""
+    fun downUrlAllowsArrayDataWhenError() {
         val adapter = JsonHelper.MO_SHI.adapter(Open115DownUrlResponse::class.java)
-        val parsed = adapter.fromJson(json)
+        val parsed = adapter.fromJson(ERROR_WITH_ARRAY_DATA_JSON)
 
         assertNotNull(parsed)
         assertEquals(false, parsed!!.state)
@@ -65,10 +63,9 @@ class Open115ModelsMoshiTest {
     }
 
     @Test
-    fun folderInfo_allowsArrayData_whenError() {
-        val json = """{"state":false,"code":401001,"message":"invalid","data":[]}"""
+    fun folderInfoAllowsArrayDataWhenError() {
         val adapter = JsonHelper.MO_SHI.adapter(Open115FolderInfoResponse::class.java)
-        val parsed = adapter.fromJson(json)
+        val parsed = adapter.fromJson(ERROR_WITH_ARRAY_DATA_JSON)
 
         assertNotNull(parsed)
         assertEquals(false, parsed!!.state)
@@ -77,7 +74,7 @@ class Open115ModelsMoshiTest {
     }
 
     @Test
-    fun refreshToken_allowsArrayData_whenError() {
+    fun refreshTokenAllowsArrayDataWhenError() {
         val json =
             """
             {
@@ -98,5 +95,10 @@ class Open115ModelsMoshiTest {
         assertEquals(401001, parsed.code)
         assertEquals("invalid", parsed.message)
         assertNull(parsed.data)
+    }
+
+    private companion object {
+        private const val ERROR_WITH_ARRAY_DATA_JSON =
+            """{"state":false,"code":401001,"message":"invalid","data":[]}"""
     }
 }

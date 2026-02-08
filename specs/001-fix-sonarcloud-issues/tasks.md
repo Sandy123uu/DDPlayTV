@@ -20,11 +20,11 @@ description: "任务清单：SonarCloud 报告问题修复优化"
 
 **Purpose**: 建立本次质量修复的目录、模板与执行入口
 
-- [ ] T001 创建质量修复证据总目录与索引文档 `specs/001-fix-sonarcloud-issues/evidence/README.md`
-- [ ] T002 [P] 创建基线导出脚本骨架与使用说明 `scripts/sonarcloud/export_baseline.py`
-- [ ] T003 [P] 创建修复台账模板（Issue/Task/Hotspot/Snapshot）`specs/001-fix-sonarcloud-issues/evidence/templates/remediation-ledger-template.md`
-- [ ] T004 [P] 创建执行日志模板（Gradle/Sonar/回归命令）`specs/001-fix-sonarcloud-issues/evidence/runlogs/command-log-template.md`
-- [ ] T005 创建修复任务总台账初始文件 `specs/001-fix-sonarcloud-issues/evidence/tracking/remediation_tasks.csv`
+- [X] T001 创建质量修复证据总目录与索引文档 `specs/001-fix-sonarcloud-issues/evidence/README.md`
+- [X] T002 [P] 创建基线导出脚本骨架与使用说明 `scripts/sonarcloud/export_baseline.py`
+- [X] T003 [P] 创建修复台账模板（Issue/Task/Hotspot/Snapshot）`specs/001-fix-sonarcloud-issues/evidence/templates/remediation-ledger-template.md`
+- [X] T004 [P] 创建执行日志模板（Gradle/Sonar/回归命令）`specs/001-fix-sonarcloud-issues/evidence/runlogs/command-log-template.md`
+- [X] T005 创建修复任务总台账初始文件 `specs/001-fix-sonarcloud-issues/evidence/tracking/remediation_tasks.csv`
 
 ---
 
@@ -34,15 +34,15 @@ description: "任务清单：SonarCloud 报告问题修复优化"
 
 **⚠️ CRITICAL**: 本阶段完成后，US1/US2/US3 才能开始
 
-- [ ] T006 在根构建脚本中新增 JaCoCo 聚合与报告任务 `./build.gradle.kts`
-- [ ] T007 [P] 在库模块统一配置 JaCoCo 与单测选项 `buildSrc/src/main/java/setup/Module.kt`
-- [ ] T008 [P] 在应用模块统一配置 JaCoCo 与单测选项 `buildSrc/src/main/java/setup/Application.kt`
-- [ ] T009 更新 SonarCloud CI 流水线以执行测试并上传覆盖率报告 `.github/workflows/sonarcloud.yml`
-- [ ] T010 [P] 配置 Sonar 覆盖率/重复率/排除项参数 `./sonar-project.properties`
-- [ ] T011 实现基线问题/热点/Top10 文件导出逻辑 `scripts/sonarcloud/export_baseline.py`
-- [ ] T012 [P] 实现基线与当前分析线对比脚本 `scripts/sonarcloud/compare_quality_snapshot.py`
-- [ ] T013 生成并固化基线快照与高风险清单 `specs/001-fix-sonarcloud-issues/evidence/baseline/quality-baseline.md`
-- [ ] T014 [P] 初始化第三方目录豁免台账 `specs/001-fix-sonarcloud-issues/evidence/tracking/exemptions.md`
+- [X] T006 在根构建脚本中新增 JaCoCo 聚合与报告任务 `./build.gradle.kts`
+- [X] T007 [P] 在库模块统一配置 JaCoCo 与单测选项 `buildSrc/src/main/java/setup/Module.kt`
+- [X] T008 [P] 在应用模块统一配置 JaCoCo 与单测选项 `buildSrc/src/main/java/setup/Application.kt`
+- [X] T009 更新 SonarCloud CI 流水线以执行测试并上传覆盖率报告 `.github/workflows/sonarcloud.yml`
+- [X] T010 [P] 配置 Sonar 覆盖率/重复率/排除项参数 `./sonar-project.properties`
+- [X] T011 实现基线问题/热点/Top10 文件导出逻辑 `scripts/sonarcloud/export_baseline.py`
+- [X] T012 [P] 实现基线与当前分析线对比脚本 `scripts/sonarcloud/compare_quality_snapshot.py`
+- [X] T013 生成并固化基线快照与高风险清单 `specs/001-fix-sonarcloud-issues/evidence/baseline/quality-baseline.md`
+- [X] T014 [P] 初始化第三方目录豁免台账 `specs/001-fix-sonarcloud-issues/evidence/tracking/exemptions.md`
 
 **Checkpoint**: 质量门基础设施可运行，基线数据可追溯，用户故事可并行启动
 
@@ -56,19 +56,19 @@ description: "任务清单：SonarCloud 报告问题修复优化"
 
 ### Tests for User Story 1（先写且先失败）
 
-- [ ] T015 [P] [US1] 为高风险热点修复新增单元测试 `bilibili_component/src/test/java/com/xyoye/common_component/bilibili/app/BilibiliTvClientSecurityTest.kt`
-- [ ] T016 [P] [US1] 为网络配置安全修复新增单元测试 `core_network_component/src/test/java/com/xyoye/common_component/network/config/ApiSecurityConfigTest.kt`
-- [ ] T017 [P] [US1] 为 NumberPicker 关键分支回归新增单元测试 `anime_component/src/test/java/com/xyoye/anime_component/ui/dialog/date_picker/NumberPickerBehaviorTest.kt`
+- [X] T015 [P] [US1] 为高风险热点修复新增单元测试 `bilibili_component/src/test/java/com/xyoye/common_component/bilibili/app/BilibiliTvClientSecurityTest.kt`
+- [X] T016 [P] [US1] 为网络配置安全修复新增单元测试 `core_network_component/src/test/java/com/xyoye/common_component/network/config/ApiSecurityConfigTest.kt`
+- [X] T017 [P] [US1] 为 NumberPicker 关键分支回归新增单元测试 `anime_component/src/test/java/com/xyoye/anime_component/ui/dialog/date_picker/NumberPickerBehaviorTest.kt`
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] 修复高风险热点对应实现 `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/app/BilibiliTvClient.kt`
-- [ ] T019 [US1] 修复高风险热点对应实现 `core_network_component/src/main/java/com/xyoye/common_component/network/config/Api.kt`
-- [ ] T020 [US1] 降低高影响复杂度并拆分控制流 `anime_component/src/main/java/com/xyoye/anime_component/ui/dialog/date_picker/NumberPicker.java`
-- [ ] T021 [US1] 记录 `/quality/issues` 与 `/quality/issues/{issueKey}/tasks` 的高风险映射台账 `specs/001-fix-sonarcloud-issues/evidence/us1/high-risk-task-map.md`
-- [ ] T022 [US1] 记录 `/quality/hotspots/{hotspotKey}/review` 的评审与处置证据 `specs/001-fix-sonarcloud-issues/evidence/us1/hotspot-review-log.md`
-- [ ] T023 [US1] 生成 `/quality/snapshots/compare` 的 US1 对比快照 `specs/001-fix-sonarcloud-issues/evidence/us1/us1-snapshot.md`
-- [ ] T024 [US1] 执行 US1 定向测试并记录结论 `specs/001-fix-sonarcloud-issues/evidence/us1/us1-test-log.md`
+- [X] T018 [US1] 修复高风险热点对应实现 `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/app/BilibiliTvClient.kt`
+- [X] T019 [US1] 修复高风险热点对应实现 `core_network_component/src/main/java/com/xyoye/common_component/network/config/Api.kt`
+- [X] T020 [US1] 降低高影响复杂度并拆分控制流 `anime_component/src/main/java/com/xyoye/anime_component/ui/dialog/date_picker/NumberPicker.java`
+- [X] T021 [US1] 记录 `/quality/issues` 与 `/quality/issues/{issueKey}/tasks` 的高风险映射台账 `specs/001-fix-sonarcloud-issues/evidence/us1/high-risk-task-map.md`
+- [X] T022 [US1] 记录 `/quality/hotspots/{hotspotKey}/review` 的评审与处置证据 `specs/001-fix-sonarcloud-issues/evidence/us1/hotspot-review-log.md`
+- [X] T023 [US1] 生成 `/quality/snapshots/compare` 的 US1 对比快照 `specs/001-fix-sonarcloud-issues/evidence/us1/us1-snapshot.md`
+- [X] T024 [US1] 执行 US1 定向测试并记录结论 `specs/001-fix-sonarcloud-issues/evidence/us1/us1-test-log.md`
 
 **Checkpoint**: US1 可独立验收（高风险闭环结果可追溯）
 
@@ -82,25 +82,25 @@ description: "任务清单：SonarCloud 报告问题修复优化"
 
 ### Tests for User Story 2（先写且先失败）
 
-- [ ] T025 [P] [US2] 为播放控制高频问题回归新增单元测试 `player_component/src/test/java/com/xyoye/player_component/wrapper/ControlWrapperQualityRegressionTest.kt`
-- [ ] T026 [P] [US2] 为存储文件页高频问题回归新增单元测试 `storage_component/src/test/java/com/xyoye/storage_component/ui/activities/storage_file/StorageFileActivityQualityTest.kt`
-- [ ] T027 [P] [US2] 为 115 存储链路高频问题回归新增单元测试 `core_storage_component/src/test/java/com/xyoye/common_component/storage/cloud115/Cloud115StorageQualityTest.kt`
-- [ ] T028 [P] [US2] 为浏览/播放/搜索/设置核心路径新增仪表化冒烟测试 `app/src/androidTest/java/com/xyoye/app/quality/CorePathSmokeTest.kt`
+- [X] T025 [P] [US2] 为播放控制高频问题回归新增单元测试 `player_component/src/test/java/com/xyoye/player_component/wrapper/ControlWrapperQualityRegressionTest.kt`
+- [X] T026 [P] [US2] 为存储文件页高频问题回归新增单元测试 `storage_component/src/test/java/com/xyoye/storage_component/ui/activities/storage_file/StorageFileActivityQualityTest.kt`
+- [X] T027 [P] [US2] 为 115 存储链路高频问题回归新增单元测试 `core_storage_component/src/test/java/com/xyoye/common_component/storage/cloud115/Cloud115StorageQualityTest.kt`
+- [X] T028 [P] [US2] 为浏览/播放/搜索/设置核心路径新增仪表化冒烟测试 `app/src/androidTest/java/com/xyoye/app/quality/CorePathSmokeTest.kt`
 
 ### Implementation for User Story 2
 
-- [ ] T029 [US2] 修复 Top10 文件中的高频问题 `player_component/src/main/java/com/xyoye/player/wrapper/ControlWrapper.kt`
-- [ ] T030 [P] [US2] 修复 Top10 文件中的高频问题 `storage_component/src/main/java/com/xyoye/storage_component/ui/activities/storage_file/StorageFileActivity.kt`
-- [ ] T031 [P] [US2] 修复 Top10 文件中的高频问题 `player_component/src/main/java/com/xyoye/player/controller/video/PlayerControlView.kt`
-- [ ] T032 [P] [US2] 修复 Top10 文件中的高频问题 `player_component/src/main/java/com/xyoye/player/controller/video/InterControllerView.kt`
-- [ ] T033 [P] [US2] 修复 Top10 文件中的高频问题 `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/repository/BilibiliRepositoryCore.kt`
-- [ ] T034 [P] [US2] 修复 Top10 测试文件中的重复与可维护性问题 `core_network_component/src/test/java/com/xyoye/common_component/network/open115/Open115ModelsMoshiTest.kt`
-- [ ] T035 [P] [US2] 修复 Top10 测试文件中的重复与可维护性问题 `player_component/src/test/java/com/xyoye/player_component/media3/Media3PlayerDelegateTest.kt`
-- [ ] T036 [P] [US2] 修复 Top10 测试文件中的重复与可维护性问题 `core_storage_component/src/test/java/com/xyoye/common_component/storage/cloud115/auth/Cloud115TokenParserTest.kt`
-- [ ] T037 [P] [US2] 修复 Top10 文件中的高频问题 `core_storage_component/src/main/java/com/xyoye/common_component/storage/impl/Cloud115Storage.kt`
-- [ ] T038 [P] [US2] 修复 Top10 资源文件中的重复与安全告警 `user_component/src/main/assets/bilibili/geetest_voucher.html`
-- [ ] T039 [US2] 生成 Top10 文件治理前后对比与问题归因表 `specs/001-fix-sonarcloud-issues/evidence/us2/top10-delta.md`
-- [ ] T040 [US2] 执行 US2 回归命令并记录核心路径结果 `specs/001-fix-sonarcloud-issues/evidence/us2/us2-test-log.md`
+- [X] T029 [US2] 修复 Top10 文件中的高频问题 `player_component/src/main/java/com/xyoye/player/wrapper/ControlWrapper.kt`
+- [X] T030 [P] [US2] 修复 Top10 文件中的高频问题 `storage_component/src/main/java/com/xyoye/storage_component/ui/activities/storage_file/StorageFileActivity.kt`
+- [X] T031 [P] [US2] 修复 Top10 文件中的高频问题 `player_component/src/main/java/com/xyoye/player/controller/video/PlayerControlView.kt`
+- [X] T032 [P] [US2] 修复 Top10 文件中的高频问题 `player_component/src/main/java/com/xyoye/player/controller/video/InterControllerView.kt`
+- [X] T033 [P] [US2] 修复 Top10 文件中的高频问题 `bilibili_component/src/main/java/com/xyoye/common_component/bilibili/repository/BilibiliRepositoryCore.kt`
+- [X] T034 [P] [US2] 修复 Top10 测试文件中的重复与可维护性问题 `core_network_component/src/test/java/com/xyoye/common_component/network/open115/Open115ModelsMoshiTest.kt`
+- [X] T035 [P] [US2] 修复 Top10 测试文件中的重复与可维护性问题 `player_component/src/test/java/com/xyoye/player_component/media3/Media3PlayerDelegateTest.kt`
+- [X] T036 [P] [US2] 修复 Top10 测试文件中的重复与可维护性问题 `core_storage_component/src/test/java/com/xyoye/common_component/storage/cloud115/auth/Cloud115TokenParserTest.kt`
+- [X] T037 [P] [US2] 修复 Top10 文件中的高频问题 `core_storage_component/src/main/java/com/xyoye/common_component/storage/impl/Cloud115Storage.kt`
+- [X] T038 [P] [US2] 修复 Top10 资源文件中的重复与安全告警 `user_component/src/main/assets/bilibili/geetest_voucher.html`
+- [X] T039 [US2] 生成 Top10 文件治理前后对比与问题归因表 `specs/001-fix-sonarcloud-issues/evidence/us2/top10-delta.md`
+- [X] T040 [US2] 执行 US2 回归命令并记录核心路径结果 `specs/001-fix-sonarcloud-issues/evidence/us2/us2-test-log.md`
 
 **Checkpoint**: US2 可独立验收（Top10 收敛 + 核心路径可用）
 
@@ -114,19 +114,19 @@ description: "任务清单：SonarCloud 报告问题修复优化"
 
 ### Tests for User Story 3（先写且先失败）
 
-- [ ] T041 [P] [US3] 为基线导出结构校验新增脚本测试 `scripts/sonarcloud/tests/test_export_baseline.py`
-- [ ] T042 [P] [US3] 为快照阈值比较逻辑新增脚本测试 `scripts/sonarcloud/tests/test_compare_quality_snapshot.py`
-- [ ] T043 [P] [US3] 为修复台账字段与状态校验新增脚本测试 `scripts/sonarcloud/tests/test_validate_remediation_ledger.py`
+- [X] T041 [P] [US3] 为基线导出结构校验新增脚本测试 `scripts/sonarcloud/tests/test_export_baseline.py`
+- [X] T042 [P] [US3] 为快照阈值比较逻辑新增脚本测试 `scripts/sonarcloud/tests/test_compare_quality_snapshot.py`
+- [X] T043 [P] [US3] 为修复台账字段与状态校验新增脚本测试 `scripts/sonarcloud/tests/test_validate_remediation_ledger.py`
 
 ### Implementation for User Story 3
 
-- [ ] T044 [US3] 实现修复台账校验器（对齐 QualityIssueItem/RemediationTaskItem/ExemptionRecord 规则）`scripts/sonarcloud/validate_remediation_ledger.py`
-- [ ] T045 [US3] 实现问题处置导出器（DEFER/ACCEPT_RISK/FALSE_POSITIVE/EXEMPT）`scripts/sonarcloud/export_issue_dispositions.py`
-- [ ] T046 [US3] 生成问题到任务到证据的审计总台账 `specs/001-fix-sonarcloud-issues/evidence/us3/remediation-ledger.md`
-- [ ] T047 [US3] 生成遗留高风险问题处置登记（理由/接受人/复核结论）`specs/001-fix-sonarcloud-issues/evidence/us3/high-risk-dispositions.md`
-- [ ] T048 [US3] 生成分支或 PR 分析线质量门对比快照 `specs/001-fix-sonarcloud-issues/evidence/us3/quality-gate-compare.md`
-- [ ] T049 [US3] 生成契约端点与 User Story 映射矩阵（覆盖 contracts 全部端点）`specs/001-fix-sonarcloud-issues/evidence/us3/contract-story-matrix.md`
-- [ ] T050 [US3] 执行最终验收命令并记录可追溯证据 `specs/001-fix-sonarcloud-issues/evidence/us3/final-acceptance-log.md`
+- [X] T044 [US3] 实现修复台账校验器（对齐 QualityIssueItem/RemediationTaskItem/ExemptionRecord 规则）`scripts/sonarcloud/validate_remediation_ledger.py`
+- [X] T045 [US3] 实现问题处置导出器（DEFER/ACCEPT_RISK/FALSE_POSITIVE/EXEMPT）`scripts/sonarcloud/export_issue_dispositions.py`
+- [X] T046 [US3] 生成问题到任务到证据的审计总台账 `specs/001-fix-sonarcloud-issues/evidence/us3/remediation-ledger.md`
+- [X] T047 [US3] 生成遗留高风险问题处置登记（理由/接受人/复核结论）`specs/001-fix-sonarcloud-issues/evidence/us3/high-risk-dispositions.md`
+- [X] T048 [US3] 生成分支或 PR 分析线质量门对比快照 `specs/001-fix-sonarcloud-issues/evidence/us3/quality-gate-compare.md`
+- [X] T049 [US3] 生成契约端点与 User Story 映射矩阵（覆盖 contracts 全部端点）`specs/001-fix-sonarcloud-issues/evidence/us3/contract-story-matrix.md`
+- [X] T050 [US3] 执行最终验收命令并记录可追溯证据 `specs/001-fix-sonarcloud-issues/evidence/us3/final-acceptance-log.md`
 
 **Checkpoint**: US3 可独立验收（全链路可追踪、可抽样复核）
 
@@ -136,11 +136,21 @@ description: "任务清单：SonarCloud 报告问题修复优化"
 
 **Purpose**: 收口跨故事事项，固化最终交付证据
 
-- [ ] T051 [P] 回填最终执行步骤与命令到交付快速指南 `specs/001-fix-sonarcloud-issues/quickstart.md`
-- [ ] T052 [P] 产出修复总结与残留风险说明 `specs/001-fix-sonarcloud-issues/evidence/final-summary.md`
-- [ ] T053 [P] 执行全量门禁并记录末尾 `BUILD SUCCESSFUL`/`BUILD FAILED` 结论 `specs/001-fix-sonarcloud-issues/evidence/final-gates.md`
-- [ ] T054 汇总最终质量指标快照（总问题/高影响/漏洞/热点/覆盖率/重复率）`specs/001-fix-sonarcloud-issues/evidence/final-snapshot.json`
-- [ ] T055 校验任务与证据一一对应并更新任务状态说明 `specs/001-fix-sonarcloud-issues/tasks.md`
+- [X] T051 [P] 回填最终执行步骤与命令到交付快速指南 `specs/001-fix-sonarcloud-issues/quickstart.md`
+- [X] T052 [P] 产出修复总结与残留风险说明 `specs/001-fix-sonarcloud-issues/evidence/final-summary.md`
+- [X] T053 [P] 执行全量门禁并记录末尾 `BUILD SUCCESSFUL`/`BUILD FAILED` 结论 `specs/001-fix-sonarcloud-issues/evidence/final-gates.md`
+- [X] T054 汇总最终质量指标快照（总问题/高影响/漏洞/热点/覆盖率/重复率）`specs/001-fix-sonarcloud-issues/evidence/final-snapshot.json`
+- [X] T055 校验任务与证据一一对应并更新任务状态说明 `specs/001-fix-sonarcloud-issues/tasks.md`
+
+
+### Phase 6 状态说明（T055）
+
+- T051 -> `specs/001-fix-sonarcloud-issues/quickstart.md`（已回填最终执行步骤与命令）
+- T052 -> `specs/001-fix-sonarcloud-issues/evidence/final-summary.md`（已产出修复总结与残留风险）
+- T053 -> `specs/001-fix-sonarcloud-issues/evidence/final-gates.md`（已记录全量门禁与日志尾部结论）
+- T054 -> `specs/001-fix-sonarcloud-issues/evidence/final-snapshot.json`（已汇总总问题/高影响/漏洞/热点/覆盖率/重复率）
+- T055 -> `specs/001-fix-sonarcloud-issues/tasks.md`（任务与证据映射已校验并完成勾选）
+- 当前待收尾风险：全量门禁仍有失败项，详见 `specs/001-fix-sonarcloud-issues/evidence/final-gates.md`
 
 ---
 

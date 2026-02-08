@@ -1,6 +1,9 @@
 import governance.VerifyLegacyPagerApisTask
 import governance.VerifyModuleDependenciesTask
 import org.jlleitschuh.gradle.ktlint.KtlintExtension
+import org.gradle.api.GradleException
+import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
+import org.gradle.testing.jacoco.tasks.JacocoReport
 
 buildscript {
     repositories {
@@ -17,6 +20,11 @@ buildscript {
 plugins {
     id("com.github.ben-manes.versions") version "0.44.0"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.1" apply false
+    jacoco
+}
+
+jacoco {
+    toolVersion = "0.8.12"
 }
 
 allprojects {
@@ -30,6 +38,7 @@ allprojects {
 
 subprojects {
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
+    apply(plugin = "jacoco")
 
     configure<KtlintExtension> {
         version.set("1.3.1")
@@ -40,11 +49,51 @@ subprojects {
             exclude("**/generated/**")
         }
     }
+
+    extensions.configure<JacocoPluginExtension> {
+        toolVersion = "0.8.12"
+    }
 }
+
+val jacocoClassExcludes =
+    listOf(
+        "**/R.class",
+        "**/R$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*Test*.*",
+        "android/**/*.*",
+        "**/*\$Lambda$*.*",
+        "**/*\$inlined$*.*",
+        "**/*Companion*.*",
+        "**/*Factory*.*",
+        "**/*Module*.*",
+        "**/*Dagger*.*",
+        "**/*Hilt*.*",
+        "**/*MembersInjector*.*",
+    )
 
 tasks {
     val clean by registering(Delete::class) {
         delete(buildDir)
+    }
+
+    register("jacocoAggregateDebugUnitTest") {
+        group = "verification"
+        description = "Runs debug unit tests for all Android modules before generating aggregate JaCoCo reports."
+    }
+
+    register<JacocoReport>("jacocoTestReport") {
+        group = "verification"
+        description = "Generates aggregate JaCoCo XML/HTML reports from debug unit tests."
+        dependsOn("jacocoAggregateDebugUnitTest")
+
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+            csv.required.set(false)
+            xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/jacocoTestReport/jacocoTestReport.xml"))
+        }
     }
 
     register<VerifyModuleDependenciesTask>("verifyModuleDependencies")
@@ -70,6 +119,71 @@ tasks {
 }
 
 gradle.projectsEvaluated {
+    val coverageProjects =
+        subprojects.filter { project ->
+            project.tasks.findByName("testDebugUnitTest") != null
+        }
+
+    tasks.named("jacocoAggregateDebugUnitTest").configure {
+        dependsOn(coverageProjects.mapNotNull { project -> project.tasks.findByName("testDebugUnitTest") })
+    }
+
+    tasks.named<JacocoReport>("jacocoTestReport").configure {
+        val sourceDirs =
+            coverageProjects.flatMap { project ->
+                listOf(
+                    project.file("src/main/java"),
+                    project.file("src/main/kotlin"),
+                )
+            }
+
+        val classDirs =
+            coverageProjects.flatMap { project ->
+                listOf(
+                    project.fileTree("${project.buildDir}/tmp/kotlin-classes/debug") {
+                        exclude(jacocoClassExcludes)
+                    },
+                    project.fileTree("${project.buildDir}/intermediates/javac/debug/classes") {
+                        exclude(jacocoClassExcludes)
+                    },
+                    project.fileTree("${project.buildDir}/intermediates/javac/debug/compileDebugJavaWithJavac/classes") {
+                        exclude(jacocoClassExcludes)
+                    },
+                    project.fileTree("${project.buildDir}/classes/kotlin/debug") {
+                        exclude(jacocoClassExcludes)
+                    },
+                )
+            }
+
+        val execData =
+            coverageProjects.flatMap { project ->
+                listOf(
+                    project.file("${project.buildDir}/jacoco/testDebugUnitTest.exec"),
+                    project.file("${project.buildDir}/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec"),
+                    project.fileTree("${project.buildDir}/outputs/code_coverage/debugAndroidTest/connected") {
+                        include("**/*.ec")
+                    },
+                )
+            }
+
+        sourceDirectories.setFrom(sourceDirs)
+        classDirectories.setFrom(classDirs)
+        executionData.setFrom(execData)
+
+        doFirst {
+            val existingExecData = executionData.files.filter { it.exists() }
+            if (existingExecData.isEmpty()) {
+                throw GradleException(
+                    "No JaCoCo execution data found. Run debug unit tests before jacocoTestReport.",
+                )
+            }
+
+            executionData.setFrom(existingExecData)
+            sourceDirectories.setFrom(sourceDirectories.files.filter { it.exists() })
+            classDirectories.setFrom(classDirectories.files.filter { it.exists() })
+        }
+    }
+
     tasks.named("verifyArchitectureGovernance").configure {
         dependsOn(tasks.named("verifyModuleDependencies"))
         dependsOn(tasks.named("verifyLegacyPagerApis"))

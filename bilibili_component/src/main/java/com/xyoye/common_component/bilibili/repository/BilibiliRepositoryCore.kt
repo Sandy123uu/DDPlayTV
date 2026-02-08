@@ -53,7 +53,6 @@ import java.security.KeyFactory
 import java.security.PublicKey
 import java.security.spec.MGF1ParameterSpec
 import java.security.spec.X509EncodedKeySpec
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 import javax.crypto.Cipher
 import javax.crypto.spec.OAEPParameterSpec
@@ -310,7 +309,7 @@ internal class BilibiliRepositoryCore(
         val signed =
             BilibiliWbiSigner.sign(attemptParams) {
                 fetchWbiKeys()
-            } ?: return null
+            }
 
         return requestBilibiliAuthed(reason = "fetchWebVVoucher") {
             service.playurl(BASE_API, signed)
@@ -1567,7 +1566,6 @@ internal class BilibiliRepositoryCore(
         }
     }
 
-    private fun newPgcSession(): String = UUID.randomUUID().toString().replace("-", "")
 
     private fun isRiskControlError(error: BilibiliException): Boolean = error.code in RISK_CONTROL_CODES
 

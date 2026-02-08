@@ -3,7 +3,6 @@ package com.xyoye.common_component.network.config
 /**
  * Created by xyoye on 2024/1/7.
  */
-
 object Api {
     // 占位
     const val PLACEHOLDER = "http://127.0.0.1:80/"
@@ -17,8 +16,8 @@ object Api {
     // 弹弹play Res
     const val DAN_DAN_RES = "http://res.acplay.net/"
 
-    // 百度 OAuth（设备码/刷新 token 等）
-    const val BAIDU_OAUTH = "https://openapi.baidu.com/"
+    // 百度账号体系（设备码/刷新 token 等）
+    const val BAIDU_ACCOUNT_API = "https://openapi.baidu.com/"
 
     // 百度网盘 OpenAPI（xpan 等）
     const val BAIDU_PAN = "https://pan.baidu.com/"
@@ -26,7 +25,7 @@ object Api {
     // 115 Open API（proapi）
     const val OPEN_115_PRO_API = "https://proapi.115.com/"
 
-    // 115 Open OAuth/刷新（passportapi）
+    // 115 Open 令牌服务（passportapi）
     const val OPEN_115_PASSPORT_API = "https://passportapi.115.com/"
 
     // 115 Cloud（扫码/状态校验/列表/播放直链等）
@@ -56,6 +55,24 @@ object Api {
 
     // HanLP
     const val HAN_LP = "https://www.hanlp.com/"
+
+    @JvmStatic
+    fun securitySensitiveEndpoints(): Map<String, String> = SECURITY_SENSITIVE_ENDPOINTS
+
+    @JvmStatic
+    fun insecureSecuritySensitiveEndpoints(): List<String> =
+        SECURITY_SENSITIVE_ENDPOINTS
+            .filterValues { endpoint -> !endpoint.startsWith("https://") }
+            .map { (name, endpoint) -> "$name=$endpoint" }
+
+    private val SECURITY_SENSITIVE_ENDPOINTS: Map<String, String> =
+        linkedMapOf(
+            "baidu_account" to BAIDU_ACCOUNT_API,
+            "baidu_pan" to BAIDU_PAN,
+            "open115_passport" to OPEN_115_PASSPORT_API,
+            "cloud115_passport" to CLOUD_115_PASSPORT_API,
+            "bilibili_api" to BILI_BILI_API,
+        )
 
     // Media3 internal gateway
     //

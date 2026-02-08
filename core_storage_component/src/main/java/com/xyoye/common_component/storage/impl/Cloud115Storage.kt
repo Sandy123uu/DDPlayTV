@@ -276,7 +276,7 @@ class Cloud115Storage(
         var currentPath = "/"
 
         for ((index, id) in segments.withIndex()) {
-            val expectingDirectory = if (index == segments.lastIndex) isDirectory else true
+            val expectingDirectory = index != segments.lastIndex || isDirectory
             val item = findInDirectory(cid = currentCid, id = id, expectingDirectory = expectingDirectory) ?: return null
 
             val storageFile = Cloud115StorageFile(fileInfo = item, parentPath = currentPath, storage = this)
@@ -312,9 +312,7 @@ class Cloud115Storage(
     ): String? {
         val playerType = profile.playerType
         return runCatching {
-            if (!file.isVideoFile()) {
-                throw IllegalStateException("该文件不是视频，无法播放")
-            }
+            check(file.isVideoFile()) { "该文件不是视频，无法播放" }
 
             val upstream = resolveUpstream(file, forceRefresh = false)
 
@@ -468,12 +466,9 @@ class Cloud115Storage(
     override fun supportSearch(): Boolean = true
 
     override suspend fun search(keyword: String): List<StorageFile> {
-        val trimmed = keyword.trim()
+        val trimmed = validateSearchKeyword(keyword)
         if (trimmed.isEmpty()) {
             return directoryFiles
-        }
-        if (trimmed.length > MAX_SEARCH_KEYWORD_LENGTH) {
-            throw IllegalArgumentException("关键词过长（最多 $MAX_SEARCH_KEYWORD_LENGTH 字符）")
         }
 
         val cid = directory?.let { resolveDirectoryCid(it) } ?: ROOT_CID
@@ -579,14 +574,8 @@ class Cloud115Storage(
         forceRefresh: Boolean
     ): Upstream {
         val payload = file.payloadAs<Cloud115FileInfo>() ?: throw IllegalStateException("无法获取文件信息")
-        val fid = payload.fid?.trim().orEmpty()
-        if (fid.isBlank()) {
-            throw IllegalStateException("无效文件ID")
-        }
-        val pickCode = payload.pc?.trim().orEmpty()
-        if (pickCode.isBlank()) {
-            throw IllegalStateException("无法获取播放链接（pick_code 为空）")
-        }
+        val fid = requireNonBlankIdentifier(payload.fid, "无效文件ID")
+        val pickCode = requireNonBlankIdentifier(payload.pc, "无法获取播放链接（pick_code 为空）")
 
         val cachedLength = runCatching { file.fileLength() }.getOrNull() ?: -1L
 
@@ -594,10 +583,7 @@ class Cloud115Storage(
             downUrlCache.resolve(fid = fid, forceRefresh = forceRefresh) {
                 val nowMs = System.currentTimeMillis()
                 val response = repository.downloadUrl(pickCode = pickCode).getOrThrow()
-                val url = response.url.trim()
-                if (url.isBlank()) {
-                    throw IllegalStateException("获取播放链接失败")
-                }
+                val url = requireNonBlankIdentifier(response.url, "获取播放链接失败")
 
                 Cloud115DownUrlCache.Entry(
                     fid = fid,
@@ -624,6 +610,23 @@ class Cloud115Storage(
         private const val MAX_SEARCH_KEYWORD_LENGTH: Int = 30
         private const val SEARCH_TYPE_VIDEO: Int = 4
         private const val SEARCH_COUNT_FOLDERS_ONLY_FILE: Int = 0
+
+        internal fun validateSearchKeyword(keyword: String): String {
+            val trimmed = keyword.trim()
+            require(trimmed.length <= MAX_SEARCH_KEYWORD_LENGTH) {
+                "关键词过长（最多 $MAX_SEARCH_KEYWORD_LENGTH 字符）"
+            }
+            return trimmed
+        }
+
+        internal fun requireNonBlankIdentifier(
+            rawValue: String?,
+            message: String,
+        ): String {
+            val value = rawValue?.trim().orEmpty()
+            check(value.isNotBlank()) { message }
+            return value
+        }
     }
 
     private fun resolveDirectoryCid(file: StorageFile): String {

@@ -38,7 +38,7 @@ class BaiduPanRepository(
         requestOAuth(reason = "oauthDeviceCode", extraInfo = "scope=$scope") {
             ensureConfigured()
             RetrofitManager.baiduPanService.oauthDeviceCode(
-                baseUrl = Api.BAIDU_OAUTH,
+                baseUrl = Api.BAIDU_ACCOUNT_API,
                 responseType = "device_code",
                 clientId = BaiduPanOpenApiConfig.clientId,
                 scope = scope,
@@ -52,7 +52,7 @@ class BaiduPanRepository(
         ) {
             ensureConfigured()
             RetrofitManager.baiduPanService.oauthToken(
-                baseUrl = Api.BAIDU_OAUTH,
+                baseUrl = Api.BAIDU_ACCOUNT_API,
                 grantType = "device_token",
                 code = deviceCode,
                 refreshToken = null,

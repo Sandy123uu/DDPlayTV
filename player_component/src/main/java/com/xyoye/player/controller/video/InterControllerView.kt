@@ -15,20 +15,34 @@ interface InterControllerView {
 
     fun getView(): View
 
-    fun onVisibilityChanged(isVisible: Boolean) {}
+    fun onVisibilityChanged(isVisible: Boolean) {
+        // Optional callback: the default implementation intentionally does nothing.
+    }
 
-    fun onPlayStateChanged(playState: PlayState) {}
+    fun onPlayStateChanged(playState: PlayState) {
+        // Optional callback: implementations react only when they render play state.
+    }
 
     fun onProgressChanged(
         duration: Long,
-        position: Long
-    ) {}
+        position: Long,
+    ) {
+        // Optional callback: implementations that do not show progress can ignore it.
+    }
 
-    fun onLockStateChanged(isLocked: Boolean) {}
+    fun onLockStateChanged(isLocked: Boolean) {
+        // Optional callback: implementations without lock UI can keep no-op behavior.
+    }
 
-    fun onVideoSizeChanged(videoSize: Point) {}
+    fun onVideoSizeChanged(videoSize: Point) {
+        // Optional callback: not every control component depends on video size.
+    }
 
-    fun onPopupModeChanged(isPopup: Boolean) {}
+    fun onPopupModeChanged(isPopup: Boolean) {
+        // Optional callback: components that do not care about popup mode can ignore it.
+    }
 
-    fun onTrackChanged(type: TrackType) {}
+    fun onTrackChanged(type: TrackType) {
+        // Optional callback: components without track-related UI can ignore updates.
+    }
 }

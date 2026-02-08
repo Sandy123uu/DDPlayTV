@@ -1,15 +1,9 @@
 package com.xyoye.player.wrapper
 
-import android.graphics.PointF
-import android.view.KeyEvent
-import com.xyoye.data_component.bean.SendDanmuBean
 import com.xyoye.data_component.bean.VideoTrackBean
 import com.xyoye.data_component.enums.DanmakuLanguage
 import com.xyoye.data_component.enums.SettingViewType
 import com.xyoye.data_component.enums.TrackType
-import com.xyoye.data_component.enums.VideoScreenScale
-import com.xyoye.player.utils.MessageTime
-import com.xyoye.subtitle.MixedSubtitle
 
 /**
  * Created by xyoye on 2020/11/1.
@@ -18,39 +12,17 @@ import com.xyoye.subtitle.MixedSubtitle
  *
  * 用于实现不同控制器间的交互
  */
-
 class ControlWrapper(
     private val mVideoPlayer: InterVideoPlayer,
     private val mController: InterVideoController,
     private val mDanmuController: InterDanmuController,
     private val mSubtitleController: InterSubtitleController,
     private val mSettingController: InterSettingController
-) : InterVideoPlayer,
-    InterVideoController,
-    InterDanmuController,
-    InterSubtitleController,
-    InterSettingController {
-    /**
-     * ------------------Player Controller----------------------
-     */
-
-    override fun start() {
-        mVideoPlayer.start()
-    }
-
-    override fun pause() {
-        mVideoPlayer.pause()
-    }
-
-    override fun getVideoSource() = mVideoPlayer.getVideoSource()
-
-    override fun getDuration() = mVideoPlayer.getDuration()
-
-    override fun getCurrentPosition() = mVideoPlayer.getCurrentPosition()
-
-    override fun isSeekable() = mVideoPlayer.isSeekable()
-
-    override fun isLive() = mVideoPlayer.isLive()
+) : InterVideoPlayer by mVideoPlayer,
+    InterVideoController by mController,
+    InterDanmuController by mDanmuController,
+    InterSubtitleController by mSubtitleController,
+    InterSettingController by mSettingController {
 
     override fun seekTo(timeMs: Long) {
         // 播放器
@@ -65,56 +37,10 @@ class ControlWrapper(
         }
     }
 
-    override fun isPlaying() = mVideoPlayer.isPlaying()
-
-    override fun getBufferedPercentage() = mVideoPlayer.getBufferedPercentage()
-
-    override fun supportBufferedPercentage() = mVideoPlayer.supportBufferedPercentage()
-
-    override fun setSilence(isSilence: Boolean) {
-        mVideoPlayer.setSilence(isSilence)
-    }
-
-    override fun isSilence() = mVideoPlayer.isSilence()
-
-    override fun setVolume(point: PointF) {
-        mVideoPlayer.setVolume(point)
-    }
-
-    override fun getVolume() = mVideoPlayer.getVolume()
-
-    override fun setScreenScale(scaleType: VideoScreenScale) {
-        mVideoPlayer.setScreenScale(scaleType)
-    }
-
     override fun setSpeed(speed: Float) {
         mVideoPlayer.setSpeed(speed)
         mDanmuController.setSpeed(speed)
     }
-
-    override fun getSpeed() = mVideoPlayer.getSpeed()
-
-    override fun getTcpSpeed() = mVideoPlayer.getTcpSpeed()
-
-    override fun supportTcpSpeed() = mVideoPlayer.supportTcpSpeed()
-
-    override fun getRenderView() = mVideoPlayer.getRenderView()
-
-    override fun getVideoSize() = mVideoPlayer.getVideoSize()
-
-    override fun setRotation(rotation: Float) {
-        mVideoPlayer.setRotation(rotation)
-    }
-
-    override fun getAnime4kMode(): Int = mVideoPlayer.getAnime4kMode()
-
-    override fun setAnime4kMode(mode: Int) {
-        mVideoPlayer.setAnime4kMode(mode)
-    }
-
-    /**
-     * ------------------Player Track Controller----------------------
-     */
 
     override fun supportAddTrack(type: TrackType): Boolean = mVideoPlayer.supportAddTrack(type)
 
@@ -123,20 +49,16 @@ class ControlWrapper(
         // 否则由支持轨道的控制器添加
         val trackType = track.type
         val added =
-            if (mVideoPlayer.supportAddTrack(trackType)) {
-                mVideoPlayer.addTrack(track)
-            } else if (mSubtitleController.supportAddTrack(trackType)) {
-                mSubtitleController.addTrack(track)
-            } else if (mDanmuController.supportAddTrack(trackType)) {
-                mDanmuController.addTrack(track)
-            } else {
-                false
+            when {
+                mVideoPlayer.supportAddTrack(trackType) -> mVideoPlayer.addTrack(track)
+                mSubtitleController.supportAddTrack(trackType) -> mSubtitleController.addTrack(track)
+                mDanmuController.supportAddTrack(trackType) -> mDanmuController.addTrack(track)
+                else -> false
             }
 
         if (added) {
             // 添加轨道成功，设置轨道选中
             selectTrack(track)
-
             mController.setTrackAdded(track)
         }
         return added
@@ -153,10 +75,10 @@ class ControlWrapper(
                     .getTracks(type)
                     .toMutableList()
                     .apply {
-                        if (type == TrackType.SUBTITLE) {
-                            addAll(mSubtitleController.getTracks(type))
-                        } else if (type == TrackType.DANMU) {
-                            addAll(mDanmuController.getTracks(type))
+                        when (type) {
+                            TrackType.SUBTITLE -> addAll(mSubtitleController.getTracks(type))
+                            TrackType.DANMU -> addAll(mDanmuController.getTracks(type))
+                            else -> Unit
                         }
                     }
             }
@@ -174,16 +96,22 @@ class ControlWrapper(
         // 如果视频播放器支持添加轨道，则选中播放器轨道，并取消控制器中同类型轨道的选中
         // 否则由支持轨道的控制器选中，并取消播放器中同类型轨道的选中
         val trackType = track.type
-        if (track.internal || mVideoPlayer.supportAddTrack(trackType)) {
-            mVideoPlayer.selectTrack(track)
-            mSubtitleController.deselectTrack(trackType)
-            mDanmuController.deselectTrack(trackType)
-        } else if (mSubtitleController.supportAddTrack(trackType)) {
-            mVideoPlayer.deselectTrack(trackType)
-            mSubtitleController.selectTrack(track)
-        } else if (mDanmuController.supportAddTrack(trackType)) {
-            mVideoPlayer.deselectTrack(trackType)
-            mDanmuController.selectTrack(track)
+        when {
+            track.internal || mVideoPlayer.supportAddTrack(trackType) -> {
+                mVideoPlayer.selectTrack(track)
+                mSubtitleController.deselectTrack(trackType)
+                mDanmuController.deselectTrack(trackType)
+            }
+
+            mSubtitleController.supportAddTrack(trackType) -> {
+                mVideoPlayer.deselectTrack(trackType)
+                mSubtitleController.selectTrack(track)
+            }
+
+            mDanmuController.supportAddTrack(trackType) -> {
+                mVideoPlayer.deselectTrack(trackType)
+                mDanmuController.selectTrack(track)
+            }
         }
         mController.setTrackUpdated(trackType)
     }
@@ -195,217 +123,15 @@ class ControlWrapper(
         mController.setTrackUpdated(type)
     }
 
-    /**
-     * ------------------Video Controller----------------------
-     */
-
-    override fun startFadeOut() {
-        mController.startFadeOut()
-    }
-
-    override fun stopFadeOut() {
-        mController.stopFadeOut()
-    }
-
-    override fun isControllerShowing() = mController.isControllerShowing()
-
-    override fun showMessage(
-        text: String,
-        time: MessageTime
-    ) {
-        mController.showMessage(text, time)
-    }
-
-    override fun setLocked(locked: Boolean) {
-        mController.setLocked(locked)
-    }
-
-    override fun isLocked() = mController.isLocked()
-
-    override fun setPopupMode(isPopup: Boolean) {
-        mController.setPopupMode(isPopup)
-    }
-
-    override fun isPopupMode() = mController.isPopupMode()
-
-    override fun startProgress() {
-        mController.startProgress()
-    }
-
-    override fun stopProgress() {
-        mController.stopProgress()
-    }
-
-    override fun setProgress(position: Long) {
-        mController.setProgress(position)
-    }
-
-    override fun hideController() {
-        mController.hideController()
-    }
-
-    override fun showController(ignoreShowing: Boolean) {
-        mController.showController(ignoreShowing)
-    }
-
-    override fun setTrackAdded(track: VideoTrackBean) {
-        mController.setTrackAdded(track)
-    }
-
-    override fun setTrackUpdated(type: TrackType) {
-        mController.setTrackUpdated(type)
-    }
-
-    override fun destroy() {
-        mController.destroy()
-    }
-
-    /**
-     * ------------------Danmu Controller----------------------
-     */
-
-    override fun updateDanmuSize() {
-        mDanmuController.updateDanmuSize()
-    }
-
-    override fun updateDanmuSpeed() {
-        mDanmuController.updateDanmuSpeed()
-    }
-
-    override fun updateDanmuAlpha() {
-        mDanmuController.updateDanmuAlpha()
-    }
-
-    override fun updateDanmuStoke() {
-        mDanmuController.updateDanmuStoke()
-    }
-
-    override fun updateDanmuOffsetTime() {
-        mDanmuController.updateDanmuOffsetTime()
-    }
-
-    override fun danmuRelease() {
-        mDanmuController.danmuRelease()
-    }
-
-    override fun updateMobileDanmuState() {
-        mDanmuController.updateMobileDanmuState()
-    }
-
-    override fun updateTopDanmuState() {
-        mDanmuController.updateTopDanmuState()
-    }
-
-    override fun updateBottomDanmuState() {
-        mDanmuController.updateBottomDanmuState()
-    }
-
-    override fun updateMaxLine() {
-        mDanmuController.updateMaxLine()
-    }
-
-    override fun updateMaxScreenNum() {
-        mDanmuController.updateMaxScreenNum()
-    }
-
-    override fun toggleDanmuVisible() {
-        mDanmuController.toggleDanmuVisible()
-    }
-
-    override fun setUserDanmuVisible(visible: Boolean) {
-        mDanmuController.setUserDanmuVisible(visible)
-    }
-
-    override fun isUserDanmuVisible(): Boolean = mDanmuController.isUserDanmuVisible()
-
-    override fun allowSendDanmu(): Boolean = mDanmuController.allowSendDanmu()
-
-    override fun addDanmuToView(danmuBean: SendDanmuBean) {
-        mDanmuController.addDanmuToView(danmuBean)
-    }
-
-    override fun addBlackList(
-        isRegex: Boolean,
-        vararg keyword: String
-    ) {
-        mDanmuController.addBlackList(isRegex, *keyword)
-    }
-
-    override fun removeBlackList(
-        isRegex: Boolean,
-        keyword: String
-    ) {
-        mDanmuController.removeBlackList(isRegex, keyword)
-    }
-
-    override fun seekTo(
-        timeMs: Long,
-        isPlaying: Boolean
-    ) {
-        mDanmuController.seekTo(timeMs, isPlaying)
-    }
-
     override fun setLanguage(language: DanmakuLanguage) {
         mDanmuController.setLanguage(language)
         mDanmuController.seekTo(getCurrentPosition(), isPlaying())
-    }
-
-    /**
-     * ------------------Subtitle Controller----------------------
-     */
-
-    override fun updateTextSize() {
-        mSubtitleController.updateTextSize()
-    }
-
-    override fun updateStrokeWidth() {
-        mSubtitleController.updateStrokeWidth()
-    }
-
-    override fun updateTextColor() {
-        mSubtitleController.updateTextColor()
-    }
-
-    override fun updateStrokeColor() {
-        mSubtitleController.updateStrokeColor()
-    }
-
-    override fun updateAlpha() {
-        mSubtitleController.updateAlpha()
-    }
-
-    override fun updateVerticalOffset() {
-        mSubtitleController.updateVerticalOffset()
-    }
-
-    override fun updateShadow() {
-        mSubtitleController.updateShadow()
     }
 
     override fun updateSubtitleOffsetTime() {
         mSubtitleController.updateSubtitleOffsetTime()
         mVideoPlayer.updateSubtitleOffsetTime()
     }
-
-    override fun getDecodeType() = mVideoPlayer.getDecodeType()
-
-    override fun onSubtitleTextOutput(subtitle: MixedSubtitle) {
-        mSubtitleController.onSubtitleTextOutput(subtitle)
-    }
-
-    /**
-     * ------------------Setting Controller----------------------
-     */
-    override fun isSettingViewShowing() = mSettingController.isSettingViewShowing()
-
-    override fun hideSettingView() {
-        mSettingController.hideSettingView()
-    }
-
-    override fun onKeyDown(
-        keyCode: Int,
-        event: KeyEvent?
-    ): Boolean = mSettingController.onKeyDown(keyCode, event)
 
     override fun showSettingView(
         viewType: SettingViewType,
@@ -415,10 +141,6 @@ class ControlWrapper(
         if (!isLocked()) {
             mSettingController.showSettingView(viewType, extra)
         }
-    }
-
-    override fun settingRelease() {
-        mSettingController.settingRelease()
     }
 
     /**
@@ -436,10 +158,7 @@ class ControlWrapper(
      * 切换视图锁定状态
      */
     fun toggleLockState() {
-        /*
-        startFadeOut()
-        setLocked(!isLocked())
-         */
+        // 锁定入口在当前版本默认隐藏，保留空实现用于兼容旧调用方。
     }
 
     /**

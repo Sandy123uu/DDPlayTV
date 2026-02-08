@@ -1,5 +1,6 @@
 package com.xyoye.storage_component.ui.activities.storage_file
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
@@ -90,15 +91,29 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
         private const val REQUEST_CODE_BILIBILI_RISK_VERIFY = 3301
         internal const val REQUEST_CODE_OPEN115_REAUTH = 3302
         internal const val REQUEST_CODE_CLOUD115_REAUTH = 3303
+
+        internal fun shouldResumeRiskPlayback(
+            requestCode: Int,
+            resultCode: Int,
+            hasPendingFile: Boolean,
+        ): Boolean =
+            requestCode == REQUEST_CODE_BILIBILI_RISK_VERIFY &&
+                resultCode == Activity.RESULT_OK &&
+                hasPendingFile
+
+        internal fun shouldRefreshAfterReauth(
+            requestCode: Int,
+            resultCode: Int,
+        ): Boolean =
+            resultCode == Activity.RESULT_OK &&
+                (requestCode == REQUEST_CODE_OPEN115_REAUTH ||
+                    requestCode == REQUEST_CODE_CLOUD115_REAUTH)
     }
 
     var shareStorageFile: StorageFile? = null
 
     private var pendingRiskVerifyFile: StorageFile? = null
     private var riskVerifyInProgress: Boolean = false
-
-    // private var locatingLastPlay = false
-    // private var lastPlayHistory: PlayHistoryEntity? = null
 
     override fun initViewModel() =
         ViewModelInit(
@@ -126,7 +141,6 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
 
         initPathRv()
         initListener()
-        // updateFloatingButtonStyle()
         openDirectory(null)
     }
 
@@ -148,15 +162,6 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
             }
         }
 
-        // 定位上次播放目录功能暂时关闭
-        // dataBinding.quicklyPlayBt.setOnClickListener {
-        //     viewModel.locateLastPlay(storage)
-        // }
-
-        // dataBinding.quicklyPlayBt.setOnFocusChangeListener { _, _ ->
-        //     updateFloatingButtonStyle()
-        // }
-
         dataBinding.pathRv.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
                 val lastIndex =
@@ -174,25 +179,6 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
             }
         }
 
-        // 系统无法正确分发快速播放按钮的焦点，需要手动分发
-        // dataBinding.quicklyPlayBt.setOnKeyListener(object : View.OnKeyListener {
-        //     override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
-        //         if (event?.action != KeyEvent.ACTION_DOWN || v?.isFocused != true) {
-        //             return false
-        //         }
-        //         if (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-        //             LogFacade.i(LogModule.STORAGE, TAG, "quickPlay key up/left -> dispatch reversed")
-        //             dispatchFocus(reversed = true)
-        //             return true
-        //         } else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-        //             LogFacade.i(LogModule.STORAGE, TAG, "quickPlay key down/right -> dispatch forward")
-        //             dispatchFocus()
-        //             return true
-        //         }
-        //         return false
-        //     }
-        // })
-
         viewModel.playLiveData.observe(this) {
             ARouter
                 .getInstance()
@@ -208,10 +194,6 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
             pendingRiskVerifyFile = payload.file
             showBilibiliRiskVerifyDialog(payload.vVoucher)
         }
-        // viewModel.locateLastPlayLiveData.observe(this) {
-        //     startLocateToHistory(it)
-        // }
-
         if (storage is FtpStorage) {
             lifecycle.coroutineScope.launchWhenResumed {
                 withContext(Dispatchers.IO) {
@@ -240,22 +222,17 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
         resultCode: Int,
         data: Intent?
     ) {
-        if (requestCode == REQUEST_CODE_BILIBILI_RISK_VERIFY) {
-            riskVerifyInProgress = false
-            val file = pendingRiskVerifyFile
-            pendingRiskVerifyFile = null
+        when {
+            requestCode == REQUEST_CODE_BILIBILI_RISK_VERIFY -> {
+                riskVerifyInProgress = false
+                val file = pendingRiskVerifyFile
+                pendingRiskVerifyFile = null
+                if (shouldResumeRiskPlayback(requestCode, resultCode, hasPendingFile = file != null)) {
+                    file?.let(::openFile)
+                }
+            }
 
-            if (resultCode == RESULT_OK && file != null) {
-                openFile(file)
-            }
-        }
-        if (requestCode == REQUEST_CODE_OPEN115_REAUTH) {
-            if (resultCode == RESULT_OK) {
-                routeStack.lastOrNull()?.fragment?.triggerTvRefresh()
-            }
-        }
-        if (requestCode == REQUEST_CODE_CLOUD115_REAUTH) {
-            if (resultCode == RESULT_OK) {
+            shouldRefreshAfterReauth(requestCode, resultCode) -> {
                 routeStack.lastOrNull()?.fragment?.triggerTvRefresh()
             }
         }
@@ -266,10 +243,7 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
         keyCode: Int,
         event: KeyEvent?
     ): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK && mMenus?.handleBackPressed() == true) {
-            return true
-        }
-        if (keyCode == KeyEvent.KEYCODE_BACK && popFragment()) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && (mMenus?.handleBackPressed() == true || popFragment())) {
             return true
         }
         return super.onKeyDown(keyCode, event)
@@ -499,83 +473,12 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
         routeStack.map { it.fragment }.onEach { it.sort() }
     }
 
-//    /**
-//     * 根据焦点状态修改悬浮按钮样式
-//     */
-//    private fun updateFloatingButtonStyle() {
-//        val floatingButton = dataBinding.quicklyPlayBt
-//        val shapeAppearanceRes = if (floatingButton.isFocused)
-//            R.style.ShapeAppearance_DanDanPlay_FloatingButton_Focused
-//        else
-//            R.style.ShapeAppearance_DanDanPlay_FloatingButton
-//        floatingButton.shapeAppearanceModel = ShapeAppearanceModel.builder(
-//            this, 0, shapeAppearanceRes
-//        ).build()
-//    }
-
     /**
      * 分发焦点到最后一个Fragment
      */
     fun dispatchFocus(reversed: Boolean = false) {
         routeStack.lastOrNull()?.fragment?.requestFocus(reversed)
     }
-
-//    fun onDirectoryDataLoaded(fragment: StorageFileFragment, files: List<StorageFile>) {
-//        if (!locatingLastPlay) {
-//            return
-//        }
-//        val latestFragment = mRouteFragmentMap.values.lastOrNull()
-//        if (fragment != latestFragment) {
-//            return
-//        }
-//        val targetHistory = lastPlayHistory ?: run {
-//            stopLocateLastPlay(false)
-//            return
-//        }
-//        val targetUniqueKey = targetHistory.uniqueKey
-//        val targetFile = files.firstOrNull { file ->
-//            file.isFile() && file.playHistory?.uniqueKey == targetUniqueKey
-//        }
-//        if (targetFile != null) {
-//            fragment.focusFile(targetUniqueKey)
-//            ToastCenter.showOriginalToast("已定位到上次观看的视频")
-//            stopLocateLastPlay(true)
-//            return
-//        }
-//        val targetDirectory = files.firstOrNull { file ->
-//            file.isDirectory() && file.playHistory?.isLastPlay == true
-//        }
-//        if (targetDirectory != null) {
-//            openDirectory(targetDirectory)
-//            return
-//        }
-//        ToastCenter.showError("定位失败：找不到上次观看记录")
-//        stopLocateLastPlay(false)
-//    }
-
-//    fun isLocatingLastPlay() = locatingLastPlay
-
-//    private fun startLocateToHistory(history: PlayHistoryEntity) {
-//        lastPlayHistory = history
-//        locatingLastPlay = true
-//        if (mRouteFragmentMap.isEmpty()) {
-//            openDirectory(null)
-//            return
-//        }
-//        val rootPath = mRouteFragmentMap.keys.firstOrNull()
-//        if (rootPath != null) {
-//            backToRouteFragment(rootPath)
-//        }
-//        mRouteFragmentMap.values.lastOrNull()?.reloadDirectory(refresh = true)
-//    }
-
-//    private fun stopLocateLastPlay(success: Boolean) {
-//        locatingLastPlay = false
-//        lastPlayHistory = null
-//        if (!success) {
-//            dataBinding.quicklyPlayBt.requestFocus()
-//        }
-//    }
 
     @Suppress("UNUSED_PARAMETER")
     fun onDirectoryDataLoaded(
@@ -751,7 +654,4 @@ class StorageFileActivity : BaseActivity<StorageFileViewModel, ActivityStorageFi
             continuation.invokeOnCancellation { dialog.dismiss() }
         }
 
-//    fun castFile(file: StorageFile) {
-//        viewModel.castItem(file)
-//    }
 }

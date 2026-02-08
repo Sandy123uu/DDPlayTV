@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "generatedAt": "2026-02-08T08:41:21.218455+00:00",
+    "analysisKey": "07c4be1f-f37a-418a-926f-2a13a7a15f86",
+    "dispositionOutcomes": [
+      "DEFER",
+      "ACCEPT_RISK",
+      "FALSE_POSITIVE",
+      "EXEMPT"
+    ]
+  },
+  "summary": {
+    "total": 5,
+    "highRiskTotal": 3,
+    "byOutcome": {
+      "ACCEPT_RISK": 1,
+      "DEFER": 2,
+      "EXEMPT": 1,
+      "FALSE_POSITIVE": 1
+    }
+  },
+  "items": [
+    {
+      "taskId": "US3-T047-A",
+      "issueKey": "AZw4PUrvpBg_nGQ6xCmc",
+      "priority": "P3",
+      "targetOutcome": "ACCEPT_RISK",
+      "taskStatus": "CLOSED",
+      "decisionReason": "当前语义转换仅影响内部日志格式，风险可控并已有人工审计兜底。",
+      "sourceScope": "FIRST_PARTY",
+      "modulePath": "bilibili_component",
+      "filePath": "bilibili_component/src/main/java/com/xyoye/common_component/bilibili/repository/BilibiliRepositoryCore.kt",
+      "line": "313",
+      "assignee": "dev-us3",
+      "reviewer": "security-reviewer",
+      "acceptedBy": "security-owner",
+      "reviewConclusion": "APPROVED",
+      "baselineAnalysisKey": "07c4be1f-f37a-418a-926f-2a13a7a15f86",
+      "currentAnalysisKey": "",
+      "evidenceLinks": [
+        "https://sonarcloud.io/project/issues?id=okami-horo_DDPlayTV&issues=AZw4PUrvpBg_nGQ6xCmc",
+        "commit:us3-risk-accept"
+      ],
+      "ruleKey": "kotlin:S6619",
+      "issueType": "CODE_SMELL",
+      "severity": "MAJOR",
+      "impactSeverity": "MEDIUM",
+      "issueStatus": "OPEN",
+      "detectedPath": "bilibili_component/src/main/java/com/xyoye/common_component/bilibili/repository/BilibiliRepositoryCore.kt",
+      "detectedLine": 313,
+      "highRisk": true
+    },
+    {
+      "taskId": "US3-T046-A",
+      "issueKey": "AZw4PUrvpBg_nGQ6xCml",
+      "priority": "P3",
+      "targetOutcome": "DEFER",
+      "taskStatus": "TRIAGED",
+      "decisionReason": "复杂度拆分涉及多接口返回结构，计划在下一轮专项重构统一处理。",
+      "sourceScope": "FIRST_PARTY",
+      "modulePath": "bilibili_component",
+      "filePath": "bilibili_component/src/main/java/com/xyoye/common_component/bilibili/repository/BilibiliRepositoryCore.kt",
+      "line": "650",
+      "assignee": "dev-us3",
+      "reviewer": "quality-owner",
+      "acceptedBy": "",
+      "reviewConclusion": "",
+      "baselineAnalysisKey": "07c4be1f-f37a-418a-926f-2a13a7a15f86",
+      "currentAnalysisKey": "",
+      "evidenceLinks": [
+        "https://sonarcloud.io/project/issues?id=okami-horo_DDPlayTV&issues=AZw4PUrvpBg_nGQ6xCml"
+      ],
+      "ruleKey": "kotlin:S3776",
+      "issueType": "CODE_SMELL",
+      "severity": "CRITICAL",
+      "impactSeverity": "HIGH",
+      "issueStatus": "OPEN",
+      "detectedPath": "bilibili_component/src/main/java/com/xyoye/common_component/bilibili/repository/BilibiliRepositoryCore.kt",
+      "detectedLine": 650,
+      "highRisk": true
+    },
+    {
+      "taskId": "US3-T046-B",
+      "issueKey": "AZw4PUrvpBg_nGQ6xCmm",
+      "priority": "P3",
+      "targetOutcome": "DEFER",
+      "taskStatus": "TRIAGED",
+      "decisionReason": "与 AAR 依赖解包流程耦合，当前迭代内优先保证播放链路稳定。",
+      "sourceScope": "FIRST_PARTY",
+      "modulePath": "bilibili_component",
+      "filePath": "bilibili_component/src/main/java/com/xyoye/common_component/bilibili/repository/BilibiliRepositoryCore.kt",
+      "line": "914",
+      "assignee": "dev-us3",
+      "reviewer": "quality-owner",
+      "acceptedBy": "",
+      "reviewConclusion": "",
+      "baselineAnalysisKey": "07c4be1f-f37a-418a-926f-2a13a7a15f86",
+      "currentAnalysisKey": "",
+      "evidenceLinks": [
+        "https://sonarcloud.io/project/issues?id=okami-horo_DDPlayTV&issues=AZw4PUrvpBg_nGQ6xCmm"
+      ],
+      "ruleKey": "kotlin:S3776",
+      "issueType": "CODE_SMELL",
+      "severity": "CRITICAL",
+      "impactSeverity": "HIGH",
+      "issueStatus": "OPEN",
+      "detectedPath": "bilibili_component/src/main/java/com/xyoye/common_component/bilibili/repository/BilibiliRepositoryCore.kt",
+      "detectedLine": 914,
+      "highRisk": true
+    },
+    {
+      "taskId": "US3-T047-C",
+      "issueKey": "TP-ISSUE-001",
+      "priority": "P3",
+      "targetOutcome": "EXEMPT",
+      "taskStatus": "CLOSED",
+      "decisionReason": "第三方 AAR 封装目录，按治理边界仅登记豁免不做深改。",
+      "sourceScope": "THIRD_PARTY",
+      "modulePath": "repository/danmaku",
+      "filePath": "repository/danmaku/DanmakuFlameMaster.aar",
+      "line": "",
+      "assignee": "dev-us3",
+      "reviewer": "quality-owner",
+      "acceptedBy": "",
+      "reviewConclusion": "",
+      "baselineAnalysisKey": "07c4be1f-f37a-418a-926f-2a13a7a15f86",
+      "currentAnalysisKey": "",
+      "evidenceLinks": [
+        "https://sonarcloud.io/project/issues?id=okami-horo_DDPlayTV&issues=TP-ISSUE-001",
+        "commit:us3-exempt-001"
+      ],
+      "ruleKey": "java:S1135",
+      "issueType": "",
+      "severity": "",
+      "impactSeverity": "",
+      "issueStatus": "",
+      "detectedPath": "",
+      "detectedLine": null,
+      "highRisk": false
+    },
+    {
+      "taskId": "US3-T047-B",
+      "issueKey": "AZwoFACRY8ZohlEMpmXt",
+      "priority": "P3",
+      "targetOutcome": "FALSE_POSITIVE",
+      "taskStatus": "READY_FOR_REVIEW",
+      "decisionReason": "测试命名已切换 camelCase，待新分析线同步刷新旧 issue 状态。",
+      "sourceScope": "FIRST_PARTY",
+      "modulePath": "core_network_component",
+      "filePath": "core_network_component/src/test/java/com/xyoye/common_component/network/open115/Open115ModelsMoshiTest.kt",
+      "line": "16",
+      "assignee": "dev-us3",
+      "reviewer": "quality-owner",
+      "acceptedBy": "",
+      "reviewConclusion": "",
+      "baselineAnalysisKey": "07c4be1f-f37a-418a-926f-2a13a7a15f86",
+      "currentAnalysisKey": "",
+      "evidenceLinks": [
+        "https://sonarcloud.io/project/issues?id=okami-horo_DDPlayTV&issues=AZwoFACRY8ZohlEMpmXt"
+      ],
+      "ruleKey": "kotlin:S100",
+      "issueType": "CODE_SMELL",
+      "severity": "MINOR",
+      "impactSeverity": "LOW",
+      "issueStatus": "OPEN",
+      "detectedPath": "core_network_component/src/test/java/com/xyoye/common_component/network/open115/Open115ModelsMoshiTest.kt",
+      "detectedLine": 16,
+      "highRisk": false
+    }
+  ]
+}

@@ -10,8 +10,8 @@ import com.xyoye.common_component.network.request.RequestParams
  * 参考：`.tmp/bilibili-API-collect/docs/misc/sign/APPKey.md`
  */
 object BilibiliTvClient {
-    private const val MISSING_CREDENTIAL_MESSAGE =
-        "未配置 B 站 TV APP_KEY/APP_SEC：TV 登录/签名已禁用，请在「个人中心-开发者设置」配置，或构建时注入 BILIBILI_TV_APP_KEY/BILIBILI_TV_APP_SECRET"
+    private const val MISSING_TV_LOGIN_CONFIG_MESSAGE =
+        "未配置 B 站 TV 登录参数：TV 登录/签名已禁用，请在「个人中心-开发者设置」完成配置，或通过构建参数注入。"
 
     const val MOBI_APP = "android_tv_yst"
     const val PLATFORM = "android"
@@ -19,16 +19,49 @@ object BilibiliTvClient {
     // TV 端扫码登录参数，可为 0
     const val LOCAL_ID = 0
 
+    @Volatile
+    private var hasTestCredentialProvider = false
+
+    @Volatile
+    private var testCredentialProvider: (() -> AppCredential?)? = null
+
     data class AppCredential(
         val appKey: String,
         val appSecret: String
     )
 
+    internal fun installCredentialProviderForTest(provider: (() -> AppCredential?)?) {
+        testCredentialProvider = provider
+        hasTestCredentialProvider = provider != null
+    }
+
     fun isAppCredentialReady(): Boolean = resolveAppCredentialOrNull() != null
 
     fun resolveAppCredentialOrNull(): AppCredential? {
-        val appKey = BilibiliTvCredentialStore.getAppKey()?.trim().orEmpty()
-        val appSecret = BilibiliTvCredentialStore.getAppSecret()?.trim().orEmpty()
+        val rawCredential =
+            if (hasTestCredentialProvider) {
+                testCredentialProvider?.invoke()
+            } else {
+                resolveCredentialFromStore()
+            }
+        return normalizeCredential(rawCredential)
+    }
+
+    private fun resolveCredentialFromStore(): AppCredential? {
+        val appKey = BilibiliTvCredentialStore.getAppKey()
+        val appSecret = BilibiliTvCredentialStore.getAppSecret()
+        if (appKey == null || appSecret == null) {
+            return null
+        }
+        return AppCredential(
+            appKey = appKey,
+            appSecret = appSecret,
+        )
+    }
+
+    private fun normalizeCredential(rawCredential: AppCredential?): AppCredential? {
+        val appKey = rawCredential?.appKey?.trim().orEmpty()
+        val appSecret = rawCredential?.appSecret?.trim().orEmpty()
         if (appKey.isBlank() || appSecret.isBlank()) {
             return null
         }
@@ -41,7 +74,7 @@ object BilibiliTvClient {
     fun missingCredentialException(): BilibiliException =
         BilibiliException.from(
             code = -1,
-            message = MISSING_CREDENTIAL_MESSAGE,
+            message = MISSING_TV_LOGIN_CONFIG_MESSAGE,
         )
 
     fun requireAppCredential(): AppCredential =

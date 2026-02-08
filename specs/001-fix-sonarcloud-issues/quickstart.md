@@ -51,3 +51,48 @@
 2. 确认所有遗留项均有处置结论（延期/接受风险/误报）及理由、复核信息。
 3. 仅当质量门状态为 `PASS` 且测试全部通过时，进入任务阶段收尾。
 
+## 6. Phase 6 最终收口（2026-02-08 回填）
+
+> 以下为本分支已执行的最终收口命令与证据路径，可直接复用。
+
+### 6.1 生成最终质量快照
+
+```bash
+python3 scripts/sonarcloud/compare_quality_snapshot.py \
+  --baseline specs/001-fix-sonarcloud-issues/evidence/baseline/quality-baseline.json \
+  --current .sonarcloud-report/sonarcloud-report.json \
+  --output specs/001-fix-sonarcloud-issues/evidence/final-snapshot.json
+```
+
+- 产物：
+  - `specs/001-fix-sonarcloud-issues/evidence/final-snapshot.json`
+  - `specs/001-fix-sonarcloud-issues/evidence/final-snapshot.md`
+
+### 6.2 执行全量门禁并归档日志
+
+```bash
+./gradlew verifyModuleDependencies --console=plain
+./gradlew testDebugUnitTest --console=plain
+./gradlew lintDebug --console=plain
+./gradlew clean build --console=plain
+
+python3 -m unittest \
+  scripts.sonarcloud.tests.test_export_baseline \
+  scripts.sonarcloud.tests.test_compare_quality_snapshot \
+  scripts.sonarcloud.tests.test_validate_remediation_ledger
+```
+
+- 门禁记录：`specs/001-fix-sonarcloud-issues/evidence/final-gates.md`
+- 原始日志：`specs/001-fix-sonarcloud-issues/evidence/runlogs/final-gate-*.log`
+
+### 6.3 最终交付物清单
+
+1. `specs/001-fix-sonarcloud-issues/evidence/final-summary.md`
+2. `specs/001-fix-sonarcloud-issues/evidence/final-gates.md`
+3. `specs/001-fix-sonarcloud-issues/evidence/final-snapshot.json`
+
+### 6.4 当前状态说明
+
+- 代码与脚本治理任务已完成并形成证据链；
+- 门禁中 `testDebugUnitTest` 与 `clean build` 当前仍失败（见 `final-gates.md` 失败原因）；
+- Sonar 指标快照仍使用同一 analysis key（`baseline == target`），需在下一次分支/PR 分析后刷新为真实对比值。

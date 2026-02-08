@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>B站风控验证</title>
   <style>
     body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #ffffff; }
@@ -28,6 +28,10 @@
       function setStatus(text) {
         var el = document.getElementById("status");
         if (el) el.innerText = text;
+      }
+
+      function androidBridge() {
+        return globalThis.Android;
       }
 
       function tryInit() {
@@ -56,21 +60,24 @@
           captchaObj.onSuccess(function () {
             var result = captchaObj.getValidate();
             if (!result) {
-              if (window.Android && window.Android.onError) window.Android.onError("验证码结果为空");
+              var bridge = androidBridge();
+              if (bridge && bridge.onError) bridge.onError("验证码结果为空");
               return;
             }
             var challenge = result.geetest_challenge || result.challenge || "";
             var validate = result.geetest_validate || result.validate || "";
             var seccode = result.geetest_seccode || result.seccode || "";
-            if (window.Android && window.Android.onSuccess) window.Android.onSuccess(challenge, validate, seccode);
+            var bridge = androidBridge();
+            if (bridge && bridge.onSuccess) bridge.onSuccess(challenge, validate, seccode);
           });
           captchaObj.onError(function (err) {
-            if (window.Android && window.Android.onError) window.Android.onError(JSON.stringify(err || {}));
+            var bridge = androidBridge();
+            if (bridge && bridge.onError) bridge.onError(JSON.stringify(err || {}));
           });
         });
       }
 
-      window.setupGeetest = function (gt, challenge) {
+      globalThis.setupGeetest = function (gt, challenge) {
         pending = { gt: gt, challenge: challenge };
         tryInit();
       };
@@ -80,4 +87,3 @@
   </script>
 </body>
 </html>
-

@@ -59,7 +59,7 @@ class BaiduPanTokenManager(
                 runCatching {
                     val response =
                         RetrofitManager.baiduPanService.oauthToken(
-                            baseUrl = Api.BAIDU_OAUTH,
+                            baseUrl = Api.BAIDU_ACCOUNT_API,
                             grantType = "refresh_token",
                             code = null,
                             refreshToken = refreshToken,

@@ -19,7 +19,7 @@ import com.xyoye.player_component.databinding.LayoutPlayerControllerBinding
  */
 
 class PlayerControlView(
-    context: Context
+    context: Context,
 ) : InterControllerView {
     private val isScreenShotEnabled = false
 
@@ -34,24 +34,20 @@ class PlayerControlView(
     private lateinit var mControlWrapper: ControlWrapper
 
     init {
-        /*
-        viewBinding.playerLockIv.setOnClickListener {
-            mControlWrapper.toggleLockState()
-        }
-         */
+        // 锁定按钮当前不在 TV 端开放，显隐和交互统一收敛到隐藏态。
         viewBinding.playerLockIv.apply {
             isVisible = false
             isEnabled = false
             isFocusable = false
             setOnClickListener(null)
         }
+
         if (isScreenShotEnabled) {
             viewBinding.playerShotIv.setOnClickListener {
                 mControlWrapper.showSettingView(SettingViewType.SCREEN_SHOT)
             }
         } else {
-            // TV adaptation: 截图按钮在 TV 端隐藏，保留旧逻辑便于恢复
-            viewBinding.playerShotIv.isVisible = false
+            hideShotImmediately()
         }
     }
 
@@ -62,40 +58,37 @@ class PlayerControlView(
     override fun getView() = viewBinding.root
 
     override fun onVisibilityChanged(isVisible: Boolean) {
-        /*
-        updateLockVisible(isVisible)
-        if (mControlWrapper.isLocked().not()) {
-            updateShotVisible(isVisible)
-        }
-         */
         updateShotVisible(isVisible)
     }
 
     override fun onPlayStateChanged(playState: PlayState) {
+        // 播放/暂停状态由底部控制器负责渲染，此处仅保留扩展点。
     }
 
     override fun onProgressChanged(
         duration: Long,
-        position: Long
+        position: Long,
     ) {
+        // 进度条由专门控制器管理，此处不重复处理。
     }
 
     override fun onLockStateChanged(isLocked: Boolean) {
-        /*
+        // 锁定能力当前默认关闭，保留状态同步以便未来恢复。
         viewBinding.playerLockIv.isSelected = isLocked
         updateShotVisible(!isLocked)
-         */
     }
 
     override fun onVideoSizeChanged(videoSize: Point) {
+        // 该视图不依赖视频尺寸进行布局。
     }
 
     override fun onPopupModeChanged(isPopup: Boolean) {
+        // 截图/锁定控件的展示策略与 popup 模式无关。
     }
 
     fun showMessage(
         text: String,
-        time: MessageTime
+        time: MessageTime,
     ) {
         viewBinding.messageContainer.showMessage(text, time)
     }
@@ -104,34 +97,20 @@ class PlayerControlView(
         viewBinding.messageContainer.clearMessage()
     }
 
-    /*
-    private fun updateLockVisible(isVisible: Boolean) {
-        if (isVisible) {
-            if (mControlWrapper.isLocked()) {
-                viewBinding.playerLockIv.postDelayed({
-                    viewBinding.playerLockIv.requestFocus()
-                }, 100)
-            }
-            viewBinding.playerLockIv.isVisible = true
-            ViewCompat.animate(viewBinding.playerLockIv)
-                .translationX(0f)
-                .setDuration(300)
-                .start()
-        } else {
-            val translateX = dp2px(60).toFloat()
-            ViewCompat.animate(viewBinding.playerLockIv)
-                .translationX(-translateX)
-                .setDuration(300)
-                .start()
+    private fun hideShotImmediately() {
+        viewBinding.playerShotIv.apply {
+            isVisible = false
+            translationX = 0f
+            clearAnimation()
         }
     }
-     */
 
     private fun updateShotVisible(isVisible: Boolean) {
-        if (isScreenShotEnabled.not()) {
-            viewBinding.playerShotIv.isVisible = false
+        if (!isScreenShotEnabled) {
+            hideShotImmediately()
             return
         }
+
         if (isVisible) {
             viewBinding.playerShotIv.isVisible = true
             ViewCompat

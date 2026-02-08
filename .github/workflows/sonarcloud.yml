@@ -25,6 +25,7 @@ jobs:
               with:
                   fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
                   ref: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.checkout_ref != '') && github.event.inputs.checkout_ref || github.ref }}
+
             - name: Validate Gradle Wrapper
               uses: gradle/wrapper-validation-action@v3
 
@@ -44,8 +45,25 @@ jobs:
                   path: ~/.sonar/cache
                   key: ${{ runner.os }}-sonar
 
-            - name: Build (debug)
-              run: ./gradlew --no-daemon assembleDebug
+            - name: Run unit tests + JaCoCo + build
+              run: |
+                  ./gradlew --no-daemon \
+                    testDebugUnitTest \
+                    jacocoTestReport \
+                    assembleDebug
+
+            - name: Verify JaCoCo report
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  report_path="build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
+                  if [ ! -f "$report_path" ]; then
+                      echo "JaCoCo XML report not found: $report_path" >&2
+                      exit 1
+                  fi
+
+                  echo "SONAR_COVERAGE_XML=$report_path" >> "$GITHUB_ENV"
+                  echo "JaCoCo XML located at: $report_path"
 
             - name: Collect class directories
               shell: bash
@@ -53,7 +71,7 @@ jobs:
                   set -euo pipefail
                   mapfile -t dirs < <( \
                       find . -type d -print \
-                        | sed 's|^\\./||' \
+                        | sed 's|^\./||' \
                         | grep -E '(^|/)build/intermediates/javac/[^/]+/[^/]+/classes$|(^|/)build/tmp/kotlin-classes/[^/]+$|(^|/)build/classes/java/[^/]+$' \
                         | sort -u \
                   )
@@ -66,11 +84,14 @@ jobs:
                   sonar_java_binaries="${sonar_java_binaries%,}"
                   echo "SONAR_JAVA_BINARIES=$sonar_java_binaries" >> "$GITHUB_ENV"
                   echo "Collected ${#dirs[@]} class dirs for sonar.java.binaries"
+
             - name: SonarCloud Scan
               uses: SonarSource/sonarqube-scan-action@v6
               if: ${{ env.SONAR_TOKEN != '' }}
               with:
                   args: >
                       -Dsonar.java.binaries=${{ env.SONAR_JAVA_BINARIES }}
+                      -Dsonar.coverage.jacoco.xmlReportPaths=${{ env.SONAR_COVERAGE_XML }}
+                      -Dsonar.qualitygate.wait=true
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

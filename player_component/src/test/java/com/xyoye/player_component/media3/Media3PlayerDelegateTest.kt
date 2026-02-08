@@ -44,7 +44,7 @@ class Media3PlayerDelegateTest {
     }
 
     @Test
-    fun prepareSession_shortCircuits_whenToggleDisabled() =
+    fun prepareSessionShortCircuitsWhenToggleDisabled() =
         runTest {
             val controller = FakeSessionController()
             val toggleScript = ToggleScript(listOf(false))
@@ -67,7 +67,7 @@ class Media3PlayerDelegateTest {
         }
 
     @Test
-    fun prepareSession_emitsStartupTelemetry() =
+    fun prepareSessionEmitsStartupTelemetry() =
         runTest {
             val controller = FakeSessionController()
             controller.prepareResult =
@@ -93,30 +93,28 @@ class Media3PlayerDelegateTest {
         }
 
     @Test
-    fun markFirstFrame_recordsLatencyTelemetry() =
+    fun markFirstFrameRecordsLatencyTelemetry() =
         runTest {
             val controller = FakeSessionController()
             val toggleScript = ToggleScript(listOf(true))
             val telemetry = RecordingTelemetrySink()
-            var now = 0L
+            val timeline = ArrayDeque(listOf(0L, 1_500L))
             val delegate =
                 Media3PlayerDelegate(
                     sessionController = controller,
                     snapshotManager = RolloutSnapshotManager { toggleScript.nextSnapshot() },
                     telemetrySink = telemetry,
-                    timeProvider = { now },
+                    timeProvider = { timeline.removeFirstOrNull() ?: 1_500L },
                 )
 
             delegate.prepareSession("media-latency", Media3SourceType.STREAM)
-
-            now = 1_500L
             delegate.markFirstFrame()
 
             assertEquals(listOf(1_500L), telemetry.firstFrameLatencies)
         }
 
     @Test
-    fun prepareSession_cachesBundle_whenControllerSucceeds() =
+    fun prepareSessionCachesBundleWhenControllerSucceeds() =
         runTest {
             val controller = FakeSessionController()
             val expected = sessionBundle("session-42")
@@ -144,7 +142,7 @@ class Media3PlayerDelegateTest {
         }
 
     @Test
-    fun prepareSession_surfacesControllerErrors() =
+    fun prepareSessionSurfacesControllerErrors() =
         runTest {
             val controller = FakeSessionController()
             val failure = IllegalStateException("network down")

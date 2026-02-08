@@ -3,7 +3,10 @@ package setup
 import com.android.build.gradle.LibraryExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
+import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.getByName
+import org.gradle.kotlin.dsl.withType
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 import setup.utils.setupDefaultDependencies
 import setup.utils.currentCommit
 import setup.utils.setupKotlinOptions
@@ -55,7 +58,22 @@ fun Project.moduleSetup() {
             buildConfig = true
         }
 
+        testOptions {
+            unitTests.isIncludeAndroidResources = true
+            unitTests.isReturnDefaultValues = true
+            unitTests.all {
+                it.systemProperty("robolectric.enabledSdks", "34")
+            }
+        }
+
         setupKotlinOptions()
+    }
+
+    tasks.withType<Test>().configureEach {
+        extensions.configure(JacocoTaskExtension::class.java) {
+            isIncludeNoLocationClasses = true
+            excludes?.add("jdk.internal.*")
+        }
     }
 
     setupDefaultDependencies()
