@@ -65,6 +65,12 @@ jobs:
                   echo "SONAR_COVERAGE_XML=$report_path" >> "$GITHUB_ENV"
                   echo "JaCoCo XML located at: $report_path"
 
+            - name: Collect Sonar scan scope
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  ./scripts/sonarcloud/collect_sonar_scope.sh
+
             - name: Collect class directories
               shell: bash
               run: |
@@ -90,6 +96,8 @@ jobs:
               if: ${{ env.SONAR_TOKEN != '' }}
               with:
                   args: >
+                      -Dsonar.sources=${{ env.SONAR_SOURCES }}
+                      -Dsonar.tests=${{ env.SONAR_TESTS }}
                       -Dsonar.java.binaries=${{ env.SONAR_JAVA_BINARIES }}
                       -Dsonar.coverage.jacoco.xmlReportPaths=${{ env.SONAR_COVERAGE_XML }}
                       -Dsonar.qualitygate.wait=true
