@@ -1,4 +1,4 @@
-name: Build
+name: SonarCloud
 on:
     workflow_dispatch:
         inputs:
@@ -15,8 +15,8 @@ permissions:
     contents: read
     pull-requests: read
 jobs:
-    sonarqube:
-        name: SonarQube
+    sonarcloud:
+        name: SonarCloud
         runs-on: ubuntu-latest
         env:
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -66,7 +66,7 @@ jobs:
                   sonar_java_binaries="${sonar_java_binaries%,}"
                   echo "SONAR_JAVA_BINARIES=$sonar_java_binaries" >> "$GITHUB_ENV"
                   echo "Collected ${#dirs[@]} class dirs for sonar.java.binaries"
-            - name: SonarQube Scan
+            - name: SonarCloud Scan
               uses: SonarSource/sonarqube-scan-action@v6
               if: ${{ env.SONAR_TOKEN != '' }}
               with:
