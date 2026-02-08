@@ -140,7 +140,7 @@ internal class BilibiliRepositoryCore(
                     .name("x-bili-gaia-vtoken")
                     .value(griskId)
                     .expiresAt(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(7))
-                    .domain("bilibili.com")
+                    .domain(DOMAIN_BILIBILI)
                     .path("/")
                     .secure()
                     .httpOnly()
@@ -605,7 +605,7 @@ internal class BilibiliRepositoryCore(
 
         return requestBilibiliAuthed(reason = "livePlayUrl") {
             service.livePlayUrl(BASE_LIVE, params)
-        }.recoverTimeout("取流超时，请检查网络后重试")
+        }.recoverTimeout(MSG_PLAYURL_TIMEOUT)
     }
 
     suspend fun liveDanmuInfo(roomId: Long): Result<BilibiliLiveDanmuConnectInfo> {
@@ -680,13 +680,13 @@ internal class BilibiliRepositoryCore(
 
                             requestBilibiliAuthed(reason = "playurl") {
                                 service.playurl(BASE_API, signed)
-                            }.recoverTimeout("取流超时，请检查网络后重试").mapCatching { data ->
+                            }.recoverTimeout(MSG_PLAYURL_TIMEOUT).mapCatching { data ->
                                 if (hasPlayableStream(data)) {
                                     data
                                 } else if (!data.vVoucher.isNullOrBlank()) {
                                     throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
                                 } else {
-                                    throw BilibiliException.from(code = -1, message = "取流失败：响应无可用流")
+                                    throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
                                 }
                             }
                         }
@@ -717,13 +717,13 @@ internal class BilibiliRepositoryCore(
 
                                 requestBilibiliAuthed(reason = "playurl(html5)") {
                                     service.playurl(BASE_API, signed)
-                                }.recoverTimeout("取流超时，请检查网络后重试").mapCatching { data ->
+                                }.recoverTimeout(MSG_PLAYURL_TIMEOUT).mapCatching { data ->
                                     if (hasPlayableStream(data)) {
                                         data
                                     } else if (!data.vVoucher.isNullOrBlank()) {
                                         throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
                                     } else {
-                                        throw BilibiliException.from(code = -1, message = "取流失败：响应无可用流")
+                                        throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
                                     }
                                 }
                             }
@@ -758,13 +758,13 @@ internal class BilibiliRepositoryCore(
 
                             requestBilibili {
                                 service.playurlOld(BASE_API, signed)
-                            }.recoverTimeout("取流超时，请检查网络后重试").mapCatching { data ->
+                            }.recoverTimeout(MSG_PLAYURL_TIMEOUT).mapCatching { data ->
                                 if (hasPlayableStream(data)) {
                                     data
                                 } else if (!data.vVoucher.isNullOrBlank()) {
                                     throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
                                 } else {
-                                    throw BilibiliException.from(code = -1, message = "取流失败：响应无可用流")
+                                    throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
                                 }
                             }
                         }
@@ -800,13 +800,13 @@ internal class BilibiliRepositoryCore(
 
                     requestBilibili {
                         service.playurlOld(BASE_API, signed)
-                    }.recoverTimeout("取流超时，请检查网络后重试").mapCatching { data ->
+                    }.recoverTimeout(MSG_PLAYURL_TIMEOUT).mapCatching { data ->
                         if (hasPlayableStream(data)) {
                             data
                         } else if (!data.vVoucher.isNullOrBlank()) {
                             throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
                         } else {
-                            throw BilibiliException.from(code = -1, message = "取流失败：响应无可用流")
+                            throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
                         }
                     }
                 }.let { tvResult ->
@@ -860,13 +860,13 @@ internal class BilibiliRepositoryCore(
                         }
                     requestBilibiliAuthed(reason = "playurlFallback") {
                         service.playurl(BASE_API, signed)
-                    }.recoverTimeout("取流超时，请检查网络后重试").mapCatching { data ->
+                    }.recoverTimeout(MSG_PLAYURL_TIMEOUT).mapCatching { data ->
                         if (hasPlayableStream(data)) {
                             data
                         } else if (!data.vVoucher.isNullOrBlank()) {
                             throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
                         } else {
-                            throw BilibiliException.from(code = -1, message = "取流失败：响应无可用流")
+                            throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
                         }
                     }
                 }
@@ -897,13 +897,13 @@ internal class BilibiliRepositoryCore(
 
                     requestBilibili {
                         service.playurlOld(BASE_API, signed)
-                    }.recoverTimeout("取流超时，请检查网络后重试").mapCatching { data ->
+                    }.recoverTimeout(MSG_PLAYURL_TIMEOUT).mapCatching { data ->
                         if (hasPlayableStream(data)) {
                             data
                         } else if (!data.vVoucher.isNullOrBlank()) {
                             throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
                         } else {
-                            throw BilibiliException.from(code = -1, message = "取流失败：响应无可用流")
+                            throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
                         }
                     }
                 }
@@ -951,7 +951,7 @@ internal class BilibiliRepositoryCore(
 
                             requestBilibiliResultAuthed(reason = "pgcPlayurl(v2)") {
                                 service.pgcPlayurlV2(BASE_API, signed)
-                            }.recoverTimeout("取流超时，请检查网络后重试").mapCatching { result: BilibiliPgcPlayurlV2Result ->
+                            }.recoverTimeout(MSG_PLAYURL_TIMEOUT).mapCatching { result: BilibiliPgcPlayurlV2Result ->
                                 val data =
                                     result.videoInfo
                                         ?: throw BilibiliException.from(code = -1, message = "取流失败：响应数据为空")
@@ -961,7 +961,7 @@ internal class BilibiliRepositoryCore(
                                 } else if (!data.vVoucher.isNullOrBlank()) {
                                     throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
                                 } else {
-                                    throw BilibiliException.from(code = -1, message = "取流失败：响应无可用流")
+                                    throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
                                 }
                             }
                         }
@@ -1000,14 +1000,14 @@ internal class BilibiliRepositoryCore(
                     return Result.failure(BilibiliTvClient.missingCredentialException())
                 }
 
-                prepareRiskControl(reason = "pgcPlayurl(tv)", force = false)
+                prepareRiskControl(reason = RISK_REASON_PGC_PLAYURL_TV, force = false)
                 retryBilibiliRiskControlWithRemedy(
-                    reason = "pgcPlayurl(tv)",
+                    reason = RISK_REASON_PGC_PLAYURL_TV,
                     maxAttempts = PGC_PLAYURL_RISK_MAX_ATTEMPTS,
                     initialDelayMs = PGC_PLAYURL_RISK_INITIAL_DELAY_MS,
                     maxDelayMs = PGC_PLAYURL_RISK_MAX_DELAY_MS,
                 ) {
-                    pgcPlayurlByTvApi(params, reason = "pgcPlayurl(tv)")
+                    pgcPlayurlByTvApi(params, reason = RISK_REASON_PGC_PLAYURL_TV)
                 }
             }
         }
@@ -1054,7 +1054,7 @@ internal class BilibiliRepositoryCore(
 
                             requestBilibiliResultAuthed(reason = "pgcPlayurlFallback(v2)") {
                                 service.pgcPlayurlV2(BASE_API, signed)
-                            }.recoverTimeout("取流超时，请检查网络后重试").mapCatching { result: BilibiliPgcPlayurlV2Result ->
+                            }.recoverTimeout(MSG_PLAYURL_TIMEOUT).mapCatching { result: BilibiliPgcPlayurlV2Result ->
                                 val data =
                                     result.videoInfo
                                         ?: throw BilibiliException.from(code = -1, message = "取流失败：响应数据为空")
@@ -1064,7 +1064,7 @@ internal class BilibiliRepositoryCore(
                                 } else if (!data.vVoucher.isNullOrBlank()) {
                                     throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
                                 } else {
-                                    throw BilibiliException.from(code = -1, message = "取流失败：响应无可用流")
+                                    throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
                                 }
                             }
                         }
@@ -1096,14 +1096,14 @@ internal class BilibiliRepositoryCore(
                     return Result.failure(BilibiliTvClient.missingCredentialException())
                 }
 
-                prepareRiskControl(reason = "pgcPlayurlFallback(tv)", force = false)
+                prepareRiskControl(reason = RISK_REASON_PGC_PLAYURL_TV_FALLBACK, force = false)
                 retryBilibiliRiskControlWithRemedy(
-                    reason = "pgcPlayurlFallback(tv)",
+                    reason = RISK_REASON_PGC_PLAYURL_TV_FALLBACK,
                     maxAttempts = PGC_PLAYURL_RISK_MAX_ATTEMPTS,
                     initialDelayMs = PGC_PLAYURL_RISK_INITIAL_DELAY_MS,
                     maxDelayMs = PGC_PLAYURL_RISK_MAX_DELAY_MS,
                 ) {
-                    pgcPlayurlByTvApi(params, reason = "pgcPlayurlFallback(tv)")
+                    pgcPlayurlByTvApi(params, reason = RISK_REASON_PGC_PLAYURL_TV_FALLBACK)
                 }
             }
         }
@@ -1145,9 +1145,9 @@ internal class BilibiliRepositoryCore(
                 if (hasPlayableStream(data)) {
                     data
                 } else {
-                    throw BilibiliException.from(code = -1, message = "取流失败：响应无可用流")
+                    throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
                 }
-            }.recoverTimeout("取流超时，请检查网络后重试")
+            }.recoverTimeout(MSG_PLAYURL_TIMEOUT)
             .onFailure { t ->
                 ErrorReportHelper.postCatchedExceptionWithContext(
                     t,
@@ -1191,8 +1191,8 @@ internal class BilibiliRepositoryCore(
         val domains =
             cookieInfo.domains
                 .map { normalizeCookieDomain(it) }
-                .filter { it.endsWith("bilibili.com", ignoreCase = true) }
-                .ifEmpty { listOf("bilibili.com") }
+                .filter { it.endsWith(DOMAIN_BILIBILI, ignoreCase = true) }
+                .ifEmpty { listOf(DOMAIN_BILIBILI) }
 
         cookieInfo.cookies.forEach { item ->
             if (item.name.isBlank() || item.value.isBlank()) return@forEach
@@ -1354,14 +1354,14 @@ internal class BilibiliRepositoryCore(
                             .Builder()
                             .name(COOKIE_BILI_TICKET)
                             .value(ticket)
-                            .domain("bilibili.com")
+                            .domain(DOMAIN_BILIBILI)
                             .path("/")
                             .expiresAt(expiresAtMs)
                             .secure()
                             .httpOnly()
                             .build()
 
-                    cookieJarStore.upsertCookie(cookie, bucketHost = "bilibili.com")
+                    cookieJarStore.upsertCookie(cookie, bucketHost = DOMAIN_BILIBILI)
                     true
                 }
             }.onFailure { t ->
@@ -1427,7 +1427,7 @@ internal class BilibiliRepositoryCore(
                     }.getOrElse { throwable ->
                         val e = throwable as? BilibiliException
                         if (e?.code == -101) {
-                            return@withLock Result.failure(BilibiliException.from(code = -101, message = "登录已失效，请重新扫码登录"))
+                            return@withLock Result.failure(BilibiliException.from(code = -101, message = MSG_LOGIN_EXPIRED_SCAN_AGAIN))
                         }
                         return@withLock Result.success(false)
                     }
@@ -1472,7 +1472,7 @@ internal class BilibiliRepositoryCore(
                         val e = throwable as? BilibiliException
                         if (e?.code == -101 || e?.code == 86095) {
                             clear()
-                            return@withLock Result.failure(BilibiliException.from(code = -101, message = "登录已失效，请重新扫码登录"))
+                            return@withLock Result.failure(BilibiliException.from(code = -101, message = MSG_LOGIN_EXPIRED_SCAN_AGAIN))
                         }
                         return@withLock Result.failure(throwable)
                     }
@@ -1504,7 +1504,7 @@ internal class BilibiliRepositoryCore(
                     val e = throwable as? BilibiliException
                     if (e?.code == -101) {
                         clear()
-                        return@withLock Result.failure(BilibiliException.from(code = -101, message = "登录已失效，请重新扫码登录"))
+                        return@withLock Result.failure(BilibiliException.from(code = -101, message = MSG_LOGIN_EXPIRED_SCAN_AGAIN))
                     }
                     return@withLock Result.failure(throwable)
                 }
@@ -1631,6 +1631,15 @@ internal class BilibiliRepositoryCore(
         private const val COOKIE_BUVID4 = "buvid4"
         private const val COOKIE_B_NUT = "b_nut"
         private const val COOKIE_X_BILI_GAIA_VTOKEN = "x-bili-gaia-vtoken"
+        private const val DOMAIN_BILIBILI = "bilibili.com"
+
+        private const val MSG_PLAYURL_TIMEOUT = "取流超时，请检查网络后重试"
+        private const val MSG_PLAYURL_EMPTY_STREAM = "取流失败：响应无可用流"
+        private const val MSG_LOGIN_EXPIRED_SCAN_AGAIN = "登录已失效，请重新扫码登录"
+
+        private const val RISK_REASON_PGC_PLAYURL_TV = "pgcPlayurl(tv)"
+        private const val RISK_REASON_PGC_PLAYURL_TV_FALLBACK = "pgcPlayurlFallback(tv)"
+
 
         private const val COOKIE_INFO_CHECK_INTERVAL_MS = 20 * 60 * 60 * 1000L
         private const val COOKIE_REFRESH_MIN_INTERVAL_MS = 2 * 60 * 1000L

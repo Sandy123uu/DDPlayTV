@@ -34,7 +34,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
 
     private var upstreamUrl: String? = null
     private var upstreamHeaders: Map<String, String> = emptyMap()
-    private var contentType: String = "application/octet-stream"
+    private var contentType: String = DEFAULT_BINARY_CONTENT_TYPE
     private var contentLength: Long = -1L
     private var upstreamTlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.STRICT
 
@@ -64,6 +64,9 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
     private var loggedNoRangeRequest: Boolean = false
 
     companion object {
+        private const val DEFAULT_BINARY_CONTENT_TYPE = "application/octet-stream"
+        private const val TEXT_PLAIN_CONTENT_TYPE = "text/plain"
+
         private fun randomPort() = Random.nextInt(20000, 30000)
 
         @JvmStatic
@@ -89,7 +92,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
     data class UpstreamSource(
         val url: String,
         val headers: Map<String, String> = emptyMap(),
-        val contentType: String = "application/octet-stream",
+        val contentType: String = DEFAULT_BINARY_CONTENT_TYPE,
         val contentLength: Long = -1L,
         val tlsPolicy: UpstreamTlsPolicy = UpstreamTlsPolicy.STRICT
     )
@@ -136,7 +139,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
             upstreamUrl
                 ?: return newFixedLengthResponse(
                     Response.Status.NOT_FOUND,
-                    "text/plain",
+                    TEXT_PLAIN_CONTENT_TYPE,
                     "upstream not configured",
                 )
 
@@ -150,7 +153,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
                 null
             }
         if (supportsRange && hasRange && requestedRange == null) {
-            return newFixedLengthResponse(Response.Status.RANGE_NOT_SATISFIABLE, "text/plain", "")
+            return newFixedLengthResponse(Response.Status.RANGE_NOT_SATISFIABLE, TEXT_PLAIN_CONTENT_TYPE, "")
         }
         val isRangeRequest = supportsRange && hasRange && requestedRange != null
         val cappedRange =
@@ -203,18 +206,18 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
                 )
             } ?: return newFixedLengthResponse(
                 Response.Status.INTERNAL_ERROR,
-                "text/plain",
+                TEXT_PLAIN_CONTENT_TYPE,
                 "upstream request failed",
             )
 
         if (!response.isSuccessful) {
             // If upstream rejects probing ranges (403), let mpv fall back to linear playback instead of failing open().
             if (supportsRange && hasRange && !seekEnabled && response.code() == 403) {
-                return newFixedLengthResponse(Response.Status.RANGE_NOT_SATISFIABLE, "text/plain", "")
+                return newFixedLengthResponse(Response.Status.RANGE_NOT_SATISFIABLE, TEXT_PLAIN_CONTENT_TYPE, "")
             }
             return newFixedLengthResponse(
                 toStatus(response.code()),
-                "text/plain",
+                TEXT_PLAIN_CONTENT_TYPE,
                 "upstream http ${response.code()}",
             )
         }
@@ -223,7 +226,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
             response.body()
                 ?: return newFixedLengthResponse(
                     Response.Status.INTERNAL_ERROR,
-                    "text/plain",
+                    TEXT_PLAIN_CONTENT_TYPE,
                     "empty upstream body",
                 )
 
@@ -268,7 +271,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
             )
             return newFixedLengthResponse(
                 Response.Status.INTERNAL_ERROR,
-                "text/plain",
+                TEXT_PLAIN_CONTENT_TYPE,
                 "upstream range unsupported",
             )
         }
@@ -564,7 +567,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
     fun generatePlayUrl(
         upstreamUrl: String,
         upstreamHeaders: Map<String, String> = emptyMap(),
-        contentType: String = "application/octet-stream",
+        contentType: String = DEFAULT_BINARY_CONTENT_TYPE,
         contentLength: Long = -1L,
         prePlayRangeMinIntervalMs: Long = runCatching { PlayerConfig.getMpvProxyRangeMinIntervalMs() }.getOrDefault(1000).toLong(),
         fileName: String = "video",

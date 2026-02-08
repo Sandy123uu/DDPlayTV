@@ -20,6 +20,10 @@ import org.junit.runner.RunWith
 class CrashTaggingTest {
     private val reporter = RecordingCrashReporter()
 
+    private companion object {
+        private const val SESSION_TELEMETRY = "session-telemetry"
+    }
+
     @Test
     fun media3MetadataIsStoredForCrashSegmentation() {
         Media3CrashTagger.setReporterForTest(reporter)
@@ -31,11 +35,11 @@ class CrashTaggingTest {
                 value = true,
                 source = Media3RolloutSource.REMOTE_CONFIG,
                 evaluatedAt = 15L,
-                appliesToSession = "session-telemetry",
+                appliesToSession = SESSION_TELEMETRY,
             )
         val session =
             PlaybackSession(
-                sessionId = "session-telemetry",
+                sessionId = SESSION_TELEMETRY,
                 mediaId = "media-telemetry",
                 sourceType = Media3SourceType.CAST,
                 playerEngine = Media3PlayerEngine.MEDIA3,
@@ -47,7 +51,7 @@ class CrashTaggingTest {
 
         assertEquals("true", reporter.userData["media3.toggle_value"])
         assertEquals("REMOTE_CONFIG", reporter.userData["media3.toggle_source"])
-        assertEquals("session-telemetry", reporter.userData["media3.snapshot_session"])
+        assertEquals(SESSION_TELEMETRY, reporter.userData["media3.snapshot_session"])
         assertEquals("MEDIA3", reporter.userData["media3.player_engine"])
         assertEquals("TREATMENT", reporter.userData["media3.toggle_cohort"])
         assertEquals("CAST", reporter.userData["media3.source_type"])

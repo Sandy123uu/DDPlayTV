@@ -12,6 +12,7 @@ import com.xyoye.common_component.services.Media3SessionServiceProvider
 )
 class Media3SessionServiceProviderImpl : Media3SessionServiceProvider {
     override fun init(context: Context?) {
+        // ARouter provider lifecycle hook; this provider only creates intents on demand.
     }
 
     override fun createBindIntent(context: Context): Intent = Intent(context, Media3SessionService::class.java)

@@ -30,6 +30,8 @@ open class BaseApplication :
         @Volatile
         private var mMainHandler: Handler? = null
 
+        private const val APP_INIT_TAG = "APP-Init"
+
         fun getAppContext(): Context = (APPLICATION_CONTEXT ?: resolveApplicationContext()).applicationContext
 
         fun getMainHandler(): Handler =
@@ -86,20 +88,20 @@ open class BaseApplication :
 
         LogFacade.i(
             LogModule.CORE,
-            "APP-Init",
+            APP_INIT_TAG,
             "application onCreate start process=${android.os.Process.myPid()}",
         )
 
         if (BuildConfig.DEBUG) {
             ARouter.openLog()
             ARouter.openDebug()
-            LogFacade.i(LogModule.CORE, "APP-Init", "router debug mode enabled")
+            LogFacade.i(LogModule.CORE, APP_INIT_TAG, "router debug mode enabled")
         }
         ARouter.init(this)
         Notifications.setupNotificationChannels(this)
         ActivityHelper.instance.init(this)
 
-        LogFacade.i(LogModule.CORE, "APP-Init", "application onCreate finished")
+        LogFacade.i(LogModule.CORE, APP_INIT_TAG, "application onCreate finished")
     }
 
     override fun newImageLoader(): ImageLoader =

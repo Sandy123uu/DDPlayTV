@@ -7,32 +7,54 @@ import org.gradle.api.artifacts.ProjectDependency
 internal object ModuleDependencyGovernance {
 
     private const val RULES_DOC = "document/architecture/module_dependency_governance.md"
+    private const val MODULE_APP = ":app"
+    private const val MODULE_ANIME = ":anime_component"
+    private const val MODULE_LOCAL = ":local_component"
+    private const val MODULE_USER = ":user_component"
+    private const val MODULE_STORAGE = ":storage_component"
+    private const val MODULE_PLAYER = ":player_component"
+    private const val MODULE_DATA = ":data_component"
+    private const val MODULE_CONTRACT = ":core_contract_component"
+    private const val MODULE_LOG = ":core_log_component"
+    private const val MODULE_SYSTEM = ":core_system_component"
+    private const val MODULE_NETWORK = ":core_network_component"
+    private const val MODULE_DATABASE = ":core_database_component"
+    private const val MODULE_STORAGE_CORE = ":core_storage_component"
+    private const val MODULE_UI = ":core_ui_component"
+    private const val MODULE_BILIBILI = ":bilibili_component"
+    private const val MODULE_REPOSITORY = ":repository"
+    private const val MODULE_REPO_DANMAKU = ":repository:danmaku"
+    private const val MODULE_REPO_IMMERSION = ":repository:immersion_bar"
+    private const val MODULE_REPO_PANEL = ":repository:panel_switch"
+    private const val MODULE_REPO_SEVEN_ZIP = ":repository:seven_zip"
+    private const val MODULE_REPO_THUNDER = ":repository:thunder"
+    private const val MODULE_REPO_VIDEO_CACHE = ":repository:video_cache"
 
     private val allKnownModules: Set<String> =
         setOf(
-            ":app",
-            ":anime_component",
-            ":local_component",
-            ":user_component",
-            ":storage_component",
-            ":player_component",
-            ":data_component",
-            ":core_contract_component",
-            ":core_log_component",
-            ":core_system_component",
-            ":core_network_component",
-            ":core_database_component",
-            ":core_storage_component",
-            ":core_ui_component",
-            ":bilibili_component",
+            MODULE_APP,
+            MODULE_ANIME,
+            MODULE_LOCAL,
+            MODULE_USER,
+            MODULE_STORAGE,
+            MODULE_PLAYER,
+            MODULE_DATA,
+            MODULE_CONTRACT,
+            MODULE_LOG,
+            MODULE_SYSTEM,
+            MODULE_NETWORK,
+            MODULE_DATABASE,
+            MODULE_STORAGE_CORE,
+            MODULE_UI,
+            MODULE_BILIBILI,
             // Gradle "container" project for nested :repository:* modules.
-            ":repository",
-            ":repository:danmaku",
-            ":repository:immersion_bar",
-            ":repository:panel_switch",
-            ":repository:seven_zip",
-            ":repository:thunder",
-            ":repository:video_cache"
+            MODULE_REPOSITORY,
+            MODULE_REPO_DANMAKU,
+            MODULE_REPO_IMMERSION,
+            MODULE_REPO_PANEL,
+            MODULE_REPO_SEVEN_ZIP,
+            MODULE_REPO_THUNDER,
+            MODULE_REPO_VIDEO_CACHE
         )
 
     /**
@@ -45,146 +67,146 @@ internal object ModuleDependencyGovernance {
     private val allowedMainProjectDependencies: Map<String, Set<String>> =
         mapOf(
             // app shell (stage 4 baseline: keep app as composition root, avoid infra impl deps)
-            ":app" to
+            MODULE_APP to
                 setOf(
-                    ":anime_component",
-                    ":local_component",
-                    ":user_component",
-                    ":storage_component",
-                    ":player_component",
-                    ":core_system_component",
-                    ":core_log_component",
-                    ":core_ui_component",
-                    ":core_contract_component",
-                    ":data_component"
+                    MODULE_ANIME,
+                    MODULE_LOCAL,
+                    MODULE_USER,
+                    MODULE_STORAGE,
+                    MODULE_PLAYER,
+                    MODULE_SYSTEM,
+                    MODULE_LOG,
+                    MODULE_UI,
+                    MODULE_CONTRACT,
+                    MODULE_DATA
                 ),
 
             // feature
-            ":anime_component" to
+            MODULE_ANIME to
                 setOf(
-                    ":core_ui_component",
-                    ":core_system_component",
-                    ":core_log_component",
-                    ":core_network_component",
-                    ":core_database_component",
-                    ":core_storage_component",
-                    ":core_contract_component",
-                    ":data_component"
+                    MODULE_UI,
+                    MODULE_SYSTEM,
+                    MODULE_LOG,
+                    MODULE_NETWORK,
+                    MODULE_DATABASE,
+                    MODULE_STORAGE_CORE,
+                    MODULE_CONTRACT,
+                    MODULE_DATA
                 ),
-            ":local_component" to
+            MODULE_LOCAL to
                 setOf(
-                    ":bilibili_component",
-                    ":core_ui_component",
-                    ":core_system_component",
-                    ":core_log_component",
-                    ":core_network_component",
-                    ":core_database_component",
-                    ":core_storage_component",
-                    ":core_contract_component",
-                    ":data_component"
+                    MODULE_BILIBILI,
+                    MODULE_UI,
+                    MODULE_SYSTEM,
+                    MODULE_LOG,
+                    MODULE_NETWORK,
+                    MODULE_DATABASE,
+                    MODULE_STORAGE_CORE,
+                    MODULE_CONTRACT,
+                    MODULE_DATA
                 ),
-            ":user_component" to
+            MODULE_USER to
                 setOf(
-                    ":bilibili_component",
-                    ":core_ui_component",
-                    ":core_system_component",
-                    ":core_log_component",
-                    ":core_network_component",
-                    ":core_database_component",
-                    ":core_storage_component",
-                    ":core_contract_component",
-                    ":data_component"
+                    MODULE_BILIBILI,
+                    MODULE_UI,
+                    MODULE_SYSTEM,
+                    MODULE_LOG,
+                    MODULE_NETWORK,
+                    MODULE_DATABASE,
+                    MODULE_STORAGE_CORE,
+                    MODULE_CONTRACT,
+                    MODULE_DATA
                 ),
-            ":storage_component" to
+            MODULE_STORAGE to
                 setOf(
-                    ":bilibili_component",
-                    ":core_ui_component",
-                    ":core_system_component",
-                    ":core_log_component",
-                    ":core_network_component",
-                    ":core_database_component",
-                    ":core_storage_component",
-                    ":core_contract_component",
-                    ":data_component"
+                    MODULE_BILIBILI,
+                    MODULE_UI,
+                    MODULE_SYSTEM,
+                    MODULE_LOG,
+                    MODULE_NETWORK,
+                    MODULE_DATABASE,
+                    MODULE_STORAGE_CORE,
+                    MODULE_CONTRACT,
+                    MODULE_DATA
                 ),
-            ":player_component" to
+            MODULE_PLAYER to
                 setOf(
-                    ":core_ui_component",
-                    ":core_system_component",
-                    ":core_log_component",
-                    ":core_network_component",
-                    ":core_database_component",
-                    ":core_storage_component",
-                    ":core_contract_component",
-                    ":data_component",
-                    ":repository:danmaku",
-                    ":repository:panel_switch",
-                    ":repository:video_cache"
+                    MODULE_UI,
+                    MODULE_SYSTEM,
+                    MODULE_LOG,
+                    MODULE_NETWORK,
+                    MODULE_DATABASE,
+                    MODULE_STORAGE_CORE,
+                    MODULE_CONTRACT,
+                    MODULE_DATA,
+                    MODULE_REPO_DANMAKU,
+                    MODULE_REPO_PANEL,
+                    MODULE_REPO_VIDEO_CACHE
                 ),
 
             // data / contract / runtime
-            ":data_component" to emptySet(),
-            ":core_contract_component" to setOf(":data_component"),
-            ":core_log_component" to setOf(":data_component"),
-            ":core_system_component" to
+            MODULE_DATA to emptySet(),
+            MODULE_CONTRACT to setOf(MODULE_DATA),
+            MODULE_LOG to setOf(MODULE_DATA),
+            MODULE_SYSTEM to
                 setOf(
-                    ":core_contract_component",
-                    ":core_log_component",
-                    ":data_component"
+                    MODULE_CONTRACT,
+                    MODULE_LOG,
+                    MODULE_DATA
                 ),
 
             // infra
-            ":core_network_component" to
+            MODULE_NETWORK to
                 setOf(
-                    ":core_system_component",
-                    ":core_log_component",
-                    ":data_component"
+                    MODULE_SYSTEM,
+                    MODULE_LOG,
+                    MODULE_DATA
                 ),
-            ":core_database_component" to
+            MODULE_DATABASE to
                 setOf(
-                    ":core_system_component",
-                    ":data_component"
+                    MODULE_SYSTEM,
+                    MODULE_DATA
                 ),
-            ":core_storage_component" to
+            MODULE_STORAGE_CORE to
                 setOf(
-                    ":bilibili_component",
-                    ":core_contract_component",
-                    ":core_database_component",
-                    ":core_log_component",
-                    ":core_network_component",
-                    ":core_system_component",
-                    ":data_component",
-                    ":repository:seven_zip",
-                    ":repository:thunder"
+                    MODULE_BILIBILI,
+                    MODULE_CONTRACT,
+                    MODULE_DATABASE,
+                    MODULE_LOG,
+                    MODULE_NETWORK,
+                    MODULE_SYSTEM,
+                    MODULE_DATA,
+                    MODULE_REPO_SEVEN_ZIP,
+                    MODULE_REPO_THUNDER
                 ),
-            ":bilibili_component" to
+            MODULE_BILIBILI to
                 setOf(
-                    ":core_contract_component",
-                    ":core_database_component",
-                    ":core_log_component",
-                    ":core_network_component",
-                    ":core_system_component",
-                    ":data_component"
+                    MODULE_CONTRACT,
+                    MODULE_DATABASE,
+                    MODULE_LOG,
+                    MODULE_NETWORK,
+                    MODULE_SYSTEM,
+                    MODULE_DATA
                 ),
 
             // ui (must not depend on infra impl layer; repo allowlist is restricted)
-            ":core_ui_component" to
+            MODULE_UI to
                 setOf(
-                    ":core_contract_component",
-                    ":core_log_component",
-                    ":core_system_component",
-                    ":data_component",
-                    ":repository:immersion_bar"
+                    MODULE_CONTRACT,
+                    MODULE_LOG,
+                    MODULE_SYSTEM,
+                    MODULE_DATA,
+                    MODULE_REPO_IMMERSION
                 ),
 
             // repository: no internal module deps
-            ":repository" to emptySet(),
-            ":repository:danmaku" to emptySet(),
-            ":repository:immersion_bar" to emptySet(),
-            ":repository:panel_switch" to emptySet(),
-            ":repository:seven_zip" to emptySet(),
-            ":repository:thunder" to emptySet(),
-            ":repository:video_cache" to emptySet()
+            MODULE_REPOSITORY to emptySet(),
+            MODULE_REPO_DANMAKU to emptySet(),
+            MODULE_REPO_IMMERSION to emptySet(),
+            MODULE_REPO_PANEL to emptySet(),
+            MODULE_REPO_SEVEN_ZIP to emptySet(),
+            MODULE_REPO_THUNDER to emptySet(),
+            MODULE_REPO_VIDEO_CACHE to emptySet()
         )
 
     /**
@@ -195,7 +217,7 @@ internal object ModuleDependencyGovernance {
     private val allowedTestOnlyProjectDependencies: Map<String, Set<String>> =
         mapOf(
             // core_network_component: tests may depend on core_contract_component.
-            ":core_network_component" to setOf(":core_contract_component")
+            MODULE_NETWORK to setOf(MODULE_CONTRACT)
         )
 
     /**
@@ -204,10 +226,10 @@ internal object ModuleDependencyGovernance {
      */
     private val bilibiliDependentWhitelist: Set<String> =
         setOf(
-            ":local_component",
-            ":user_component",
-            ":storage_component",
-            ":core_storage_component"
+            MODULE_LOCAL,
+            MODULE_USER,
+            MODULE_STORAGE,
+            MODULE_STORAGE_CORE
         )
 
     /**
@@ -216,100 +238,136 @@ internal object ModuleDependencyGovernance {
      */
     private val allowedApiProjectDependencies: Map<String, Set<String>> =
         mapOf(
-            ":core_contract_component" to setOf(":data_component"),
-            ":core_ui_component" to
+            MODULE_CONTRACT to setOf(MODULE_DATA),
+            MODULE_UI to
                 setOf(
-                    ":repository:immersion_bar",
-                    ":data_component"
+                    MODULE_REPO_IMMERSION,
+                    MODULE_DATA
                 ),
-            ":core_network_component" to setOf(":data_component"),
-            ":core_database_component" to setOf(":data_component"),
-            ":core_log_component" to setOf(":data_component")
+            MODULE_NETWORK to setOf(MODULE_DATA),
+            MODULE_DATABASE to setOf(MODULE_DATA),
+            MODULE_LOG to setOf(MODULE_DATA)
         )
 
     fun verify(rootProject: Project) {
-        val allGradleModules = rootProject.subprojects.map { it.path }.toSet()
-        val unknownModules = allGradleModules - allKnownModules
-        if (unknownModules.isNotEmpty()) {
-            throw GradleException(
-                buildString {
-                    appendLine("模块依赖治理校验失败：存在未纳入规则的模块（需补充分层与依赖矩阵）")
-                    appendLine("规则文档：$RULES_DOC")
-                    appendLine("未识别模块：")
-                    unknownModules.sorted().forEach { appendLine("- $it") }
-                    appendLine()
-                    appendLine("处理方式：")
-                    appendLine("- 更新 $RULES_DOC（分层/允许矩阵/白名单）")
-                    appendLine("- 同步更新 buildSrc 的 ModuleDependencyGovernance 规则后再合入")
-                }
-            )
-        }
+        validateKnownModules(rootProject)
 
-        val violations = mutableListOf<Violation>()
-        rootProject.subprojects
-            .sortedBy { it.path }
-            .forEach { project ->
-                val fromPath = project.path
-                val allowedMain = allowedMainProjectDependencies.getValue(fromPath)
-                val allowedTestExtra = allowedTestOnlyProjectDependencies[fromPath].orEmpty()
-                val allowedApi = allowedApiProjectDependencies[fromPath].orEmpty()
-
-                for (configuration in project.configurations.sortedBy { it.name }) {
-                    val configName = configuration.name
-                    if (!isDeclaredDependencyConfiguration(configName)) continue
-
-                    val declaredProjectDeps =
-                        configuration.dependencies
-                            .withType(ProjectDependency::class.java)
-                            .sortedBy { it.dependencyProject.path }
-                    if (declaredProjectDeps.isEmpty()) continue
-
-                    val isTestConfig = isTestConfiguration(configName)
-                    val allowedForConfig =
-                        if (isTestConfig) {
-                            allowedMain + allowedTestExtra
-                        } else {
-                            allowedMain
-                        }
-
-                    val isApiConfig = isApiConfiguration(configName)
-                    declaredProjectDeps.forEach { dependency ->
-                        val toPath = dependency.dependencyProject.path
-
-                        if (toPath !in allowedForConfig) {
-                            val reason =
-                                when {
-                                    toPath == ":bilibili_component" && fromPath !in bilibiliDependentWhitelist ->
-                                        "违反 DR-0002：仅允许 ${bilibiliDependentWhitelist.sorted().joinToString()} 直接依赖 :bilibili_component"
-                                    else ->
-                                        "不在 v2 允许矩阵内"
-                                }
-                            violations +=
-                                Violation(
-                                    from = fromPath,
-                                    configuration = configName,
-                                    to = toPath,
-                                    reason = reason
-                                )
-                        }
-
-                        if (isApiConfig && toPath !in allowedApi) {
-                            violations +=
-                                Violation(
-                                    from = fromPath,
-                                    configuration = configName,
-                                    to = toPath,
-                                    reason = "违反 DR-0003：禁止通过 api(project(...)) 泄漏该模块"
-                                )
-                        }
-                    }
-                }
-            }
+        val violations =
+            rootProject.subprojects
+                .sortedBy { it.path }
+                .flatMap { project -> collectProjectViolations(project) }
 
         if (violations.isNotEmpty()) {
             throw GradleException(formatViolations(violations))
         }
     }
+
+    private fun validateKnownModules(rootProject: Project) {
+        val allGradleModules = rootProject.subprojects.map { it.path }.toSet()
+        val unknownModules = allGradleModules - allKnownModules
+        if (unknownModules.isEmpty()) return
+
+        throw GradleException(
+            buildString {
+                appendLine("模块依赖治理校验失败：存在未纳入规则的模块（需补充分层与依赖矩阵）")
+                appendLine("规则文档：$RULES_DOC")
+                appendLine("未识别模块：")
+                unknownModules.sorted().forEach { appendLine("- $it") }
+                appendLine()
+                appendLine("处理方式：")
+                appendLine("- 更新 $RULES_DOC（分层/允许矩阵/白名单）")
+                appendLine("- 同步更新 buildSrc 的 ModuleDependencyGovernance 规则后再合入")
+            }
+        )
+    }
+
+    private fun collectProjectViolations(project: Project): List<Violation> {
+        val fromPath = project.path
+        val allowedMain = allowedMainProjectDependencies.getValue(fromPath)
+        val allowedTestExtra = allowedTestOnlyProjectDependencies[fromPath].orEmpty()
+        val allowedApi = allowedApiProjectDependencies[fromPath].orEmpty()
+
+        return project.configurations
+            .sortedBy { it.name }
+            .flatMap { configuration ->
+                val configName = configuration.name
+                if (!isDeclaredDependencyConfiguration(configName)) {
+                    return@flatMap emptyList()
+                }
+
+                val declaredProjectDeps =
+                    configuration.dependencies
+                        .withType(ProjectDependency::class.java)
+                        .sortedBy { it.dependencyProject.path }
+                if (declaredProjectDeps.isEmpty()) {
+                    return@flatMap emptyList()
+                }
+
+                collectConfigurationViolations(
+                    fromPath = fromPath,
+                    configurationName = configName,
+                    dependencies = declaredProjectDeps,
+                    allowedMain = allowedMain,
+                    allowedTestExtra = allowedTestExtra,
+                    allowedApi = allowedApi,
+                )
+            }
+    }
+
+    private fun collectConfigurationViolations(
+        fromPath: String,
+        configurationName: String,
+        dependencies: List<ProjectDependency>,
+        allowedMain: Set<String>,
+        allowedTestExtra: Set<String>,
+        allowedApi: Set<String>,
+    ): List<Violation> {
+        val allowedForConfiguration =
+            if (isTestConfiguration(configurationName)) {
+                allowedMain + allowedTestExtra
+            } else {
+                allowedMain
+            }
+        val isApiConfig = isApiConfiguration(configurationName)
+        val violations = mutableListOf<Violation>()
+
+        dependencies.forEach { dependency ->
+            val toPath = dependency.dependencyProject.path
+
+            if (toPath !in allowedForConfiguration) {
+                violations +=
+                    Violation(
+                        from = fromPath,
+                        configuration = configurationName,
+                        to = toPath,
+                        reason = disallowedDependencyReason(fromPath, toPath),
+                    )
+            }
+
+            if (isApiConfig && toPath !in allowedApi) {
+                violations +=
+                    Violation(
+                        from = fromPath,
+                        configuration = configurationName,
+                        to = toPath,
+                        reason = "违反 DR-0003：禁止通过 api(project(...)) 泄漏该模块",
+                    )
+            }
+        }
+
+        return violations
+    }
+
+    private fun disallowedDependencyReason(
+        fromPath: String,
+        toPath: String,
+    ): String =
+        when {
+            toPath == MODULE_BILIBILI && fromPath !in bilibiliDependentWhitelist ->
+                "违反 DR-0002：仅允许 ${bilibiliDependentWhitelist.sorted().joinToString()} 直接依赖 :bilibili_component"
+            else ->
+                "不在 v2 允许矩阵内"
+        }
 
     private fun formatViolations(violations: List<Violation>): String =
         buildString {

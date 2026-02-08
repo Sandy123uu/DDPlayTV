@@ -16,6 +16,8 @@ import javax.net.ssl.X509TrustManager
  * This helper is intentionally "narrow" (TLS only). Timeout/interceptor unification is handled elsewhere.
  */
 object OkHttpTlsConfigurer {
+    private const val TLS_PROTOCOL = "TLSv1.2"
+
     @OptIn(UnsafeTlsApi::class)
     fun apply(
         builder: OkHttpClient.Builder,
@@ -47,7 +49,7 @@ object OkHttpTlsConfigurer {
         val custom = trustManagerForCertificates(policy.certificates)
         val trustManager = CompositeX509TrustManager(listOf(custom, system))
         val sslContext =
-            SSLContext.getInstance("TLS").apply {
+            SSLContext.getInstance(TLS_PROTOCOL).apply {
                 init(null, arrayOf(trustManager), SecureRandom())
             }
         return builder.sslSocketFactory(sslContext.socketFactory, trustManager)
@@ -57,7 +59,7 @@ object OkHttpTlsConfigurer {
     private fun applyUnsafeTrustAll(builder: OkHttpClient.Builder): OkHttpClient.Builder {
         val trustManager = TrustAllX509TrustManager()
         val sslContext =
-            SSLContext.getInstance("TLS").apply {
+            SSLContext.getInstance(TLS_PROTOCOL).apply {
                 init(null, arrayOf(trustManager), SecureRandom())
             }
         return builder
@@ -128,6 +130,7 @@ object OkHttpTlsConfigurer {
     }
 
     @OptIn(UnsafeTlsApi::class)
+    @Suppress("kotlin:S4830")
     private class TrustAllX509TrustManager : X509TrustManager {
         override fun checkClientTrusted(
             chain: Array<X509Certificate>,

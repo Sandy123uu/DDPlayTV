@@ -15,15 +15,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class Media3CastManagerTest {
+    private companion object {
+        private const val LIVING_ROOM_TARGET_ID = "living-room"
+    }
+
     @Test
     fun returnsDisabledResult_whenCastSenderDisabled() {
         val manager = Media3CastManager(codecFallbackHandler = CodecFallbackHandler())
 
         val result =
             manager.prepareCastSession(
-                targetId = "living-room",
+                targetId = LIVING_ROOM_TARGET_ID,
                 session = playbackSession(),
-                capability = capabilityContract("living-room"),
+                capability = capabilityContract(LIVING_ROOM_TARGET_ID),
                 capabilityResult = null,
             )
 
@@ -39,9 +43,9 @@ class Media3CastManagerTest {
 
         val result =
             manager.prepareCastSession(
-                targetId = "living-room",
+                targetId = LIVING_ROOM_TARGET_ID,
                 session = session,
-                capability = capabilityContract("living-room"),
+                capability = capabilityContract(LIVING_ROOM_TARGET_ID),
                 capabilityResult =
                     LegacyCapabilityResult(
                         mediaTracks = emptyList(),
@@ -59,7 +63,7 @@ class Media3CastManagerTest {
 
         assertTrue(result is CastSessionPrepareResult.Ready)
         val payload = (result as CastSessionPrepareResult.Ready).payload
-        assertEquals("living-room", payload.target.id)
+        assertEquals(LIVING_ROOM_TARGET_ID, payload.target.id)
         assertEquals(session.sessionId, payload.sessionId)
         assertTrue(payload.audioOnly)
         assertEquals("Codec h265 not supported on cast target", payload.fallbackMessage)
@@ -73,7 +77,7 @@ class Media3CastManagerTest {
             manager.prepareCastSession(
                 targetId = "missing-target",
                 session = playbackSession(),
-                capability = capabilityContract("living-room"),
+                capability = capabilityContract(LIVING_ROOM_TARGET_ID),
                 capabilityResult = null,
             )
 

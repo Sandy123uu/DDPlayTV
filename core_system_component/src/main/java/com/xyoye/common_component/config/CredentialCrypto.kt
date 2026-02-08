@@ -24,6 +24,10 @@ internal object CredentialCrypto {
     private const val AES_KEY_ALIAS = "dandanplay.developer.credential.aes"
     private const val RSA_KEY_ALIAS = "dandanplay.developer.credential.rsa"
 
+    private const val RSA_OAEP_SHA256_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding"
+    private const val RSA_OAEP_SHA1_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding"
+    private const val LEGACY_RSA_WRAP_TRANSFORMATION = "RSA/ECB/PKCS1Padding"
+
     fun encrypt(plainText: String): String? =
         runCatching {
             val secretKey = getOrCreateSecretKey() ?: return null
@@ -111,7 +115,13 @@ internal object CredentialCrypto {
 
             val wrappedKey = DevelopConfig.getDevCredentialAesKeyWrapped()
             if (!wrappedKey.isNullOrBlank()) {
-                unwrapAesKey(wrappedKey)?.let { return it }
+                unwrapAesKeyWithOaep(wrappedKey)?.let { return it }
+                unwrapAesKeyWithLegacyPkcs1(wrappedKey)?.let { legacyKey ->
+                    wrapAesKey(legacyKey.encoded ?: return@let)?.let {
+                        DevelopConfig.putDevCredentialAesKeyWrapped(it)
+                    }
+                    return legacyKey
+                }
             }
 
             val rawKey = ByteArray(16).apply { SecureRandom().nextBytes(this) }
@@ -147,18 +157,35 @@ internal object CredentialCrypto {
         runCatching {
             val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) }
             val publicKey = keyStore.getCertificate(RSA_KEY_ALIAS)?.publicKey ?: return null
-            val cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding")
+            val cipher = createRsaOaepCipher() ?: return null
             cipher.init(Cipher.ENCRYPT_MODE, publicKey)
             base64Encode(cipher.doFinal(rawKey))
         }.getOrNull()
 
-    private fun unwrapAesKey(wrappedKey: String): SecretKey? =
+    private fun unwrapAesKeyWithOaep(wrappedKey: String): SecretKey? =
         runCatching {
             val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) }
             val privateKey = keyStore.getKey(RSA_KEY_ALIAS, null) ?: return null
-            val cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding")
+            val cipher = createRsaOaepCipher() ?: return null
             cipher.init(Cipher.DECRYPT_MODE, privateKey)
             val rawKey = cipher.doFinal(base64Decode(wrappedKey))
             SecretKeySpec(rawKey, "AES")
         }.getOrNull()
+
+    @Suppress("kotlin:S5542")
+    private fun unwrapAesKeyWithLegacyPkcs1(wrappedKey: String): SecretKey? =
+        runCatching {
+            val keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER).apply { load(null) }
+            val privateKey = keyStore.getKey(RSA_KEY_ALIAS, null) ?: return null
+            // Legacy fallback to keep pre-OAEP wrapped keys readable during migration. // NOSONAR
+            val cipher = Cipher.getInstance(LEGACY_RSA_WRAP_TRANSFORMATION)
+            cipher.init(Cipher.DECRYPT_MODE, privateKey)
+            val rawKey = cipher.doFinal(base64Decode(wrappedKey))
+            SecretKeySpec(rawKey, "AES")
+        }.getOrNull()
+
+    private fun createRsaOaepCipher(): Cipher? =
+        runCatching { Cipher.getInstance(RSA_OAEP_SHA256_TRANSFORMATION) }
+            .recoverCatching { Cipher.getInstance(RSA_OAEP_SHA1_TRANSFORMATION) }
+            .getOrNull()
 }

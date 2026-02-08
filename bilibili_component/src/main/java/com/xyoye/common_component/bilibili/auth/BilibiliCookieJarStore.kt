@@ -114,18 +114,18 @@ class BilibiliCookieJarStore(
     fun isLoginCookiePresent(): Boolean =
         hasCookieName(
             name = "SESSDATA",
-            domainSuffix = "bilibili.com",
+            domainSuffix = DEFAULT_BILIBILI_DOMAIN_SUFFIX,
         )
 
     fun isBuvid3CookiePresent(): Boolean =
         hasCookieName(
             name = "buvid3",
-            domainSuffix = "bilibili.com",
+            domainSuffix = DEFAULT_BILIBILI_DOMAIN_SUFFIX,
         )
 
     fun isCookiePresent(
         name: String,
-        domainSuffix: String = "bilibili.com"
+        domainSuffix: String = DEFAULT_BILIBILI_DOMAIN_SUFFIX
     ): Boolean =
         hasCookieName(
             name = name,
@@ -134,7 +134,7 @@ class BilibiliCookieJarStore(
 
     fun getCookieOrNull(
         name: String,
-        domainSuffix: String = "bilibili.com"
+        domainSuffix: String = DEFAULT_BILIBILI_DOMAIN_SUFFIX
     ): Cookie? =
         synchronized(lock) {
             val now = System.currentTimeMillis()
@@ -164,7 +164,7 @@ class BilibiliCookieJarStore(
                 ?.toCookie()
         }
 
-    fun exportCookieHeader(domainSuffix: String = "bilibili.com"): String? =
+    fun exportCookieHeader(domainSuffix: String = DEFAULT_BILIBILI_DOMAIN_SUFFIX): String? =
         synchronized(lock) {
             val now = System.currentTimeMillis()
             val cookies =
@@ -315,5 +315,6 @@ class BilibiliCookieJarStore(
 
     private companion object {
         private const val KEY_ALL = "cookies_all"
+        private const val DEFAULT_BILIBILI_DOMAIN_SUFFIX = "bilibili.com"
     }
 }

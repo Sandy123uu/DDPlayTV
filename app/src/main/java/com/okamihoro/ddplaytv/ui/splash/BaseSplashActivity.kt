@@ -61,6 +61,7 @@ abstract class BaseSplashActivity : BaseAppCompatActivity<ActivitySplashBinding>
             textPathView.setAnimListener(
                 object : TextPathAnimView.AnimListener {
                     override fun onStart() {
+                        // No-op: animation start needs no side effects.
                     }
 
                     override fun onEnd() {
@@ -70,6 +71,7 @@ abstract class BaseSplashActivity : BaseAppCompatActivity<ActivitySplashBinding>
                     }
 
                     override fun onLoop() {
+                        // No-op: splash animation is configured for a single run.
                     }
                 },
             )
