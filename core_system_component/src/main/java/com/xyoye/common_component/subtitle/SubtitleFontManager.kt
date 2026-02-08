@@ -96,7 +96,9 @@ object SubtitleFontManager {
             }
             true
         }.onFailure {
-            target.delete()
+            if (target.exists() && !target.delete()) {
+                LogFacade.w(LogModule.SUBTITLE, TAG, "delete broken default font failed: ${target.absolutePath}")
+            }
             LogFacade.e(
                 LogModule.SUBTITLE,
                 TAG,
@@ -136,7 +138,13 @@ object SubtitleFontManager {
                             "migrated legacy font ${legacyFile.name} to ${targetFile.absolutePath}",
                         )
                     }.onFailure {
-                        targetFile.delete()
+                        if (targetFile.exists() && !targetFile.delete()) {
+                            LogFacade.w(
+                                LogModule.SUBTITLE,
+                                TAG,
+                                "delete broken migrated font failed: ${targetFile.absolutePath}",
+                            )
+                        }
                         LogFacade.w(
                             LogModule.SUBTITLE,
                             TAG,

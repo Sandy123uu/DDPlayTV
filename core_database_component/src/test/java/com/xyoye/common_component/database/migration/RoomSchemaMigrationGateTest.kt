@@ -158,9 +158,15 @@ class RoomSchemaMigrationGateTest {
         name: String
     ) {
         val dbFile = context.getDatabasePath(name)
-        dbFile.delete()
-        File(dbFile.absolutePath + "-shm").delete()
-        File(dbFile.absolutePath + "-wal").delete()
+        deleteFileIfExists(dbFile)
+        deleteFileIfExists(File(dbFile.absolutePath + "-shm"))
+        deleteFileIfExists(File(dbFile.absolutePath + "-wal"))
+    }
+
+    private fun deleteFileIfExists(file: File) {
+        if (file.exists() && !file.delete()) {
+            throw IllegalStateException("Failed to delete file: ${file.absolutePath}")
+        }
     }
 
     private companion object {

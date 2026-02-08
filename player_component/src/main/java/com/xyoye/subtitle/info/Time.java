@@ -17,7 +17,7 @@ public class Time {
 			s = Integer.parseInt(value.substring(6, 8));
 			ms = Integer.parseInt(value.substring(9, 12));
 			
-			mseconds = ms + s*1000 + m*60000 + h*3600000;
+			mseconds = ms + s * 1000L + m * 60000L + h * 3600000L;
 			
 		} else if (format.equalsIgnoreCase("h:mm:ss.cs")){
 			// this type of format:  1:02:22.51 (used in .ASS/.SSA) 
@@ -43,7 +43,7 @@ public class Time {
 				}
 			}
 
-			mseconds = cs*10 + s*1000 + m*60000 + h*3600000;
+			mseconds = cs * 10L + s * 1000L + m * 60000L + h * 3600000L;
 		} else if (format.equalsIgnoreCase("h:m:s:f/fps")){
 			int h, m, s, f;
 			float fps;
@@ -55,7 +55,7 @@ public class Time {
 			s = Integer.parseInt(args[2]);
 			f = Integer.parseInt(args[3]);
 
-			mseconds = (int)(f*1000/fps) + s*1000 + m*60000 + h*3600000;
+			mseconds = (long) (f * 1000 / fps) + s * 1000L + m * 60000L + h * 3600000L;
 		}
 	}
 

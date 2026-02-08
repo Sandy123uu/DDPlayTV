@@ -27,7 +27,7 @@ class MpvAssFullSubtitleParserTest {
         assertEquals(1000L, sample.durationMs)
         assertEquals(
             "0,0,Default,,0,0,0,,Hello",
-            sample.data.toString(Charsets.UTF_8),
+            sample.data.decodeToString(),
         )
     }
 
@@ -45,10 +45,10 @@ class MpvAssFullSubtitleParserTest {
         assertEquals(2, samples.size)
         assertEquals(1000L, samples[0].timecodeMs)
         assertEquals(1000L, samples[0].durationMs)
-        assertEquals("0,0,Default,,0,0,0,,Hello", samples[0].data.toString(Charsets.UTF_8))
+        assertEquals("0,0,Default,,0,0,0,,Hello", samples[0].data.decodeToString())
         assertEquals(3500L, samples[1].timecodeMs)
         assertEquals(500L, samples[1].durationMs)
-        assertEquals("1,0,Default,,0,0,0,,World", samples[1].data.toString(Charsets.UTF_8))
+        assertEquals("1,0,Default,,0,0,0,,World", samples[1].data.decodeToString())
     }
 
     @Test
@@ -62,7 +62,7 @@ class MpvAssFullSubtitleParserTest {
         assertEquals(1, samples.size)
         assertEquals(
             "0,0,Default,,0,0,0,,Hello, world",
-            samples[0].data.toString(Charsets.UTF_8),
+            samples[0].data.decodeToString(),
         )
     }
 

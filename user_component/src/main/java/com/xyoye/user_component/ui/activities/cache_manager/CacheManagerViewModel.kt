@@ -162,15 +162,26 @@ class CacheManagerViewModel : BaseViewModel() {
                 return
             }
 
-            if (directory.isFile) {
-                directory.delete()
+            if (directory.isFile && !directory.delete()) {
+                ErrorReportHelper.postCatchedExceptionWithContext(
+                    IllegalStateException("failed to delete cache file"),
+                    "CacheManagerViewModel",
+                    "clearCacheDirectory",
+                    "path=${directory.absolutePath}",
+                )
+                return
             }
 
             directory.listFiles()?.forEach {
                 if (it.isDirectory) {
                     clearCacheDirectory(it)
-                } else {
-                    it.delete()
+                } else if (!it.delete()) {
+                    ErrorReportHelper.postCatchedExceptionWithContext(
+                        IllegalStateException("failed to delete cache file"),
+                        "CacheManagerViewModel",
+                        "clearCacheDirectory",
+                        "path=${it.absolutePath}",
+                    )
                 }
             }
         } catch (e: Exception) {

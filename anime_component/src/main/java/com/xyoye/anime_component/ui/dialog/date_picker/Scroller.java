@@ -386,7 +386,7 @@ public class Scroller  {
         mMode = FLING_MODE;
         mFinished = false;
 
-        float velocity =  (float) Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+        float velocity =  (float) Math.sqrt((double) velocityX * velocityX + (double) velocityY * velocityY);
      
         mVelocity = velocity;
         final double l = Math.log(START_TENSION * velocity / ALPHA);
@@ -477,7 +477,7 @@ public class Scroller  {
      */
     public void setFinalX(int newX) {
         mFinalX = newX;
-        mDeltaX = mFinalX - mStartX;
+        mDeltaX = (float) mFinalX - mStartX;
         mFinished = false;
     }
 
@@ -490,7 +490,7 @@ public class Scroller  {
      */
     public void setFinalY(int newY) {
         mFinalY = newY;
-        mDeltaY = mFinalY - mStartY;
+        mDeltaY = (float) mFinalY - mStartY;
         mFinished = false;
     }
 
@@ -498,7 +498,7 @@ public class Scroller  {
      * @hide
      */
     public boolean isScrollingInDirection(float xvel, float yvel) {
-        return !mFinished && Math.signum(xvel) == Math.signum(mFinalX - mStartX) &&
-                Math.signum(yvel) == Math.signum(mFinalY - mStartY);
+        return !mFinished && Math.signum(xvel) == Math.signum((float) mFinalX - mStartX) &&
+                Math.signum(yvel) == Math.signum((float) mFinalY - mStartY);
     }
 }

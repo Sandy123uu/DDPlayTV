@@ -76,7 +76,7 @@ fun AppExtension.setupSignConfigs(project: Project) = apply {
 
         getByName("release") {
             signingConfig = signingConfigs.findByName(this.name)
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

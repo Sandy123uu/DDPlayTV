@@ -117,12 +117,8 @@ def _validate_module_report_required_fields(module_path: str, report_text: str) 
         "- 范围：": "Missing '- 范围：...'",
     }
     for needle, msg in required_lines.items():
-        if needle.startswith("- 模块："):
-            if needle not in report_text:
-                issues.append(Issue("ERROR", f"{module_path}: {msg}"))
-        else:
-            if needle not in report_text:
-                issues.append(Issue("ERROR", f"{module_path}: {msg}"))
+        if needle not in report_text:
+            issues.append(Issue("ERROR", f"{module_path}: {msg}"))
 
     if "YYYY-MM-DD" in report_text:
         issues.append(Issue("ERROR", f"{module_path}: placeholder 'YYYY-MM-DD' not replaced"))

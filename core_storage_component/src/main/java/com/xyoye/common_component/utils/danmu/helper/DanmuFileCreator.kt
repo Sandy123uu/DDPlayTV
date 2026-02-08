@@ -36,8 +36,8 @@ object DanmuFileCreator {
             }
 
             val danmuFile = File(animeDirectory, "$fileName.xml")
-            if (danmuFile.isValid()) {
-                danmuFile.delete()
+            if (danmuFile.isValid() && !danmuFile.delete()) {
+                throw IOException("保存弹幕失败，删除旧文件失败: ${danmuFile.absolutePath}")
             }
             danmuFile.createNewFile()
             return danmuFile

@@ -58,7 +58,14 @@ object BilibiliCleanup {
                 if (!file.exists() || !file.isFile) return@runCatching
                 if (!file.absolutePath.startsWith(danmuDir)) return@runCatching
                 if (!file.name.startsWith("bilibili_") || !file.name.endsWith(".xml")) return@runCatching
-                file.delete()
+                if (!file.delete()) {
+                    ErrorReportHelper.postCatchedExceptionWithContext(
+                        IllegalStateException("failed to delete bilibili danmu file"),
+                        "BilibiliCleanup",
+                        "deleteBilibiliDanmuFiles",
+                        "path=${file.absolutePath}",
+                    )
+                }
             }
         }
     }
@@ -71,7 +78,16 @@ object BilibiliCleanup {
                     .listFiles()
                     ?.filter { it.isFile && it.name.startsWith("bilibili_") && it.name.endsWith(".mpd") }
                     .orEmpty()
-            files.forEach { it.delete() }
+            files.forEach {
+                if (!it.delete()) {
+                    ErrorReportHelper.postCatchedExceptionWithContext(
+                        IllegalStateException("failed to delete bilibili mpd file"),
+                        "BilibiliCleanup",
+                        "deleteBilibiliMpdFiles",
+                        "path=${it.absolutePath}",
+                    )
+                }
+            }
         }
     }
 }

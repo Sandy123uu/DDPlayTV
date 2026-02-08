@@ -1750,8 +1750,10 @@ public class NumberPicker extends LinearLayout {
      * will be displayed in the selector.
      */
     private void incrementSelectorIndices(int[] selectorIndices) {
-        if (selectorIndices.length - 1 >= 0)
-            System.arraycopy(selectorIndices, 1, selectorIndices, 0, selectorIndices.length - 1);
+        if (selectorIndices.length < 2) {
+            return;
+        }
+        System.arraycopy(selectorIndices, 1, selectorIndices, 0, selectorIndices.length - 1);
         int nextScrollSelectorIndex = selectorIndices[selectorIndices.length - 2] + 1;
         if (mWrapSelectorWheel && nextScrollSelectorIndex > mMaxValue) {
             nextScrollSelectorIndex = mMinValue;
@@ -1765,8 +1767,10 @@ public class NumberPicker extends LinearLayout {
      * will be displayed in the selector.
      */
     private void decrementSelectorIndices(int[] selectorIndices) {
-        if (selectorIndices.length - 1 >= 0)
-            System.arraycopy(selectorIndices, 0, selectorIndices, 1, selectorIndices.length - 1);
+        if (selectorIndices.length < 2) {
+            return;
+        }
+        System.arraycopy(selectorIndices, 0, selectorIndices, 1, selectorIndices.length - 1);
         int nextScrollSelectorIndex = selectorIndices[1] - 1;
         if (mWrapSelectorWheel && nextScrollSelectorIndex < mMinValue) {
             nextScrollSelectorIndex = mMaxValue;

@@ -55,8 +55,13 @@ internal object Anime4kShaderManager {
         val baseDir = PathHelper.getMpvShadersDirectory()
         val directory =
             File(baseDir, OUTPUT_DIR_NAME).apply {
-                if (isFile) {
-                    delete()
+                if (isFile && !delete()) {
+                    LogFacade.w(
+                        LogModule.PLAYER,
+                        TAG,
+                        "failed to delete file blocking shader directory: $absolutePath",
+                    )
+                    return null
                 }
                 if (!exists() && !mkdirs()) {
                     LogFacade.w(
@@ -95,7 +100,9 @@ internal object Anime4kShaderManager {
                 "shader copied: $assetPath -> ${target.absolutePath}",
             )
         }.onFailure { error ->
-            target.delete()
+            if (target.exists() && !target.delete()) {
+                LogFacade.w(LogModule.PLAYER, TAG, "delete broken shader file failed: ${target.absolutePath}")
+            }
             LogFacade.e(
                 LogModule.PLAYER,
                 TAG,

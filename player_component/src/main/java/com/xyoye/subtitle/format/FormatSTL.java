@@ -48,8 +48,6 @@ public class FormatSTL implements TimedTextFileFormat {
 	}
 
 	public TimedTextObject parseFile(File file, Charset isCharset) throws IOException, FatalParsingException {
-
-		InputStream is = new FileInputStream(file);
 		TimedTextObject tto = new TimedTextObject();
 		tto.fileName = file.getName();
 
@@ -57,7 +55,7 @@ public class FormatSTL implements TimedTextFileFormat {
 		byte [] ttiBlock = new byte [128];
 		
 
-		try {
+		try (InputStream is = new FileInputStream(file)) {
 			//we read the file
 			//but first we create the possible styles
 			createSTLStyles(tto);
@@ -190,10 +188,6 @@ public class FormatSTL implements TimedTextFileFormat {
 			}
 			if(subtitleNumber != numberOfSubtitles)
 				tto.warnings += "Number of parsed subtitles ("+subtitleNumber+") different from expected number of subtitles ("+numberOfSubtitles+").\n\n";
-
-			//we close the reader
-			is.close();
-
 
 			tto.cleanUnusedStyles();
 

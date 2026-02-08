@@ -76,8 +76,10 @@ object SubtitleFontCacheHelper {
         inputStream: InputStream
     ): Boolean {
         val target = File(directory, fileName)
-        if (target.exists()) {
-            target.delete()
+        if (target.exists() && !target.delete()) {
+            LogFacade.w(LogModule.SUBTITLE, TAG, "delete cached font failed: ${target.absolutePath}")
+            IOUtils.closeIO(inputStream)
+            return false
         }
         var outputStream: BufferedOutputStream? = null
         return runCatching {
@@ -90,7 +92,9 @@ object SubtitleFontCacheHelper {
             outputStream?.flush()
             true
         }.onFailure {
-            target.delete()
+            if (target.exists() && !target.delete()) {
+                LogFacade.w(LogModule.SUBTITLE, TAG, "delete broken cache font failed: ${target.absolutePath}")
+            }
             LogFacade.w(LogModule.SUBTITLE, TAG, "cache font failed: ${it.message}")
         }.also {
             IOUtils.closeIO(outputStream)

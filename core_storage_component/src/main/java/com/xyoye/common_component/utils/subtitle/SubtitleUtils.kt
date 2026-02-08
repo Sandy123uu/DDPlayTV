@@ -35,8 +35,15 @@ object SubtitleUtils {
 
         val subtitleFileName = fileName.formatFileName()
         val subtitleFile = File(directory, subtitleFileName)
-        if (subtitleFile.exists()) {
-            subtitleFile.delete()
+        if (subtitleFile.exists() && !subtitleFile.delete()) {
+            ErrorReportHelper.postCatchedExceptionWithContext(
+                IllegalStateException("failed to delete existing subtitle file"),
+                "SubtitleUtils",
+                "saveSubtitle",
+                "path=${subtitleFile.absolutePath}",
+            )
+            IOUtils.closeIO(inputStream)
+            return null
         }
 
         var outputStream: OutputStream? = null
@@ -70,8 +77,15 @@ object SubtitleUtils {
         // 创建压缩文件
         var outputStream: OutputStream? = null
         val zipFile = File(PathHelper.getSubtitleDirectory(), fileName.formatFileName())
-        if (zipFile.exists()) {
-            zipFile.delete()
+        if (zipFile.exists() && !zipFile.delete()) {
+            ErrorReportHelper.postCatchedExceptionWithContext(
+                IllegalStateException("failed to delete existing zip file"),
+                "SubtitleUtils",
+                "saveAndUnzipFile",
+                "path=${zipFile.absolutePath}",
+            )
+            IOUtils.closeIO(inputStream)
+            return null
         }
         try {
             // 保存

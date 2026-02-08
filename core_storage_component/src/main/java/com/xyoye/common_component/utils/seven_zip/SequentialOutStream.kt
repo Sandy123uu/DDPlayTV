@@ -56,7 +56,16 @@ class SequentialOutStream(
                 "写入7z文件失败: $fileName",
             )
             close()
-            outFile?.delete()
+            outFile?.let { file ->
+                if (file.exists() && !file.delete()) {
+                    ErrorReportHelper.postCatchedExceptionWithContext(
+                        IllegalStateException("failed to delete broken 7z output file"),
+                        "SequentialOutStream",
+                        "write",
+                        "path=${file.absolutePath}",
+                    )
+                }
+            }
             throw SevenZipException("failed to write file: $fileName")
         }
         return data.size

@@ -7,6 +7,7 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.FileOutputStream
 import java.io.FileReader
+import java.io.IOException
 import java.io.OutputStreamWriter
 
 /**
@@ -61,7 +62,9 @@ object DanmuUtils {
             IOUtils.closeIO(bufferFileReader)
             IOUtils.closeIO(fileReader)
 
-            tempFile.renameTo(danmuFile)
+            if (!tempFile.renameTo(danmuFile)) {
+                throw IOException("Failed to replace danmu file: ${danmuFile.absolutePath}")
+            }
         } catch (e: Throwable) {
             ErrorReportHelper.postCatchedException(
                 e,

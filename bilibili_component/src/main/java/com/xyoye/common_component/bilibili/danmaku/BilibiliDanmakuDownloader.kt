@@ -36,13 +36,42 @@ object BilibiliDanmakuDownloader {
                 }
 
                 if (tmp.length() <= 0) {
-                    tmp.delete()
+                    if (tmp.exists() && !tmp.delete()) {
+                        ErrorReportHelper.postCatchedExceptionWithContext(
+                            IllegalStateException("failed to delete empty tmp file"),
+                            "BilibiliDanmakuDownloader",
+                            "getOrDownload",
+                            "cid=$cid tmp=${tmp.absolutePath}",
+                        )
+                    }
                     return@runCatching null
                 }
-                if (danmuFile.exists()) {
-                    danmuFile.delete()
+                if (danmuFile.exists() && !danmuFile.delete()) {
+                    ErrorReportHelper.postCatchedExceptionWithContext(
+                        IllegalStateException("failed to delete old danmaku file"),
+                        "BilibiliDanmakuDownloader",
+                        "getOrDownload",
+                        "cid=$cid file=${danmuFile.absolutePath}",
+                    )
+                    return@runCatching null
                 }
-                tmp.renameTo(danmuFile)
+                if (!tmp.renameTo(danmuFile)) {
+                    if (tmp.exists() && !tmp.delete()) {
+                        ErrorReportHelper.postCatchedExceptionWithContext(
+                            IllegalStateException("failed to cleanup tmp danmaku file"),
+                            "BilibiliDanmakuDownloader",
+                            "getOrDownload",
+                            "cid=$cid tmp=${tmp.absolutePath}",
+                        )
+                    }
+                    ErrorReportHelper.postCatchedExceptionWithContext(
+                        IllegalStateException("failed to rename tmp danmaku file"),
+                        "BilibiliDanmakuDownloader",
+                        "getOrDownload",
+                        "cid=$cid tmp=${tmp.absolutePath} target=${danmuFile.absolutePath}",
+                    )
+                    return@runCatching null
+                }
                 LocalDanmuBean(danmuFile.absolutePath)
             }.onFailure { e ->
                 ErrorReportHelper.postCatchedExceptionWithContext(

@@ -78,8 +78,8 @@ class LogDiskErrorInstrumentedTest {
         )
 
         // 等待写入被尝试且错误被处理（handleFileError 运行完毕）
-        writeAttempted.await(2, TimeUnit.SECONDS)
-        errorHandled.await(2, TimeUnit.SECONDS)
+        assertTrue(writeAttempted.await(2, TimeUnit.SECONDS))
+        assertTrue(errorHandled.await(2, TimeUnit.SECONDS))
 
         val updatedState = writer.currentStateForTest()
         assertEquals(DebugToggleState.DISABLED_DUE_TO_ERROR, updatedState.debugToggleState)

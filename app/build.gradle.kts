@@ -24,7 +24,6 @@ android {
         applicationId = Versions.applicationId
         minSdk = Versions.minSdkVersion
         targetSdk = Versions.targetSdkVersion
-        targetSdk = Versions.targetSdkVersion
         versionCode = Versions.versionCode
         versionName = Versions.versionName
         multiDexEnabled = true

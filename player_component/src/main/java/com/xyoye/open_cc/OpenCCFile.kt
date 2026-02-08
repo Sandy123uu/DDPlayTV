@@ -1,6 +1,7 @@
 package com.xyoye.open_cc
 
 import android.content.Context
+import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.PathHelper
 import java.io.File
 import java.io.FileOutputStream
@@ -141,13 +142,25 @@ object OpenCCFile {
                         output.flush()
                     }
                 }
-                tmpFile.delete()
+                deleteTempFileIfExists(tmpFile, "rename fallback cleanup: $assetsFilePath")
             }
         } catch (e: Exception) {
-            if (tmpFile.exists()) {
-                tmpFile.delete()
-            }
+            deleteTempFileIfExists(tmpFile, "exception cleanup: $assetsFilePath")
             throw e
+        }
+    }
+
+    private fun deleteTempFileIfExists(
+        file: File,
+        reason: String
+    ) {
+        if (file.exists() && !file.delete()) {
+            ErrorReportHelper.postCatchedExceptionWithContext(
+                IllegalStateException("failed to delete temporary file"),
+                "OpenCCFile",
+                "copyFileFromAssetsAtomic",
+                "$reason, path=${file.absolutePath}",
+            )
         }
     }
 }

@@ -15,5 +15,6 @@ class SearchAdvancedActivity : BaseActivity<SearchAdvancedViewModel, ActivitySea
     override fun getLayoutId() = R.layout.activity_search_advanced
 
     override fun initView() {
+        // Intentionally empty: advanced search page currently has no runtime initialization.
     }
 }

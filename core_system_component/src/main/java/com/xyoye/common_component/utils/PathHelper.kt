@@ -91,11 +91,11 @@ object PathHelper {
     }
 
     private fun checkDirectory(dirFile: File) {
-        if (dirFile.isFile) {
-            dirFile.delete()
+        if (dirFile.isFile && !dirFile.delete()) {
+            throw IllegalStateException("Failed to delete file path: ${dirFile.absolutePath}")
         }
-        if (!dirFile.exists()) {
-            dirFile.mkdirs()
+        if (!dirFile.exists() && !dirFile.mkdirs()) {
+            throw IllegalStateException("Failed to create directory: ${dirFile.absolutePath}")
         }
     }
 }

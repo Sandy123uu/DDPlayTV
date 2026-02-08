@@ -272,7 +272,7 @@ class LiveDanmakuSocketClient(
     }
 
     private fun handleAuthReply(packet: LiveDanmakuPacket) {
-        val json = packet.body.toString(Charsets.UTF_8)
+        val json = packet.body.decodeToString()
         val code = runCatching { JSONObject(json).optInt("code", -1) }.getOrNull() ?: -1
         if (code == 0) {
             verified.set(true)
@@ -299,7 +299,7 @@ class LiveDanmakuSocketClient(
     }
 
     private fun handleCommand(packet: LiveDanmakuPacket) {
-        val json = packet.body.toString(Charsets.UTF_8)
+        val json = packet.body.decodeToString()
         val event = LiveDanmakuCommandParser.parseCommand(json) ?: return
         listener.onEvent(event)
     }

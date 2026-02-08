@@ -143,6 +143,7 @@ class SearchActivity : BaseActivity<SearchViewModel, ActivitySearchBinding>() {
                     count: Int,
                     after: Int
                 ) {
+                    // No-op: this page only reacts to finalized text in afterTextChanged.
                 }
 
                 override fun onTextChanged(
@@ -151,6 +152,7 @@ class SearchActivity : BaseActivity<SearchViewModel, ActivitySearchBinding>() {
                     before: Int,
                     count: Int
                 ) {
+                    // No-op: we update UI state after text is fully applied.
                 }
             },
         )
