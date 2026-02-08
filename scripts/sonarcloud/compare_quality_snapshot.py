@@ -246,7 +246,7 @@ def check_thresholds(current: dict[str, Any], thresholds: Thresholds) -> list[di
 
 def build_snapshot_id(baseline_key: str, target_key: str) -> str:
     raw = f"{baseline_key}->{target_key}".encode("utf-8")
-    return hashlib.sha1(raw).hexdigest()[:12]
+    return hashlib.sha256(raw).hexdigest()[:12]
 
 
 def build_comparison(

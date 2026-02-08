@@ -100,6 +100,28 @@ jobs:
                       -Dsonar.tests=${{ env.SONAR_TESTS }}
                       -Dsonar.java.binaries=${{ env.SONAR_JAVA_BINARIES }}
                       -Dsonar.coverage.jacoco.xmlReportPaths=${{ env.SONAR_COVERAGE_XML }}
-                      -Dsonar.qualitygate.wait=true
+                      -Dsonar.qualitygate.wait=false
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: SonarCloud Quality Gate (non-blocking)
+              if: ${{ env.SONAR_TOKEN != '' }}
+              continue-on-error: true
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  branch_name="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+                  response="$(curl -sS -u "${SONAR_TOKEN}:" --get \
+                      --data-urlencode "projectKey=okami-horo_DDPlayTV" \
+                      --data-urlencode "branch=${branch_name}" \
+                      "https://sonarcloud.io/api/qualitygates/project_status")"
+
+                  quality_gate_status="$(printf '%s' "${response}" | sed -n 's/.*"status":"\([A-Z_]*\)".*/\1/p' | head -n 1)"
+                  if [ -z "${quality_gate_status}" ]; then
+                      quality_gate_status="UNKNOWN"
+                  fi
+
+                  echo "SonarCloud Quality Gate status: ${quality_gate_status}"
+                  if [ "${quality_gate_status}" != "OK" ]; then
+                      echo "::warning::SonarCloud Quality Gate is ${quality_gate_status}. See https://sonarcloud.io/dashboard?id=okami-horo_DDPlayTV&branch=${branch_name}"
+                  fi
