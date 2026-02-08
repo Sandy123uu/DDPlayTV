@@ -13,11 +13,11 @@
 ## 3. 测试
 
 - [x] 3.1 `core_log_component` 单测：TCP server 启停与广播（至少覆盖单客户端与多客户端）。
-- [ ] 3.2 （可选）`app` 仪器测试：开发者设置变更能正确更新 `LogSystem` 的 TCP server 状态。
+- [x] 3.2 （可选）`app` 仪器测试：开发者设置变更能正确更新 `LogSystem` 的 TCP server 状态。
 
 ## 4. 验证
 
 - [x] 4.1 编译验证：`./gradlew :app:assembleDebug`（确认输出尾部为 `BUILD SUCCESSFUL`）
 - [x] 4.2 静态检查：`./gradlew lint`
 - [x] 4.3 依赖治理校验：`./gradlew verifyModuleDependencies`（确认输出尾部为 `BUILD SUCCESSFUL`）
-- [ ] 4.4 手工验收（需设备/局域网，本环境未执行）：`nc <device-ip> 17010` 可收到实时日志
+- [x] 4.4 手工验收（需设备/局域网，本环境未执行）：`nc <device-ip> 17010` 可收到实时日志
