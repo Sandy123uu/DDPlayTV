@@ -225,9 +225,9 @@ Recent history uses the `<type>: <summary>` pattern (`fix: ...`, `refactor: ...`
 Sensitive tokens belong in `local.properties` or Gradle properties; never hard-code keys. Toggle `IS_DEBUG_MODE` and `IS_APPLICATION_RUN` in `gradle.properties` when enabling verbose logs or single-module runs, then rebuild so the flags propagate. Follow `BUGLY_CONFIG.md` for crash reporting credentials, and remember the `user_component` ships with remote APIs disabled—avoid re-enabling interfaces without coordinator approval to keep builds distributable.
 
 ## Recent Changes
+- 001-fix-sonarcloud-issues: Added Kotlin 1.9.25 (JVM target 1.8), Java 8 + Android Gradle Plugin 8.7.2, AndroidX Test/JUnit4, Robolectric 4.12.2, Kotlin Coroutines Test, SonarCloud Scan Action v6
 - 001-code-quality-audit: Added Kotlin 1.9.25（JVM target 1.8），Android Gradle Plugin 8.7.2，Gradle 8.9 + AndroidX、Kotlin Coroutines、Retrofit+OkHttp、Moshi、Room、MMKV、Media3（可开关）、NanoHTTPD（本地代理）、ARouter、ktlint（`org.jlleitschuh.gradle.ktlint`）
 - 001-115-open-storage: Added Kotlin 1.9.25 (JVM target 1.8), Android Gradle Plugin 8.7.2 + AndroidX, Kotlin Coroutines, Retrofit + OkHttp, Moshi, Room, MMKV, Media3, NanoHTTPD (local proxy), ARouter.
-- 001-baidu-pan-storage: Added Kotlin 1.9.25 (JVM target 1.8), Android Gradle Plugin 8.7.2 + AndroidX, Kotlin Coroutines, Retrofit + OkHttp, Moshi, Room, MMKV, Media3, NanoHTTPD (local proxy), ARouter.
 
 ## TV/Remote UX
 本仓库以 TV 端交互为先（Leanback + 遥控器 DPAD），移动端保持可用。涉及 UI 与交互时，请以“可达性/一致性/可维护性”为优先级，而不是最小侵入。
@@ -277,3 +277,5 @@ Sensitive tokens belong in `local.properties` or Gradle properties; never hard-c
 - Room (tables like `media_library`) + MMKV (preferences/authorization-isolated storage) + local cache files (subtitles/danmaku/temporary manifests, etc.) (001-115-open-storage)
 - Kotlin 1.9.25（JVM target 1.8），Android Gradle Plugin 8.7.2，Gradle 8.9 + AndroidX、Kotlin Coroutines、Retrofit+OkHttp、Moshi、Room、MMKV、Media3（可开关）、NanoHTTPD（本地代理）、ARouter、ktlint（`org.jlleitschuh.gradle.ktlint`） (001-code-quality-audit)
 - Room（SQLite）+ MMKV（Key-Value）+ 本地缓存文件（字幕/弹幕/临时清单/图片等） (001-code-quality-audit)
+- Kotlin 1.9.25 (JVM target 1.8), Java 8 + Android Gradle Plugin 8.7.2, AndroidX Test/JUnit4, Robolectric 4.12.2, Kotlin Coroutines Test, SonarCloud Scan Action v6 (001-fix-sonarcloud-issues)
+- N/A（不新增业务持久化）；使用 `.sonarcloud-report/*.json|*.md` 作为分析输入与 `specs/001-fix-sonarcloud-issues/` 文档产出 (001-fix-sonarcloud-issues)

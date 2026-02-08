@@ -1,0 +1,471 @@
+openapi: 3.0.3
+info:
+  title: Quality Remediation API Contract
+  version: 0.1.0
+  description: |
+    Contract for SonarCloud issue remediation workflow tracking.
+    This contract is used for process alignment and audit evidence, not as a public runtime API.
+servers:
+  - url: https://quality-gate.internal
+    description: Example internal endpoint
+paths:
+  /quality/issues:
+    get:
+      summary: List quality issues within the scoped analysis line
+      operationId: listQualityIssues
+      parameters:
+        - name: analysisKey
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/IssueStatus'
+        - name: sourceScope
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/SourceScope'
+        - name: impactSeverity
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ImpactSeverity'
+      responses:
+        '200':
+          description: Issues matched by filters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/QualityIssueItem'
+
+  /quality/issues/{issueKey}/tasks:
+    post:
+      summary: Create remediation task for an issue
+      operationId: createRemediationTask
+      parameters:
+        - name: issueKey
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RemediationTaskItem'
+        '409':
+          description: Task already exists or issue is closed
+
+  /quality/tasks/{taskId}/transition:
+    post:
+      summary: Advance or rollback task status by workflow action
+      operationId: transitionTask
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskTransitionRequest'
+      responses:
+        '200':
+          description: Task status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RemediationTaskItem'
+        '422':
+          description: Transition violates workflow or evidence policy
+
+  /quality/hotspots/{hotspotKey}/review:
+    post:
+      summary: Submit hotspot review result
+      operationId: reviewHotspot
+      parameters:
+        - name: hotspotKey
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HotspotReviewRequest'
+      responses:
+        '200':
+          description: Hotspot review saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecurityHotspotReview'
+        '422':
+          description: Invalid risk disposition (for example high risk accepted)
+
+  /quality/issues/{issueKey}/disposition:
+    post:
+      summary: Record deferred/accepted/false-positive/exempt disposition
+      operationId: setIssueDisposition
+      parameters:
+        - name: issueKey
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssueDispositionRequest'
+      responses:
+        '200':
+          description: Disposition recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityIssueItem'
+        '422':
+          description: Missing reason/approval or scope mismatch
+
+  /quality/snapshots/compare:
+    post:
+      summary: Create baseline-versus-target quality comparison snapshot
+      operationId: createComparisonSnapshot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSnapshotRequest'
+      responses:
+        '201':
+          description: Snapshot generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityComparisonSnapshot'
+
+  /quality/snapshots/{snapshotId}:
+    get:
+      summary: Query a generated comparison snapshot
+      operationId: getComparisonSnapshot
+      parameters:
+        - name: snapshotId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Snapshot detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityComparisonSnapshot'
+
+components:
+  schemas:
+    IssueType:
+      type: string
+      enum: [BUG, VULNERABILITY, CODE_SMELL]
+
+    Severity:
+      type: string
+      enum: [BLOCKER, CRITICAL, MAJOR, MINOR, INFO]
+
+    ImpactSeverity:
+      type: string
+      enum: [HIGH, MEDIUM, LOW, INFO]
+
+    SourceScope:
+      type: string
+      enum: [FIRST_PARTY, THIRD_PARTY]
+
+    IssueStatus:
+      type: string
+      enum:
+        [
+          OPEN,
+          IN_PROGRESS,
+          FIXED_PENDING_ANALYSIS,
+          CLOSED,
+          DEFERRED,
+          ACCEPTED_RISK,
+          FALSE_POSITIVE,
+          EXEMPTED,
+        ]
+
+    TaskPriority:
+      type: string
+      enum: [P1, P2, P3]
+
+    TaskOutcome:
+      type: string
+      enum: [FIX, ACCEPT_RISK, DEFER, FALSE_POSITIVE, EXEMPT]
+
+    TaskStatus:
+      type: string
+      enum: [NEW, TRIAGED, IN_PROGRESS, READY_FOR_REVIEW, VERIFIED, CLOSED, REJECTED]
+
+    RiskLevel:
+      type: string
+      enum: [HIGH, MEDIUM, LOW]
+
+    HotspotReviewStatus:
+      type: string
+      enum: [TO_REVIEW, IN_REVIEW, REVIEWED_SAFE, REVIEWED_FIXED, REVIEWED_ACCEPTED]
+
+    GateStatus:
+      type: string
+      enum: [PASS, FAIL]
+
+    QualityIssueItem:
+      type: object
+      required: [issueKey, issueType, severity, impactSeverity, filePath, status, sourceScope]
+      properties:
+        issueKey:
+          type: string
+        ruleKey:
+          type: string
+        issueType:
+          $ref: '#/components/schemas/IssueType'
+        severity:
+          $ref: '#/components/schemas/Severity'
+        impactSeverity:
+          $ref: '#/components/schemas/ImpactSeverity'
+        modulePath:
+          type: string
+        filePath:
+          type: string
+        line:
+          type: integer
+        status:
+          $ref: '#/components/schemas/IssueStatus'
+        sourceScope:
+          $ref: '#/components/schemas/SourceScope'
+        baselineAnalysisKey:
+          type: string
+        currentAnalysisKey:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    RemediationTaskItem:
+      type: object
+      required: [taskId, issueKey, priority, targetOutcome, taskStatus, assignee, reviewer]
+      properties:
+        taskId:
+          type: string
+        issueKey:
+          type: string
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        targetOutcome:
+          $ref: '#/components/schemas/TaskOutcome'
+        taskStatus:
+          $ref: '#/components/schemas/TaskStatus'
+        assignee:
+          type: string
+        reviewer:
+          type: string
+        decisionReason:
+          type: string
+        evidenceLinks:
+          type: array
+          items:
+            type: string
+            format: uri
+        updatedAt:
+          type: string
+          format: date-time
+
+    SecurityHotspotReview:
+      type: object
+      required: [hotspotKey, issueKey, riskLevel, reviewStatus, disposition, reviewer, reviewedAt]
+      properties:
+        hotspotKey:
+          type: string
+        issueKey:
+          type: string
+        riskLevel:
+          $ref: '#/components/schemas/RiskLevel'
+        reviewStatus:
+          $ref: '#/components/schemas/HotspotReviewStatus'
+        disposition:
+          $ref: '#/components/schemas/TaskOutcome'
+        rationale:
+          type: string
+        reviewer:
+          type: string
+        acceptedBy:
+          type: string
+        reviewedAt:
+          type: string
+          format: date-time
+
+    QualityComparisonSnapshot:
+      type: object
+      required:
+        [
+          snapshotId,
+          baselineAnalysisKey,
+          targetAnalysisKey,
+          gateStatus,
+          totalIssuesBaseline,
+          totalIssuesCurrent,
+          vulnerabilitiesBaseline,
+          vulnerabilitiesCurrent,
+          highImpactBaseline,
+          highImpactCurrent,
+          hotspotsReviewedRate,
+          newCoverage,
+          newDuplicatedLinesDensity,
+          generatedAt,
+        ]
+      properties:
+        snapshotId:
+          type: string
+        baselineAnalysisKey:
+          type: string
+        targetAnalysisKey:
+          type: string
+        gateStatus:
+          $ref: '#/components/schemas/GateStatus'
+        totalIssuesBaseline:
+          type: integer
+        totalIssuesCurrent:
+          type: integer
+        vulnerabilitiesBaseline:
+          type: integer
+        vulnerabilitiesCurrent:
+          type: integer
+        highImpactBaseline:
+          type: integer
+        highImpactCurrent:
+          type: integer
+        hotspotsReviewedRate:
+          type: number
+          format: double
+        newCoverage:
+          type: number
+          format: double
+        newDuplicatedLinesDensity:
+          type: number
+          format: double
+        top10FilesDelta:
+          type: array
+          items:
+            type: object
+            required: [path, baselineCount, currentCount]
+            properties:
+              path:
+                type: string
+              baselineCount:
+                type: integer
+              currentCount:
+                type: integer
+        generatedAt:
+          type: string
+          format: date-time
+
+    CreateTaskRequest:
+      type: object
+      required: [priority, targetOutcome, assignee, reviewer]
+      properties:
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        targetOutcome:
+          $ref: '#/components/schemas/TaskOutcome'
+        assignee:
+          type: string
+        reviewer:
+          type: string
+
+    TaskTransitionAction:
+      type: string
+      enum: [TRIAGE, START, SUBMIT_REVIEW, VERIFY, CLOSE, REJECT, REOPEN]
+
+    TaskTransitionRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          $ref: '#/components/schemas/TaskTransitionAction'
+        decisionReason:
+          type: string
+        evidenceLinks:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    HotspotReviewRequest:
+      type: object
+      required: [issueKey, riskLevel, disposition, rationale, reviewer]
+      properties:
+        issueKey:
+          type: string
+        riskLevel:
+          $ref: '#/components/schemas/RiskLevel'
+        disposition:
+          $ref: '#/components/schemas/TaskOutcome'
+        rationale:
+          type: string
+        reviewer:
+          type: string
+        acceptedBy:
+          type: string
+
+    IssueDispositionType:
+      type: string
+      enum: [DEFER, ACCEPT_RISK, FALSE_POSITIVE, EXEMPT]
+
+    IssueDispositionRequest:
+      type: object
+      required: [disposition, reason, reviewer]
+      properties:
+        disposition:
+          $ref: '#/components/schemas/IssueDispositionType'
+        reason:
+          type: string
+        reviewer:
+          type: string
+        acceptedBy:
+          type: string
+
+    CreateSnapshotRequest:
+      type: object
+      required: [baselineAnalysisKey, targetAnalysisKey]
+      properties:
+        baselineAnalysisKey:
+          type: string
+        targetAnalysisKey:
+          type: string
+        includeTopFiles:
+          type: integer
+          default: 10
