@@ -102,7 +102,13 @@ class MainActivity : BaseShellActivity<ActivityMainBinding>() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        developerMenus = developerMenuService.create(this, menu)
+        developerMenus =
+            if (::developerMenuService.isInitialized) {
+                developerMenuService.create(this, menu)
+            } else {
+                LogFacade.w(LogModule.CORE, LOG_TAG, "developer menu service not injected, skip menu create")
+                null
+            }
         return super.onCreateOptionsMenu(menu)
     }
 

@@ -57,3 +57,4 @@ hs_err_pid*
 .build/
 .opencode/
 .sonarcloud-report/
+specs/

@@ -258,5 +258,8 @@ class DatabaseManager private constructor() {
                 MIGRATION_13_14,
                 MIGRATION_14_15,
                 MIGRATION_15_16,
-            ).build()
+            )
+            // 允许版本回退时执行破坏性迁移，避免 16->15 降级路径卡在启动阶段。
+            .fallbackToDestructiveMigrationOnDowngrade()
+            .build()
 }
