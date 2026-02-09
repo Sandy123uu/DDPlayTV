@@ -43,6 +43,7 @@ import com.xyoye.common_component.source.VideoSourceManager
 import com.xyoye.common_component.source.base.BaseVideoSource
 import com.xyoye.common_component.source.factory.StorageVideoSourceFactory
 import com.xyoye.common_component.source.media.StorageVideoSource
+import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.utils.StatusBarStyle
 import com.xyoye.common_component.utils.danmu.StorageDanmuMatcher
 import com.xyoye.common_component.utils.screencast.ScreencastHandler
@@ -96,6 +97,7 @@ class PlayerActivity :
         private const val TAG_CONFIG = "PlayerConfig"
         private const val TAG_CAST = "PlayerCast"
         private const val TAG_MEDIA3 = "Media3Session"
+        private const val BACK_EXIT_CONFIRM_WINDOW_MS = 1500L
     }
 
     private val danmuViewModel: PlayerDanmuViewModel by lazy {
@@ -148,6 +150,7 @@ class PlayerActivity :
     private var playbackAddonJob: Job? = null
     private var playbackRecoveryAttempts: Int = 0
     private var pendingSeekPositionMs: Long? = null
+    private val exitConfirmGuard = BackPressExitConfirmGuard(BACK_EXIT_CONFIRM_WINDOW_MS)
 
     private val media3ServiceConnection =
         object : ServiceConnection {
@@ -261,6 +264,8 @@ class PlayerActivity :
     }
 
     override fun onPause() {
+        exitConfirmGuard.reset()
+
         val popupNotShowing = popupManager.isShowing().not()
         val backgroundAllowed = PlayerConfig.isBackgroundPlay() && media3SupportsBackgroundPlayback()
         val backgroundPlayDisable = backgroundAllowed.not()
@@ -292,6 +297,17 @@ class PlayerActivity :
         if (danDanPlayer.onBackPressed()) {
             return
         }
+
+        if (isTelevisionUiMode() && exitConfirmGuard.shouldInterceptExit()) {
+            ToastCenter.showToast("再按一次退出播放")
+            return
+        }
+
+        exitConfirmGuard.reset()
+        exitPlayerByBack()
+    }
+
+    private fun exitPlayerByBack() {
         danDanPlayer.recordPlayInfo()
         finish()
     }
