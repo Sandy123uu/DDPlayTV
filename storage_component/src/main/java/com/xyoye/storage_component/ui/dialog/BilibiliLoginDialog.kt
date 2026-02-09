@@ -1,23 +1,24 @@
 package com.xyoye.storage_component.ui.dialog
 
 import android.app.Activity
-import android.os.SystemClock
+import android.graphics.Bitmap
 import androidx.core.view.isVisible
 import com.xyoye.common_component.bilibili.BilibiliApiPreferencesStore
 import com.xyoye.common_component.bilibili.BilibiliApiType
 import com.xyoye.common_component.bilibili.BilibiliPlaybackPreferencesStore
-import com.xyoye.common_component.bilibili.login.BilibiliLoginPollResult
 import com.xyoye.common_component.bilibili.repository.BilibiliRepository
-import com.xyoye.common_component.extension.toResColor
-import com.xyoye.common_component.utils.QrCodeHelper
-import com.xyoye.common_component.utils.dp2px
+import com.xyoye.common_component.log.LogFacade
+import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.weight.dialog.BaseBottomDialog
 import com.xyoye.data_component.entity.MediaLibraryEntity
 import com.xyoye.storage_component.R
 import com.xyoye.storage_component.databinding.DialogBilibiliLoginBinding
+import com.xyoye.storage_component.ui.dialog.scanlogin.ScanLoginCoordinator
+import com.xyoye.storage_component.ui.dialog.scanlogin.ScanUiState
+import com.xyoye.storage_component.ui.dialog.scanlogin.provider.BilibiliScanProvider
+import com.xyoye.storage_component.ui.dialog.scanlogin.provider.BilibiliScanSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -28,12 +29,12 @@ class BilibiliLoginDialog(
     private val library: MediaLibraryEntity,
     private val apiType: BilibiliApiType = BilibiliApiPreferencesStore.read(library).apiType,
     private val onLoginSuccess: () -> Unit,
-    private val onDismiss: (() -> Unit)? = null
+    private val onDismiss: (() -> Unit)? = null,
 ) : BaseBottomDialog<DialogBilibiliLoginBinding>(activity) {
     private lateinit var binding: DialogBilibiliLoginBinding
 
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var pollingJob: Job? = null
+    private var coordinator: ScanLoginCoordinator<BilibiliScanSession, Bitmap, Unit>? = null
 
     private val storageKey = BilibiliPlaybackPreferencesStore.storageKey(library)
     private val repository = BilibiliRepository(storageKey)
@@ -52,7 +53,7 @@ class BilibiliLoginDialog(
         setNegativeListener { dismiss() }
 
         setOnDismissListener {
-            pollingJob?.cancel()
+            coordinator?.cancel()
             scope.cancel()
             onDismiss?.invoke()
         }
@@ -61,74 +62,70 @@ class BilibiliLoginDialog(
     }
 
     private fun startLoginFlow() {
-        pollingJob?.cancel()
-        pollingJob =
-            scope.launch {
-                binding.loadingPb.isVisible = true
-                binding.statusTv.text = "正在获取二维码…"
-
-                val generate = repository.loginQrCodeGenerate(apiType)
-                val data = generate.getOrNull()
-                if (data == null || data.url.isBlank() || data.qrcodeKey.isBlank()) {
-                    binding.loadingPb.isVisible = false
-                    binding.statusTv.text = "获取二维码失败，请稍后重试"
-                    return@launch
-                }
-
-                val qrCode =
-                    QrCodeHelper.createQrCode(
-                        context = activity,
-                        content = data.url,
-                        sizePx = dp2px(220),
-                        logoResId = R.mipmap.ic_logo,
-                        bitmapColor =
-                            com.xyoye.core_ui_component.R.color.text_black
-                                .toResColor(activity),
-                        errorContext = "生成 Bilibili 登录二维码失败",
-                    )
-                binding.qrCodeIv.setImageBitmap(qrCode)
-                binding.loadingPb.isVisible = false
-                binding.statusTv.text = "请使用哔哩哔哩 App 扫码登录"
-
-                pollUntilDone(data.qrcodeKey)
+        coordinator?.cancel()
+        coordinator =
+            ScanLoginCoordinator(
+                scope = scope,
+                provider =
+                    BilibiliScanProvider(
+                        activity = activity,
+                        repository = repository,
+                        apiType = apiType,
+                    ),
+            ) { state ->
+                renderState(state)
             }
+        coordinator?.start()
     }
 
-    private suspend fun pollUntilDone(qrcodeKey: String) {
-        val start = SystemClock.elapsedRealtime()
-        while (scope.coroutineContext[Job]?.isActive == true) {
-            val poll = repository.loginQrCodePoll(qrcodeKey, apiType)
-            val result = poll.getOrNull()
-            if (result == null) {
-                binding.statusTv.text = "登录状态获取失败，请检查网络后重试"
-                return
+    private fun renderState(state: ScanUiState<Bitmap, Unit>) {
+        when (state) {
+            is ScanUiState.Loading -> {
+                binding.loadingPb.isVisible = true
+                binding.statusTv.text = state.message
             }
 
-            when (result) {
-                BilibiliLoginPollResult.WaitingScan -> binding.statusTv.text = "等待扫码…"
-                BilibiliLoginPollResult.WaitingConfirm -> binding.statusTv.text = "已扫码，请在 App 上确认登录"
-                BilibiliLoginPollResult.Expired -> {
-                    binding.statusTv.text = "二维码已失效，请点击重试"
-                    return
-                }
+            is ScanUiState.QrReady -> {
+                binding.qrCodeIv.setImageBitmap(state.qrData)
+                binding.loadingPb.isVisible = false
+                binding.statusTv.text = state.hintMessage
+            }
 
-                BilibiliLoginPollResult.Success -> {
-                    binding.statusTv.text = "登录成功"
+            is ScanUiState.Progress -> {
+                binding.loadingPb.isVisible = false
+                binding.statusTv.text = state.message
+            }
+
+            is ScanUiState.Success -> {
+                binding.loadingPb.isVisible = false
+                binding.statusTv.text = state.message
+                scope.launch {
                     delay(300)
                     dismiss()
                     onLoginSuccess.invoke()
-                    return
                 }
-
-                is BilibiliLoginPollResult.Error -> binding.statusTv.text = result.message
             }
 
-            if (SystemClock.elapsedRealtime() - start > 2 * 60 * 1000) {
-                binding.statusTv.text = "二维码已过期，请点击重试"
-                return
+            is ScanUiState.Failure -> {
+                binding.loadingPb.isVisible = false
+                binding.statusTv.text = state.failure.userMessage
+                LogFacade.e(
+                    LogModule.STORAGE,
+                    LOG_TAG,
+                    "bilibili scan login failed",
+                    mapOf(
+                        "storageKey" to storageKey,
+                        "apiType" to apiType.name,
+                        "category" to state.failure.category.name,
+                        "debugCode" to state.failure.debugCode,
+                        "retryable" to state.failure.retryable.toString(),
+                    ),
+                )
             }
-
-            delay(1500)
         }
+    }
+
+    private companion object {
+        private const val LOG_TAG: String = "bilibili_scan_login"
     }
 }

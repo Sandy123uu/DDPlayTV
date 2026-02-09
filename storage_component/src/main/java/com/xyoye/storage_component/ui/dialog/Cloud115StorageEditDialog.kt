@@ -136,8 +136,11 @@ class Cloud115StorageEditDialog(
                     ?: DEFAULT_LOGIN_APP
             }.getOrDefault(DEFAULT_LOGIN_APP)
 
+        val loginStorageKey = Cloud115AuthStore.storageKey(editLibrary)
+
         Cloud115LoginDialog(
             activity = activity,
+            storageKey = loginStorageKey,
             initialLoginApp = initialLoginApp,
             onLoginSuccess = { result ->
                 handleAuthSuccess(

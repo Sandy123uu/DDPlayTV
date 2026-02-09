@@ -21,6 +21,7 @@ import com.xyoye.data_component.data.cloud115.Cloud115QRCodeStatusResp
 import com.xyoye.data_component.data.cloud115.Cloud115QRCodeTokenResp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.ResponseBody
 import java.nio.charset.StandardCharsets
 
 class Cloud115Repository(
@@ -50,6 +51,17 @@ class Cloud115Repository(
             response
         }
 
+    suspend fun qrcodeImage(uid: String): Result<ResponseBody> =
+        requestQrCodeApi(
+            reason = "qrcodeImage",
+            extraInfo = "uidLength=${uid.length}",
+        ) {
+            RetrofitManager.cloud115Service.qrcodeImage(
+                baseUrl = Api.CLOUD_115_QRCODE_API,
+                uid = uid,
+            )
+        }
+
     suspend fun qrcodeStatus(
         uid: String,
         time: Long,
@@ -77,7 +89,8 @@ class Cloud115Repository(
 
     suspend fun qrcodeLogin(
         uid: String,
-        app: String = DEFAULT_QRCODE_APP
+        app: String = DEFAULT_QRCODE_APP,
+        persistAuth: Boolean = true
     ): Result<Cloud115QRCodeLoginResp> =
         requestPassportApi(
             reason = "qrcodeLogin",
@@ -112,18 +125,20 @@ class Cloud115Repository(
                     ?: response.data?.face?.faceMedium
                     ?: response.data?.face?.faceSmall
 
-            Cloud115AuthStore.writeAuthorized(
-                storageKey = storageKey,
-                cookie = cookieHeader,
-                userId = userId,
-                loginApp = app,
-                userName = response.data?.userName,
-                avatarUrl = avatarUrl,
-                updatedAtMs = System.currentTimeMillis(),
-            )
+            if (persistAuth) {
+                Cloud115AuthStore.writeAuthorized(
+                    storageKey = storageKey,
+                    cookie = cookieHeader,
+                    userId = userId,
+                    loginApp = app,
+                    userName = response.data?.userName,
+                    avatarUrl = avatarUrl,
+                    updatedAtMs = System.currentTimeMillis(),
+                )
 
-            lastCookieCheckAtMs = System.currentTimeMillis()
-            lastCookieValid = true
+                lastCookieCheckAtMs = System.currentTimeMillis()
+                lastCookieValid = true
+            }
             LogFacade.i(
                 LogModule.STORAGE,
                 LOG_TAG,

@@ -68,19 +68,11 @@ fun AppExtension.setupSignConfigs(project: Project) = apply {
             versionNameSuffix = "-debug"
             resValue("string", "app_name", "DDPlayTV (Debug)")
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
         }
 
         getByName("release") {
             signingConfig = signingConfigs.findByName(this.name)
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            isMinifyEnabled = false
         }
 
         create("beta") {
