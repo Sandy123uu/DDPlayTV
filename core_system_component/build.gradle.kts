@@ -135,4 +135,6 @@ dependencies {
     kapt(files("../repository/mmkv/mmkv-compiler.jar"))
 
     kapt(Dependencies.Alibaba.arouter_compiler)
+
+    testImplementation(Dependencies.Testing.robolectric)
 }
