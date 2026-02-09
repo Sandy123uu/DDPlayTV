@@ -3,11 +3,14 @@ package com.xyoye.common_component.database.migration
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
 import com.xyoye.common_component.database.DatabaseInfo
 import com.xyoye.common_component.database.DatabaseManager
 import org.json.JSONArray
 import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,22 +43,139 @@ class RoomSchemaMigrationGateTest {
 
         try {
             val supportDb = roomDb.openHelper.writableDatabase
-
-            val cursor = supportDb.query("PRAGMA table_info(`media_library`)")
-            val columnNames = mutableSetOf<String>()
-            cursor.use {
-                val nameIndex = it.getColumnIndex("name")
-                while (it.moveToNext()) {
-                    if (nameIndex >= 0) {
-                        columnNames.add(it.getString(nameIndex))
-                    }
-                }
-            }
+            val columnNames = queryColumnNames(supportDb, tableName = TABLE_MEDIA_LIBRARY)
 
             assertTrue(
                 "Migration 15->16 must add column web_dav_allow_insecure_tls to media_library",
-                columnNames.contains("web_dav_allow_insecure_tls"),
+                columnNames.contains(COLUMN_WEB_DAV_ALLOW_INSECURE_TLS),
             )
+        } finally {
+            roomDb.close()
+            deleteDatabaseFiles(context, TEST_DB_NAME)
+        }
+    }
+
+    @Test
+    fun migration16To15KeepsMediaLibraryRowsAndSidecar() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        deleteDatabaseFiles(context, TEST_DB_NAME)
+
+        val dbFile =
+            context.getDatabasePath(TEST_DB_NAME).also { file ->
+                file.parentFile?.mkdirs()
+            }
+
+        val schemaJson = loadSchemaJson(version = NEW_VERSION)
+        createDatabaseFromRoomSchemaJson(dbFile, schemaJson, version = NEW_VERSION)
+
+        val roomDb =
+            Room
+                .databaseBuilder(context, DatabaseInfo::class.java, TEST_DB_NAME)
+                .build()
+
+        try {
+            val supportDb = roomDb.openHelper.writableDatabase
+            seedMediaLibraryRows(supportDb)
+
+            DatabaseManager.MIGRATION_16_15.migrate(supportDb)
+            supportDb.version = OLD_VERSION
+
+            val columnNames = queryColumnNames(supportDb, tableName = TABLE_MEDIA_LIBRARY)
+            assertFalse(
+                "Migration 16->15 must remove column web_dav_allow_insecure_tls from media_library",
+                columnNames.contains(COLUMN_WEB_DAV_ALLOW_INSECURE_TLS),
+            )
+
+            val mediaRows =
+                queryMediaLibraryRowsWithoutTls(supportDb)
+                    .associateBy { it.id }
+            assertEquals(2, mediaRows.size)
+            assertEquals("LibraryA", mediaRows.getValue(1L).displayName)
+            assertEquals("LibraryB", mediaRows.getValue(2L).displayName)
+            assertEquals(2, mediaRows.getValue(1L).playerTypeOverride)
+            assertEquals(0, mediaRows.getValue(2L).playerTypeOverride)
+
+            val sidecarMap = queryTlsSidecar(supportDb)
+            assertEquals(mapOf(1L to 1, 2L to 0), sidecarMap)
+        } finally {
+            roomDb.close()
+            deleteDatabaseFiles(context, TEST_DB_NAME)
+        }
+    }
+
+    @Test
+    fun migration16To15Then15To16RestoresTlsValues() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        deleteDatabaseFiles(context, TEST_DB_NAME)
+
+        val dbFile =
+            context.getDatabasePath(TEST_DB_NAME).also { file ->
+                file.parentFile?.mkdirs()
+            }
+
+        val schemaJson = loadSchemaJson(version = NEW_VERSION)
+        createDatabaseFromRoomSchemaJson(dbFile, schemaJson, version = NEW_VERSION)
+
+        val roomDb =
+            Room
+                .databaseBuilder(context, DatabaseInfo::class.java, TEST_DB_NAME)
+                .build()
+
+        try {
+            val supportDb = roomDb.openHelper.writableDatabase
+            seedMediaLibraryRows(supportDb)
+
+            DatabaseManager.MIGRATION_16_15.migrate(supportDb)
+            supportDb.version = OLD_VERSION
+
+            DatabaseManager.MIGRATION_15_16.migrate(supportDb)
+            supportDb.version = NEW_VERSION
+
+            val columnNames = queryColumnNames(supportDb, tableName = TABLE_MEDIA_LIBRARY)
+            assertTrue(
+                "Migration 15->16 must re-add column web_dav_allow_insecure_tls",
+                columnNames.contains(COLUMN_WEB_DAV_ALLOW_INSECURE_TLS),
+            )
+
+            val restoredTlsMap = queryMediaLibraryTlsMap(supportDb)
+            assertEquals(mapOf(1L to 1, 2L to 0), restoredTlsMap)
+            assertFalse(tableExists(supportDb, TABLE_MEDIA_LIBRARY_SIDECAR))
+        } finally {
+            roomDb.close()
+            deleteDatabaseFiles(context, TEST_DB_NAME)
+        }
+    }
+
+    @Test
+    fun migration16To15KeepsPlayHistoryRowsUntouched() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        deleteDatabaseFiles(context, TEST_DB_NAME)
+
+        val dbFile =
+            context.getDatabasePath(TEST_DB_NAME).also { file ->
+                file.parentFile?.mkdirs()
+            }
+
+        val schemaJson = loadSchemaJson(version = NEW_VERSION)
+        createDatabaseFromRoomSchemaJson(dbFile, schemaJson, version = NEW_VERSION)
+
+        val roomDb =
+            Room
+                .databaseBuilder(context, DatabaseInfo::class.java, TEST_DB_NAME)
+                .build()
+
+        try {
+            val supportDb = roomDb.openHelper.writableDatabase
+            seedMediaLibraryRows(supportDb)
+            seedPlayHistoryRows(supportDb)
+
+            val before = queryPlayHistoryRows(supportDb)
+
+            DatabaseManager.MIGRATION_16_15.migrate(supportDb)
+            supportDb.version = OLD_VERSION
+
+            val after = queryPlayHistoryRows(supportDb)
+            assertEquals(before, after)
         } finally {
             roomDb.close()
             deleteDatabaseFiles(context, TEST_DB_NAME)
@@ -135,6 +255,157 @@ class RoomSchemaMigrationGateTest {
         }
     }
 
+    private fun seedMediaLibraryRows(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            "INSERT INTO media_library(" +
+                "id, display_name, url, media_type, account, password, is_anonymous, port, describe," +
+                "ftp_mode, ftp_address, ftp_encoding, smb_v2, smb_share_path, remote_secret," +
+                "web_dav_strict, web_dav_allow_insecure_tls, screencast_address, remote_anime_grouping, player_type_override" +
+                ") VALUES(" +
+                "1, 'LibraryA', 'https://example.com/a', 'webdav', 'a', 'pa', 0, 443, 'desc-a'," +
+                "0, '', 'UTF-8', 1, '/a', 'secret-a'," +
+                "1, 1, 'cast-a', 0, 2" +
+                ")",
+        )
+        database.execSQL(
+            "INSERT INTO media_library(" +
+                "id, display_name, url, media_type, account, password, is_anonymous, port, describe," +
+                "ftp_mode, ftp_address, ftp_encoding, smb_v2, smb_share_path, remote_secret," +
+                "web_dav_strict, web_dav_allow_insecure_tls, screencast_address, remote_anime_grouping, player_type_override" +
+                ") VALUES(" +
+                "2, 'LibraryB', 'https://example.com/b', 'webdav', 'b', 'pb', 1, 80, 'desc-b'," +
+                "0, '', 'UTF-8', 0, '/b', 'secret-b'," +
+                "1, 0, 'cast-b', 1, 0" +
+                ")",
+        )
+    }
+
+    private fun seedPlayHistoryRows(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            "INSERT INTO play_history(" +
+                "id, video_name, url, media_type, video_position, video_duration, play_time, danmu_path, episode_id," +
+                "subtitle_path, torrent_path, torrent_index, http_header, unique_key, storage_path, storage_id, audio_path" +
+                ") VALUES(" +
+                "1, 'VideoA', 'play://a', 'webdav', 120, 3600, 1, NULL, 'ep-a'," +
+                "NULL, NULL, -1, NULL, 'unique-a', NULL, 1, NULL" +
+                ")",
+        )
+    }
+
+    private fun queryColumnNames(
+        database: SupportSQLiteDatabase,
+        tableName: String
+    ): Set<String> {
+        val cursor = database.query("PRAGMA table_info(`$tableName`)")
+        val columnNames = mutableSetOf<String>()
+        cursor.use {
+            val nameIndex = it.getColumnIndex("name")
+            while (it.moveToNext()) {
+                if (nameIndex >= 0) {
+                    columnNames.add(it.getString(nameIndex))
+                }
+            }
+        }
+        return columnNames
+    }
+
+    private fun queryMediaLibraryRowsWithoutTls(database: SupportSQLiteDatabase): List<MediaLibraryRow> {
+        val cursor =
+            database.query(
+                "SELECT id, display_name, player_type_override FROM media_library ORDER BY id",
+            )
+        return cursor.use {
+            val idIndex = it.getColumnIndex("id")
+            val displayNameIndex = it.getColumnIndex("display_name")
+            val playerTypeOverrideIndex = it.getColumnIndex("player_type_override")
+            val rows = mutableListOf<MediaLibraryRow>()
+            while (it.moveToNext()) {
+                rows.add(
+                    MediaLibraryRow(
+                        id = it.getLong(idIndex),
+                        displayName = it.getString(displayNameIndex),
+                        playerTypeOverride = it.getInt(playerTypeOverrideIndex),
+                    ),
+                )
+            }
+            rows
+        }
+    }
+
+    private fun queryTlsSidecar(database: SupportSQLiteDatabase): Map<Long, Int> {
+        val cursor =
+            database.query(
+                "SELECT id, web_dav_allow_insecure_tls FROM $TABLE_MEDIA_LIBRARY_SIDECAR ORDER BY id",
+            )
+        return cursor.use {
+            val idIndex = it.getColumnIndex("id")
+            val valueIndex = it.getColumnIndex(COLUMN_WEB_DAV_ALLOW_INSECURE_TLS)
+            val map = linkedMapOf<Long, Int>()
+            while (it.moveToNext()) {
+                map[it.getLong(idIndex)] = it.getInt(valueIndex)
+            }
+            map
+        }
+    }
+
+    private fun queryMediaLibraryTlsMap(database: SupportSQLiteDatabase): Map<Long, Int> {
+        val cursor =
+            database.query(
+                "SELECT id, web_dav_allow_insecure_tls FROM media_library ORDER BY id",
+            )
+        return cursor.use {
+            val idIndex = it.getColumnIndex("id")
+            val tlsIndex = it.getColumnIndex(COLUMN_WEB_DAV_ALLOW_INSECURE_TLS)
+            val map = linkedMapOf<Long, Int>()
+            while (it.moveToNext()) {
+                map[it.getLong(idIndex)] = it.getInt(tlsIndex)
+            }
+            map
+        }
+    }
+
+    private fun queryPlayHistoryRows(database: SupportSQLiteDatabase): List<PlayHistoryRow> {
+        val cursor =
+            database.query(
+                "SELECT id, video_name, unique_key, storage_id FROM play_history ORDER BY id",
+            )
+        return cursor.use {
+            val idIndex = it.getColumnIndex("id")
+            val videoNameIndex = it.getColumnIndex("video_name")
+            val uniqueKeyIndex = it.getColumnIndex("unique_key")
+            val storageIdIndex = it.getColumnIndex("storage_id")
+            val rows = mutableListOf<PlayHistoryRow>()
+            while (it.moveToNext()) {
+                val storageId =
+                    if (it.isNull(storageIdIndex)) {
+                        null
+                    } else {
+                        it.getLong(storageIdIndex)
+                    }
+                rows.add(
+                    PlayHistoryRow(
+                        id = it.getLong(idIndex),
+                        videoName = it.getString(videoNameIndex),
+                        uniqueKey = it.getString(uniqueKeyIndex),
+                        storageId = storageId,
+                    ),
+                )
+            }
+            rows
+        }
+    }
+
+    private fun tableExists(
+        database: SupportSQLiteDatabase,
+        tableName: String
+    ): Boolean {
+        val cursor =
+            database.query(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='$tableName' LIMIT 1",
+            )
+        return cursor.use { it.moveToFirst() }
+    }
+
     private fun forEachObject(
         array: JSONArray,
         block: (JSONObject) -> Unit
@@ -169,11 +440,27 @@ class RoomSchemaMigrationGateTest {
         }
     }
 
+    private data class MediaLibraryRow(
+        val id: Long,
+        val displayName: String,
+        val playerTypeOverride: Int
+    )
+
+    private data class PlayHistoryRow(
+        val id: Long,
+        val videoName: String,
+        val uniqueKey: String,
+        val storageId: Long?
+    )
+
     private companion object {
         const val OLD_VERSION = 15
         const val NEW_VERSION = 16
         const val TEST_DB_NAME = "room_migration_gate_test.db"
         private const val ROOM_TABLE_NAME_PLACEHOLDER = "${'$'}{TABLE_NAME}"
         private const val ROOM_VIEW_NAME_PLACEHOLDER = "${'$'}{VIEW_NAME}"
+        private const val TABLE_MEDIA_LIBRARY = "media_library"
+        private const val TABLE_MEDIA_LIBRARY_SIDECAR = "media_library_v16_ext"
+        private const val COLUMN_WEB_DAV_ALLOW_INSECURE_TLS = "web_dav_allow_insecure_tls"
     }
 }

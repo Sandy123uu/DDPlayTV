@@ -16,6 +16,9 @@ class DatabaseManager private constructor() {
     // "ALTER TABLE magnet_screen ADD COLUMN screen_id INTEGER NOT NULL"
 
     companion object {
+        private const val MEDIA_LIBRARY_SIDECAR_TABLE = "media_library_v16_ext"
+        private const val MEDIA_LIBRARY_TEMP_TABLE = "media_library_temp"
+
         val MIGRATION_1_2 =
             object : Migration(1, 2) {
                 override fun migrate(database: SupportSQLiteDatabase) {
@@ -226,6 +229,83 @@ class DatabaseManager private constructor() {
                     database.execSQL(
                         "ALTER TABLE media_library ADD COLUMN web_dav_allow_insecure_tls INTEGER NOT NULL DEFAULT 0",
                     )
+
+                    val sidecarExists =
+                        database
+                            .query(
+                                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='$MEDIA_LIBRARY_SIDECAR_TABLE' LIMIT 1",
+                            ).use { cursor ->
+                                cursor.moveToFirst()
+                            }
+                    if (sidecarExists) {
+                        database.execSQL(
+                            "UPDATE media_library " +
+                                "SET web_dav_allow_insecure_tls = COALESCE((" +
+                                "SELECT web_dav_allow_insecure_tls FROM $MEDIA_LIBRARY_SIDECAR_TABLE " +
+                                "WHERE $MEDIA_LIBRARY_SIDECAR_TABLE.id = media_library.id" +
+                                "), web_dav_allow_insecure_tls)",
+                        )
+                        database.execSQL("DROP TABLE IF EXISTS $MEDIA_LIBRARY_SIDECAR_TABLE")
+                    }
+                }
+            }
+
+        val MIGRATION_16_15 =
+            object : Migration(16, 15) {
+                override fun migrate(database: SupportSQLiteDatabase) {
+                    database.execSQL(
+                        "CREATE TABLE IF NOT EXISTS $MEDIA_LIBRARY_SIDECAR_TABLE(" +
+                            "id INTEGER NOT NULL PRIMARY KEY," +
+                            "web_dav_allow_insecure_tls INTEGER NOT NULL" +
+                            ")",
+                    )
+                    database.execSQL("DELETE FROM $MEDIA_LIBRARY_SIDECAR_TABLE")
+                    database.execSQL(
+                        "INSERT INTO $MEDIA_LIBRARY_SIDECAR_TABLE(id, web_dav_allow_insecure_tls) " +
+                            "SELECT id, web_dav_allow_insecure_tls FROM media_library",
+                    )
+
+                    database.execSQL("DROP TABLE IF EXISTS $MEDIA_LIBRARY_TEMP_TABLE")
+                    database.execSQL(
+                        "CREATE TABLE $MEDIA_LIBRARY_TEMP_TABLE(" +
+                            "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," +
+                            "display_name TEXT NOT NULL," +
+                            "url TEXT NOT NULL," +
+                            "media_type TEXT NOT NULL," +
+                            "account TEXT," +
+                            "password TEXT," +
+                            "is_anonymous INTEGER NOT NULL," +
+                            "port INTEGER NOT NULL," +
+                            "describe TEXT," +
+                            "ftp_mode INTEGER NOT NULL," +
+                            "ftp_address TEXT NOT NULL," +
+                            "ftp_encoding TEXT NOT NULL," +
+                            "smb_v2 INTEGER NOT NULL," +
+                            "smb_share_path TEXT," +
+                            "remote_secret TEXT," +
+                            "web_dav_strict INTEGER NOT NULL," +
+                            "screencast_address TEXT NOT NULL," +
+                            "remote_anime_grouping INTEGER NOT NULL," +
+                            "player_type_override INTEGER NOT NULL" +
+                            ")",
+                    )
+                    database.execSQL(
+                        "INSERT INTO $MEDIA_LIBRARY_TEMP_TABLE(" +
+                            "id, display_name, url, media_type, account, password, is_anonymous, port, describe," +
+                            "ftp_mode, ftp_address, ftp_encoding, smb_v2, smb_share_path, remote_secret," +
+                            "web_dav_strict, screencast_address, remote_anime_grouping, player_type_override" +
+                            ") " +
+                            "SELECT " +
+                            "id, display_name, url, media_type, account, password, is_anonymous, port, describe," +
+                            "ftp_mode, ftp_address, ftp_encoding, smb_v2, smb_share_path, remote_secret," +
+                            "web_dav_strict, screencast_address, remote_anime_grouping, player_type_override " +
+                            "FROM media_library",
+                    )
+                    database.execSQL("DROP TABLE media_library")
+                    database.execSQL("ALTER TABLE $MEDIA_LIBRARY_TEMP_TABLE RENAME TO media_library")
+                    database.execSQL(
+                        "CREATE UNIQUE INDEX IF NOT EXISTS index_media_library_url_media_type ON media_library(url, media_type)",
+                    )
                 }
             }
 
@@ -258,8 +338,7 @@ class DatabaseManager private constructor() {
                 MIGRATION_13_14,
                 MIGRATION_14_15,
                 MIGRATION_15_16,
+                MIGRATION_16_15,
             )
-            // 允许版本回退时执行破坏性迁移，避免 16->15 降级路径卡在启动阶段。
-            .fallbackToDestructiveMigrationOnDowngrade()
             .build()
 }
