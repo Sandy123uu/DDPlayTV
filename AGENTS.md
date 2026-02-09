@@ -12,20 +12,21 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-The app follows a modular MVVM layout. The composition root lives in `app/` (launcher shell + global wiring). Feature/business modules live in sibling directories (e.g. `anime_component/`, `local_component/`, `player_component/`, `storage_component/`, `user_component/`, `bilibili_component/`). Shared foundations are provided by `core_*` modules and `data_component/`. Build tooling resides in `buildSrc/`, and custom assets/scripts live under `document/`, `scripts/`, and `repository/`. Prefer keeping large media/prompts in dedicated folders rather than polluting module folders.
+The app follows a modular MVVM layout. The composition root lives in `app/` (launcher shell + global wiring). Feature/business modules live in sibling directories (e.g. `anime_component/`, `local_component/`, `player_component/`, `storage_component/`, `user_component/`). `bilibili_component/` acts as an infrastructure integration module reused across features. Shared foundations are provided by `core_*` modules and `data_component/`. Build tooling resides in `buildSrc/`, and custom assets/scripts live under `document/`, `scripts/`, and `repository/`. Prefer keeping large media/prompts in dedicated folders rather than polluting module folders.
 
 ## Module Overview (based on `settings.gradle.kts`)
 > Scope: only modules included via `include(...)` in `settings.gradle.kts`. The repo may contain similarly named folders that are not part of the main build.
 
-- Total modules: `21` (`15` app/core/data + `6` bundled `repository` dependencies)
+- Total modules: `21` (`1` app + `5` feature + `1` infra integration + `7` core + `1` data + `6` bundled `repository` dependencies)
 - App shell (1)
   - `:app`: app entry + shell (startup/main UI including TV), composes all modules into the final APK; also hosts global capabilities like Media3 sessions/background services.
-- Feature/business modules (6)
+- Feature/business modules (5)
   - `:anime_component`: anime/resource search, filters, details, follow/history (including magnet-search UI).
   - `:local_component`: local media library + playback entry; playback history; danmaku/subtitle source binding and downloads (e.g. Bilibili danmaku, Shooter subtitles).
   - `:player_component`: player capabilities + UI (Media3/VLC/mpv adapters, subtitles/ASS rendering, danmaku rendering/filtering, TV/gesture controls, caching, etc.).
   - `:storage_component`: storage + “streaming/casting” UI (file browsing, remote storage config, QR/remote scan, casting provider/receiver, etc.).
   - `:user_component`: user center + settings (login/profile, theme, player/app/developer settings, cache/scan management, about/licenses, etc.).
+- Infrastructure integration modules (1)
   - `:bilibili_component`: Bilibili integration (auth/cookies, signing, playback links/MPD, danmaku download, live danmaku socket, playback heartbeat + risk-control state), reused across modules.
 - Core foundation modules (7)
   - `:core_contract_component`: cross-module contracts + routing (e.g. `RouteTable`), Service interfaces (file sharing/casting), playback extensions / shared Media3 session APIs.
@@ -173,7 +174,6 @@ graph TD
   player --> contract
   player --> data
   player --> repo_danmaku
-  player --> repo_panel
   player --> repo_cache
 
   storageFeature --> uiCore
@@ -193,8 +193,6 @@ graph TD
   app --> storageFeature
   app --> system
   app --> log
-  app --> network
-  app --> db
   app --> uiCore
   app --> contract
   app --> data
@@ -213,7 +211,7 @@ Use Gradle from repo root:
 - Always read the tail of Gradle output and confirm whether it ends with `BUILD SUCCESSFUL` or `BUILD FAILED` before reporting status to the user. Do **not** assume success just because tasks ran; explicitly mention failures when they occur.
 
 ## Coding Style & Naming Conventions
-Stick to the Kotlin version configured by the repo (currently 1.9.25), with 4-space indentation, explicit visibility, and trailing commas disabled. View models live under `.../presentation` or `.../viewmodel` packages; fragments/activities use DataBinding layouts named `fragment_<feature>.xml` or `activity_<feature>.xml`. ARouter paths follow `/module/Feature`. Prefer extension functions for shared logic and keep shared helpers in appropriate `core_*` modules (often under `com.xyoye.common_component.*` packages), instead of duplicating them in feature modules. Lint via `./gradlew lint` before sending patches and let ktlint/Detekt settings inside `buildSrc` drive formatting rather than ad-hoc style tweaks.
+Stick to the Kotlin version configured by the repo (currently 1.9.25), with 4-space indentation, explicit visibility, and trailing commas disabled. View models live under `.../presentation` or `.../viewmodel` packages; fragments/activities use DataBinding layouts named `fragment_<feature>.xml` or `activity_<feature>.xml`. ARouter paths follow `/module/Feature`. Prefer extension functions for shared logic and keep shared helpers in appropriate `core_*` modules (often under `com.xyoye.common_component.*` packages), instead of duplicating them in feature modules. Lint via `./gradlew lint` before sending patches and let ktlint settings in root Gradle/buildSrc drive formatting rather than ad-hoc style tweaks.
 
 ## Testing Guidelines
 Place JVM tests in `*/src/test/java` and instrumentation suites in `*/src/androidTest/java`; name files `<Class>Test.kt` or `<Feature>InstrumentedTest.kt` so Gradle discovers them. Cover parsing, player helpers, and data-layer conversions with unit tests, and reserve playback/integration flows for instrumentation backed by an emulator with media files in `storage_component`. Failing tests should block the PR, so run `testDebugUnitTest` locally and attach emulator logs when `connectedDebugAndroidTest` fails.
@@ -222,7 +220,7 @@ Place JVM tests in `*/src/test/java` and instrumentation suites in `*/src/androi
 Recent history uses the `<type>: <summary>` pattern (`fix: ...`, `refactor: ...`); keep summaries under ~60 characters and describe scope (e.g., `player_component`). Squash noisy WIP commits before pushing. PRs must include: purpose, affected modules, test evidence (command + result), and UI screenshots when touching layouts. Link GitHub issues and note any required configuration toggles (`IS_APPLICATION_RUN`, `IS_DEBUG_MODE`).
 
 ## Security & Configuration Tips
-Sensitive tokens belong in `local.properties` or Gradle properties; never hard-code keys. Toggle `IS_DEBUG_MODE` and `IS_APPLICATION_RUN` in `gradle.properties` when enabling verbose logs or single-module runs, then rebuild so the flags propagate. Follow `BUGLY_CONFIG.md` for crash reporting credentials, and remember the `user_component` ships with remote APIs disabled—avoid re-enabling interfaces without coordinator approval to keep builds distributable.
+Sensitive tokens belong in `local.properties` or Gradle properties; never hard-code keys. Toggle `IS_DEBUG_MODE` and `IS_APPLICATION_RUN` in `gradle.properties` when enabling verbose logs or single-module runs, then rebuild so the flags propagate. Follow the comments in `local.properties.template` for Bugly crash reporting credentials setup, and remember the `user_component` ships with remote APIs disabled—avoid re-enabling interfaces without coordinator approval to keep builds distributable.
 
 ## Recent Changes
 - 001-fix-sonarcloud-issues: Added Kotlin 1.9.25 (JVM target 1.8), Java 8 + Android Gradle Plugin 8.7.2, AndroidX Test/JUnit4, Robolectric 4.12.2, Kotlin Coroutines Test, SonarCloud Scan Action v6
@@ -270,12 +268,12 @@ Sensitive tokens belong in `local.properties` or Gradle properties; never hard-c
 - 所有可操作控件均有清晰 focused 反馈（视觉高亮一致、可辨识）。
 
 ## Active Technologies
-- Kotlin 1.9.25 (JVM target 1.8), Android Gradle Plugin 8.7.2 + AndroidX (Lifecycle/ViewModel/Room, etc.), Kotlin Coroutines, Retrofit/OkHttp, Moshi, Media3, ARouter, MMKV (003-add-bilibili-history)
-- Room (SQLite) + MMKV (Key-Value) + local cache files (for temporary MPD/QR images, etc.) (003-add-bilibili-history)
+- Kotlin 1.9.25 (JVM target 1.8), Android Gradle Plugin 8.7.2 + AndroidX (Lifecycle/ViewModel/Room, etc.), Kotlin Coroutines, Retrofit/OkHttp, Moshi, Media3, ARouter, MMKV (001-115-cloud-storage)
+- Room (SQLite) + MMKV (Key-Value) + local cache files (for temporary MPD/QR images, etc.) (001-115-cloud-storage)
 - Kotlin 1.9.25 (JVM target 1.8), Android Gradle Plugin 8.7.2 + AndroidX, Kotlin Coroutines, Retrofit + OkHttp, Moshi, Room, MMKV, Media3, NanoHTTPD (local proxy), ARouter (001-baidu-pan-storage)
 - Room (tables like `media_library`) + MMKV (preferences/login state storage) + local cache files (subtitles/danmaku/temporary manifests, etc.) (001-baidu-pan-storage)
 - Room (tables like `media_library`) + MMKV (preferences/authorization-isolated storage) + local cache files (subtitles/danmaku/temporary manifests, etc.) (001-115-open-storage)
 - Kotlin 1.9.25（JVM target 1.8），Android Gradle Plugin 8.7.2，Gradle 8.9 + AndroidX、Kotlin Coroutines、Retrofit+OkHttp、Moshi、Room、MMKV、Media3（可开关）、NanoHTTPD（本地代理）、ARouter、ktlint（`org.jlleitschuh.gradle.ktlint`） (001-code-quality-audit)
 - Room（SQLite）+ MMKV（Key-Value）+ 本地缓存文件（字幕/弹幕/临时清单/图片等） (001-code-quality-audit)
 - Kotlin 1.9.25 (JVM target 1.8), Java 8 + Android Gradle Plugin 8.7.2, AndroidX Test/JUnit4, Robolectric 4.12.2, Kotlin Coroutines Test, SonarCloud Scan Action v6 (001-fix-sonarcloud-issues)
-- N/A（不新增业务持久化）；使用 `.sonarcloud-report/*.json|*.md` 作为分析输入与 `specs/001-fix-sonarcloud-issues/` 文档产出 (001-fix-sonarcloud-issues)
+- N/A（不新增业务持久化）；使用 `.sonarcloud-report/` 作为分析输入与 `specs/001-fix-sonarcloud-issues/` 文档产出 (001-fix-sonarcloud-issues)

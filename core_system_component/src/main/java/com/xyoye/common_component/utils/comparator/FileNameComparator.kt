@@ -93,67 +93,110 @@ fun Collator.getCollateKey(source: String): CollationKey {
     var previousIndex = 0
     var index = 0
     val endIndex = source.length
+
     while (index < endIndex) {
         when {
             source[index] == '.' -> {
-                if (previousIndex != index) {
-                    val collationKey = getCollationKey(source.substring(previousIndex, index))
-                    result.append(collationKey.toByteArray())
-                }
-                result.append(COLLATION_SENTINEL).append(1)
-                previousIndex = index + 1
+                previousIndex = appendDotSegment(source, previousIndex, index, result)
+                index += 1
             }
             source[index].isAsciiDigit() -> {
-                if (previousIndex != index) {
-                    val collationKey = getCollationKey(source.substring(previousIndex, index))
-                    result.append(collationKey.toByteArray())
-                }
-                result.append(COLLATION_SENTINEL).append(2)
-                previousIndex = index
-                var leadingZeros: Int
-                var digits: Int
-                if (source[index] == '0') {
-                    leadingZeros = 1
-                    digits = 0
-                } else {
-                    leadingZeros = 0
-                    digits = 1
-                }
-                while (++index < endIndex) {
-                    if (source[index] == '0' && digits == 0) {
-                        ++leadingZeros
-                    } else if (source[index].isAsciiDigit()) {
-                        ++digits
-                    } else {
-                        if (digits == 0) {
-                            ++digits
-                            --leadingZeros
-                        }
-                        break
-                    }
-                }
-                while (digits > 1) {
-                    result.append(':'.code.toByte())
-                    --digits
-                }
-                if (leadingZeros > 0) {
-                    suffix.append(leadingZeros.toByte())
-                    previousIndex += leadingZeros
-                }
-                result.append(source.substring(previousIndex, index).toByteString())
-                previousIndex = index
-                --index
+                val digitSegmentResult = appendDigitSegment(source, previousIndex, index, result, suffix)
+                previousIndex = digitSegmentResult.nextPreviousIndex
+                index = digitSegmentResult.nextIndex
             }
-            else -> {}
+            else -> {
+                index += 1
+            }
         }
-        ++index
     }
-    if (previousIndex != index) {
-        val collationKey = getCollationKey(source.substring(previousIndex, index))
-        result.append(collationKey.toByteArray())
-    }
+
+    appendPlainSegment(source, previousIndex, endIndex, result)
     result.append(suffix.toByteString())
     return ByteArrayCollationKey(source, result.toByteString().borrowBytes())
+}
+
+private data class DigitSegmentResult(
+    val nextIndex: Int,
+    val nextPreviousIndex: Int
+)
+
+private fun Collator.appendPlainSegment(
+    source: String,
+    startIndex: Int,
+    endIndex: Int,
+    result: ByteStringBuilder
+) {
+    if (startIndex >= endIndex) return
+    val collationKey = getCollationKey(source.substring(startIndex, endIndex))
+    result.append(collationKey.toByteArray())
+}
+
+private fun Collator.appendDotSegment(
+    source: String,
+    previousIndex: Int,
+    index: Int,
+    result: ByteStringBuilder
+): Int {
+    appendPlainSegment(source, previousIndex, index, result)
+    result.append(COLLATION_SENTINEL).append(1)
+    return index + 1
+}
+
+private fun Collator.appendDigitSegment(
+    source: String,
+    previousIndex: Int,
+    startIndex: Int,
+    result: ByteStringBuilder,
+    suffix: ByteStringBuilder
+): DigitSegmentResult {
+    appendPlainSegment(source, previousIndex, startIndex, result)
+    result.append(COLLATION_SENTINEL).append(2)
+
+    val endIndex = source.length
+    var scanIndex = startIndex
+    var segmentStart = startIndex
+    var leadingZeros: Int
+    var digits: Int
+
+    if (source[scanIndex] == '0') {
+        leadingZeros = 1
+        digits = 0
+    } else {
+        leadingZeros = 0
+        digits = 1
+    }
+
+    while (++scanIndex < endIndex) {
+        when {
+            source[scanIndex] == '0' && digits == 0 -> {
+                leadingZeros += 1
+            }
+            source[scanIndex].isAsciiDigit() -> {
+                digits += 1
+            }
+            else -> {
+                if (digits == 0) {
+                    digits += 1
+                    leadingZeros -= 1
+                }
+                break
+            }
+        }
+    }
+
+    while (digits > 1) {
+        result.append(':'.code.toByte())
+        digits -= 1
+    }
+
+    if (leadingZeros > 0) {
+        suffix.append(leadingZeros.toByte())
+        segmentStart += leadingZeros
+    }
+
+    result.append(source.substring(segmentStart, scanIndex).toByteString())
+    return DigitSegmentResult(nextIndex = scanIndex, nextPreviousIndex = scanIndex)
 }
 
 private fun Char.isAsciiDigit(): Boolean = this in '0'..'9'

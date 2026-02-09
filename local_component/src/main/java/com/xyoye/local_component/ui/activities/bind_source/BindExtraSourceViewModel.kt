@@ -34,6 +34,8 @@ class BindExtraSourceViewModel : BaseViewModel() {
 
         // 搜索记录缓存，格式为 <file_directory, file_name, searched_text>。
         private val searchTextCache = LinkedList<Triple<String, String, String>>()
+        private val EPISODE_SUFFIX_REGEX = Regex(".* \\d{1,2}$")
+        private val EPISODE_SUFFIX_TRIM_REGEX = Regex(" \\d{1,2}$")
     }
 
     private lateinit var storageFile: StorageFile
@@ -156,55 +158,15 @@ class BindExtraSourceViewModel : BaseViewModel() {
 
     private fun matchSearchTextCache(target: StorageFile): String? {
         return try {
-            for (cachedTriple in searchTextCache) {
-                val cachedFileDir: String = cachedTriple.first
-                val cachedFileName: String = cachedTriple.second
-                val cachedText: String = cachedTriple.third
-                val targetDir = parseFileDir(target.filePath())
-                val targetName = target.fileName()
-                if (!target.isFile()) {
-                    continue
-                }
-                // 比较所在目录。
-                if (targetDir != cachedFileDir) {
-                    continue
-                }
-                // 比较文件名。
-                var ptr = 0
-                val diff = LinkedList<Int>()
-                while (ptr < targetName.length || ptr < cachedFileName.length) {
-                    val a = if (ptr < targetName.length) targetName[ptr] else '*'
-                    val b = if (ptr < cachedFileName.length) cachedFileName[ptr] else '*'
-                    if (a != b) {
-                        diff.addLast(ptr)
-                    }
-                    ptr++
-                }
-                if (diff.size == 0) {
-                    // 无差异。
-                    return cachedText
-                }
-                if (diff.size > 2) {
-                    // 差异过多。
-                    continue
-                }
-                if (diff.any { !targetName[it].isDigit() || !cachedFileName[it].isDigit() }) {
-                    // 差异包含数字以外的内容。
-                    continue
-                }
-                if (diff.size == 2 && (diff[1] - diff[0] != 1)) {
-                    // 多段不相邻差异。
-                    continue
-                }
-                // 命中缓存。
-                if (cachedText.matches(Regex(".* \\d{1,2}$"))) {
-                    // 缓存搜索结果末尾包含集数，删除集数内容。
-                    // 不作替换处理是避免错误处理文件名中类似"11"、"12"这样的差异。
-                    return cachedText.replace(Regex(" \\d{1,2}$"), "")
-                }
-                return cachedText
+            if (!target.isFile()) {
+                return null
             }
-            null
+
+            val targetDir = parseFileDir(target.filePath())
+            val targetName = target.fileName()
+            searchTextCache.firstNotNullOfOrNull { cachedTriple ->
+                matchCachedSearchText(targetDir, targetName, cachedTriple)
+            }
         } catch (e: Exception) {
             ErrorReportHelper.postCatchedExceptionWithContext(
                 e,
@@ -214,6 +176,62 @@ class BindExtraSourceViewModel : BaseViewModel() {
             )
             null
         }
+    }
+
+    private fun matchCachedSearchText(
+        targetDir: String,
+        targetName: String,
+        cachedTriple: Triple<String, String, String>
+    ): String? {
+        val (cachedFileDir, cachedFileName, cachedText) = cachedTriple
+        if (targetDir != cachedFileDir) {
+            return null
+        }
+
+        val diff = findFileNameDiffIndexes(targetName, cachedFileName)
+        if (diff.isEmpty()) {
+            return cachedText
+        }
+        if (diff.size > 2 || !isDigitOnlyDiff(targetName, cachedFileName, diff)) {
+            return null
+        }
+        if (diff.size == 2 && diff[1] - diff[0] != 1) {
+            return null
+        }
+        return normalizeCachedSearchText(cachedText)
+    }
+
+    private fun findFileNameDiffIndexes(
+        targetName: String,
+        cachedFileName: String
+    ): List<Int> {
+        val diff = mutableListOf<Int>()
+        val maxLength = maxOf(targetName.length, cachedFileName.length)
+        for (index in 0 until maxLength) {
+            val targetChar = targetName.getOrNull(index)
+            val cachedChar = cachedFileName.getOrNull(index)
+            if (targetChar != cachedChar) {
+                diff.add(index)
+            }
+        }
+        return diff
+    }
+
+    private fun isDigitOnlyDiff(
+        targetName: String,
+        cachedFileName: String,
+        diffIndexes: List<Int>
+    ): Boolean =
+        diffIndexes.all { index ->
+            targetName.getOrNull(index)?.isDigit() == true &&
+                cachedFileName.getOrNull(index)?.isDigit() == true
+        }
+
+    private fun normalizeCachedSearchText(cachedText: String): String {
+        if (cachedText.matches(EPISODE_SUFFIX_REGEX)) {
+            return cachedText.replace(EPISODE_SUFFIX_TRIM_REGEX, "")
+        }
+        return cachedText
     }
 
     private fun addSearchTextCache(

@@ -76,82 +76,92 @@ object SevenZipUtils {
         destDir: File,
         cleanupOnFailure: Boolean
     ): String? {
-        if (!compressFile.exists() || !compressFile.isFile) throw IOException("compress file not found")
-        if (!destDir.exists() || !destDir.isDirectory) throw IOException("Dest directory not found")
-
+        validateExtractInput(compressFile, destDir)
         return withContext(Dispatchers.IO) {
-            suspendCancellableCoroutine { continuation ->
-                var randomAccessFile: RandomAccessFile? = null
-                var inArchive: IInArchive? = null
-                var extractCallback: ArchiveExtractCallback? = null
+            extractFileCancellable(
+                compressFile = compressFile,
+                destDir = destDir,
+                cleanupOnFailure = cleanupOnFailure,
+            )
+        }
+    }
 
-                val cleaned = AtomicBoolean(false)
+    private suspend fun extractFileCancellable(
+        compressFile: File,
+        destDir: File,
+        cleanupOnFailure: Boolean
+    ): String? =
+        suspendCancellableCoroutine { continuation ->
+            var randomAccessFile: RandomAccessFile? = null
+            var inArchive: IInArchive? = null
+            var extractCallback: ArchiveExtractCallback? = null
+            val cleaned = AtomicBoolean(false)
 
-                fun cleanupOutputDir() {
-                    if (!cleanupOnFailure) return
-                    if (!cleaned.compareAndSet(false, true)) return
-                    destDir.deleteRecursively()
-                }
+            continuation.invokeOnCancellation {
+                cleanupOutputDirIfNeeded(cleanupOnFailure, destDir, cleaned)
+                closeExtractResources(extractCallback, inArchive, randomAccessFile)
+            }
 
-                fun closeResources() {
-                    try {
-                        extractCallback?.close()
-                    } catch (_: Throwable) {
-                    } finally {
-                        extractCallback = null
-                    }
-                    try {
-                        inArchive?.close()
-                    } catch (_: Throwable) {
-                    } finally {
-                        inArchive = null
-                    }
-                    try {
-                        randomAccessFile?.close()
-                    } catch (_: Throwable) {
-                    } finally {
-                        randomAccessFile = null
-                    }
-                }
-
-                continuation.invokeOnCancellation {
-                    cleanupOutputDir()
-                    closeResources()
-                }
-
-                var result: String? = null
-                try {
+            val result =
+                runCatching {
                     val raf = RandomAccessFile(compressFile, "r").also { randomAccessFile = it }
                     val accessFileInStream = RandomAccessFileInStream(raf)
                     val archive = SevenZip.openInArchive(null, accessFileInStream).also { inArchive = it }
+                    var extractPath: String? = null
                     extractCallback =
                         ArchiveExtractCallback(archive, destDir) { path ->
-                            result = path
+                            extractPath = path
                         }
-
                     archive.extract(null, false, extractCallback)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (t: Throwable) {
+                    extractPath
+                }.getOrElse { throwable ->
+                    if (throwable is CancellationException) {
+                        throw throwable
+                    }
                     if (continuation.isActive) {
                         ErrorReportHelper.postCatchedException(
-                            t,
+                            throwable,
                             "SevenZipUtils.extractFile",
                             "解压失败: ${compressFile.name}",
                         )
                     }
-                    result = null
-                } finally {
-                    closeResources()
-                    if (result == null) {
-                        cleanupOutputDir()
-                    }
+                    null
                 }
 
-                if (continuation.isActive) {
-                    continuation.resume(result)
-                }
+            closeExtractResources(extractCallback, inArchive, randomAccessFile)
+            if (result == null) {
+                cleanupOutputDirIfNeeded(cleanupOnFailure, destDir, cleaned)
+            }
+            if (continuation.isActive) {
+                continuation.resume(result)
             }
         }
+
+    private fun validateExtractInput(
+        compressFile: File,
+        destDir: File
+    ) {
+        if (!compressFile.exists() || !compressFile.isFile) throw IOException("compress file not found")
+        if (!destDir.exists() || !destDir.isDirectory) throw IOException("Dest directory not found")
+    }
+
+    private fun cleanupOutputDirIfNeeded(
+        cleanupOnFailure: Boolean,
+        destDir: File,
+        cleaned: AtomicBoolean
+    ) {
+        if (!cleanupOnFailure) return
+        if (!cleaned.compareAndSet(false, true)) return
+        destDir.deleteRecursively()
+    }
+
+    private fun closeExtractResources(
+        extractCallback: ArchiveExtractCallback?,
+        inArchive: IInArchive?,
+        randomAccessFile: RandomAccessFile?
+    ) {
+        runCatching { extractCallback?.close() }
+        runCatching { inArchive?.close() }
+        runCatching { randomAccessFile?.close() }
     }
 }

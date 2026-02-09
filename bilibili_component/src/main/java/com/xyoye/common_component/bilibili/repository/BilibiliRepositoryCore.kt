@@ -652,179 +652,198 @@ internal class BilibiliRepositoryCore(
         preferences: BilibiliPlaybackPreferences
     ): Result<BilibiliPlayurlData> {
         val apiType = currentApiType()
-        val baseParams = hashMapOf<String, Any?>()
-        baseParams["bvid"] = bvid
-        baseParams["cid"] = cid
-        baseParams.putAll(BilibiliPlayurlPreferencesMapper.primaryParams(preferences, apiType))
+        val baseParams = buildPlayurlBaseParams(bvid, cid, preferences, apiType)
         val allowTryLook = !isLoggedIn()
 
         return when (apiType) {
-            BilibiliApiType.WEB ->
-                run {
-                    prepareRiskControl(reason = "playurl", force = false)
-
-                    val pcResult =
-                        retryBilibiliRiskControlWithRemedy(
-                            reason = "playurl",
-                            maxAttempts = PLAYURL_RISK_MAX_ATTEMPTS,
-                            initialDelayMs = PLAYURL_RISK_INITIAL_DELAY_MS,
-                            maxDelayMs = PLAYURL_RISK_MAX_DELAY_MS,
-                        ) {
-                            val attemptParams = baseParams.toMutableMap()
-                            applyWebPlayurlRiskParams(attemptParams, allowTryLook)
-                            val signed =
-                                BilibiliWbiSigner.sign(attemptParams) {
-                                    fetchWbiKeys()
-                                }
-
-                            requestBilibiliAuthed(reason = "playurl") {
-                                service.playurl(BASE_API, signed)
-                            }.recoverTimeout(MSG_PLAYURL_TIMEOUT).mapCatching { data ->
-                                if (hasPlayableStream(data)) {
-                                    data
-                                } else if (!data.vVoucher.isNullOrBlank()) {
-                                    throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
-                                } else {
-                                    throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
-                                }
-                            }
-                        }
-                    if (pcResult.isSuccess) {
-                        return@run pcResult
-                    }
-
-                    val pcError = pcResult.exceptionOrNull() as? BilibiliException
-                    val fnval = (baseParams["fnval"] as? Number)?.toInt()
-                    val shouldTryHtml5 = fnval == 1 && pcError?.code in RISK_CONTROL_CODES
-
-                    val html5Result =
-                        if (shouldTryHtml5) {
-                            retryBilibiliRiskControlWithRemedy(
-                                reason = "playurl(html5)",
-                                maxAttempts = PLAYURL_RISK_MAX_ATTEMPTS,
-                                initialDelayMs = PLAYURL_RISK_INITIAL_DELAY_MS,
-                                maxDelayMs = PLAYURL_RISK_MAX_DELAY_MS,
-                            ) {
-                                val attemptParams = baseParams.toMutableMap()
-                                attemptParams["platform"] = "html5"
-                                attemptParams["high_quality"] = 1
-                                applyWebPlayurlRiskParams(attemptParams, allowTryLook = allowTryLook)
-                                val signed =
-                                    BilibiliWbiSigner.sign(attemptParams) {
-                                        fetchWbiKeys()
-                                    }
-
-                                requestBilibiliAuthed(reason = "playurl(html5)") {
-                                    service.playurl(BASE_API, signed)
-                                }.recoverTimeout(MSG_PLAYURL_TIMEOUT).mapCatching { data ->
-                                    if (hasPlayableStream(data)) {
-                                        data
-                                    } else if (!data.vVoucher.isNullOrBlank()) {
-                                        throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
-                                    } else {
-                                        throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
-                                    }
-                                }
-                            }
-                        } else {
-                            null
-                        }
-                    if (html5Result?.isSuccess == true) {
-                        return@run html5Result
-                    }
-
-                    // Web 无法取流时，尝试使用 TV/API 签名链路作为兜底（不改变用户偏好）。
-                    if (!BilibiliTvClient.isAppCredentialReady()) {
-                        return@run html5Result ?: pcResult
-                    }
-
-                    val tvResult =
-                        retryBilibiliRiskControlWithRemedy(
-                            reason = "playurl(tvFallback)",
-                            maxAttempts = PLAYURL_RISK_MAX_ATTEMPTS,
-                            initialDelayMs = PLAYURL_RISK_INITIAL_DELAY_MS,
-                            maxDelayMs = PLAYURL_RISK_MAX_DELAY_MS,
-                        ) block@{
-                            val attemptParams = baseParams.toMutableMap()
-                            val auth = BilibiliAuthStore.read(storageKey)
-                            auth.appAccessToken?.takeIf { it.isNotBlank() }?.let { attemptParams["access_key"] = it }
-                            attemptParams["mobi_app"] = BilibiliTvClient.MOBI_APP
-                            attemptParams["platform"] = BilibiliTvClient.PLATFORM
-
-                            val signed =
-                                runCatching { BilibiliTvClient.sign(attemptParams) }
-                                    .getOrElse { return@block Result.failure(it) }
-
-                            requestBilibili {
-                                service.playurlOld(BASE_API, signed)
-                            }.recoverTimeout(MSG_PLAYURL_TIMEOUT).mapCatching { data ->
-                                if (hasPlayableStream(data)) {
-                                    data
-                                } else if (!data.vVoucher.isNullOrBlank()) {
-                                    throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
-                                } else {
-                                    throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
-                                }
-                            }
-                        }
-                    if (tvResult.isSuccess) {
-                        tvResult
-                    } else {
-                        html5Result ?: pcResult
-                    }
-                }
-
-            BilibiliApiType.TV -> {
-                if (!BilibiliTvClient.isAppCredentialReady()) {
-                    return Result.failure(BilibiliTvClient.missingCredentialException())
-                }
-
-                prepareRiskControl(reason = "playurl(tv)", force = false)
-
-                retryBilibiliRiskControlWithRemedy(
-                    reason = "playurl(tv)",
-                    maxAttempts = PLAYURL_RISK_MAX_ATTEMPTS,
-                    initialDelayMs = PLAYURL_RISK_INITIAL_DELAY_MS,
-                    maxDelayMs = PLAYURL_RISK_MAX_DELAY_MS,
-                ) block@{
-                    val attemptParams = baseParams.toMutableMap()
-                    val auth = BilibiliAuthStore.read(storageKey)
-                    auth.appAccessToken?.takeIf { it.isNotBlank() }?.let { attemptParams["access_key"] = it }
-                    attemptParams["mobi_app"] = BilibiliTvClient.MOBI_APP
-                    attemptParams["platform"] = BilibiliTvClient.PLATFORM
-
-                    val signed =
-                        runCatching { BilibiliTvClient.sign(attemptParams) }
-                            .getOrElse { return@block Result.failure(it) }
-
-                    requestBilibili {
-                        service.playurlOld(BASE_API, signed)
-                    }.recoverTimeout(MSG_PLAYURL_TIMEOUT).mapCatching { data ->
-                        if (hasPlayableStream(data)) {
-                            data
-                        } else if (!data.vVoucher.isNullOrBlank()) {
-                            throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
-                        } else {
-                            throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
-                        }
-                    }
-                }.let { tvResult ->
-                    tvResult.recoverCatching { throwable ->
-                        val error = throwable as? BilibiliException ?: throw throwable
-                        if (isRiskControlError(error)) {
-                            val vVoucher = fetchWebVVoucherOrNull(baseParams, allowTryLook = allowTryLook)
-                            if (!vVoucher.isNullOrBlank()) {
-                                throw BilibiliException.from(
-                                    code = -352,
-                                    message = "风控校验失败（v_voucher=$vVoucher）",
-                                )
-                            }
-                        }
-                        throw throwable
-                    }
-                }
-            }
+            BilibiliApiType.WEB -> playurlByWeb(baseParams, allowTryLook)
+            BilibiliApiType.TV -> playurlByTv(baseParams, allowTryLook)
         }
+    }
+
+    private fun buildPlayurlBaseParams(
+        bvid: String,
+        cid: Long,
+        preferences: BilibiliPlaybackPreferences,
+        apiType: BilibiliApiType
+    ): MutableMap<String, Any?> =
+        hashMapOf<String, Any?>().apply {
+            put("bvid", bvid)
+            put("cid", cid)
+            putAll(BilibiliPlayurlPreferencesMapper.primaryParams(preferences, apiType))
+        }
+
+    private suspend fun playurlByWeb(
+        baseParams: Map<String, Any?>,
+        allowTryLook: Boolean
+    ): Result<BilibiliPlayurlData> {
+        prepareRiskControl(reason = "playurl", force = false)
+
+        val webResult = requestWebPlayurlWithRetry(
+            reason = "playurl",
+            baseParams = baseParams,
+            allowTryLook = allowTryLook,
+        )
+        if (webResult.isSuccess) {
+            return webResult
+        }
+
+        val html5Result = requestHtml5PlayurlOrNull(baseParams, allowTryLook, webResult)
+        if (html5Result?.isSuccess == true) {
+            return html5Result
+        }
+        return requestWebTvFallback(baseParams, html5Result, webResult)
+    }
+
+    private suspend fun requestHtml5PlayurlOrNull(
+        baseParams: Map<String, Any?>,
+        allowTryLook: Boolean,
+        webResult: Result<BilibiliPlayurlData>
+    ): Result<BilibiliPlayurlData>? {
+        if (!shouldTryHtml5Playurl(baseParams, webResult)) {
+            return null
+        }
+        return requestWebPlayurlWithRetry(
+            reason = "playurl(html5)",
+            baseParams = baseParams,
+            allowTryLook = allowTryLook,
+        ) { attemptParams ->
+            attemptParams["platform"] = "html5"
+            attemptParams["high_quality"] = 1
+        }
+    }
+
+    private fun shouldTryHtml5Playurl(
+        baseParams: Map<String, Any?>,
+        webResult: Result<BilibiliPlayurlData>
+    ): Boolean {
+        val error = webResult.exceptionOrNull() as? BilibiliException
+        val fnval = (baseParams["fnval"] as? Number)?.toInt()
+        return fnval == 1 && error?.code in RISK_CONTROL_CODES
+    }
+
+    private suspend fun requestWebTvFallback(
+        baseParams: Map<String, Any?>,
+        html5Result: Result<BilibiliPlayurlData>?,
+        webResult: Result<BilibiliPlayurlData>
+    ): Result<BilibiliPlayurlData> {
+        // Web 无法取流时，尝试使用 TV/API 签名链路作为兜底（不改变用户偏好）。
+        if (!BilibiliTvClient.isAppCredentialReady()) {
+            return html5Result ?: webResult
+        }
+
+        val tvResult =
+            requestTvPlayurlWithRetry(
+                reason = "playurl(tvFallback)",
+                baseParams = baseParams,
+            )
+        return if (tvResult.isSuccess) {
+            tvResult
+        } else {
+            html5Result ?: webResult
+        }
+    }
+
+    private suspend fun playurlByTv(
+        baseParams: Map<String, Any?>,
+        allowTryLook: Boolean
+    ): Result<BilibiliPlayurlData> {
+        if (!BilibiliTvClient.isAppCredentialReady()) {
+            return Result.failure(BilibiliTvClient.missingCredentialException())
+        }
+
+        prepareRiskControl(reason = "playurl(tv)", force = false)
+        val tvResult =
+            requestTvPlayurlWithRetry(
+                reason = "playurl(tv)",
+                baseParams = baseParams,
+            )
+        return recoverTvPlayurlRiskError(tvResult, baseParams, allowTryLook)
+    }
+
+    private suspend fun recoverTvPlayurlRiskError(
+        tvResult: Result<BilibiliPlayurlData>,
+        baseParams: Map<String, Any?>,
+        allowTryLook: Boolean
+    ): Result<BilibiliPlayurlData> =
+        tvResult.recoverCatching { throwable ->
+            val error = throwable as? BilibiliException ?: throw throwable
+            if (!isRiskControlError(error)) {
+                throw throwable
+            }
+            val vVoucher = fetchWebVVoucherOrNull(baseParams, allowTryLook = allowTryLook)
+            if (!vVoucher.isNullOrBlank()) {
+                throw BilibiliException.from(
+                    code = -352,
+                    message = "风控校验失败（v_voucher=$vVoucher）",
+                )
+            }
+            throw throwable
+        }
+
+    private suspend fun requestWebPlayurlWithRetry(
+        reason: String,
+        baseParams: Map<String, Any?>,
+        allowTryLook: Boolean,
+        updateParams: (MutableMap<String, Any?>) -> Unit = {}
+    ): Result<BilibiliPlayurlData> =
+        retryBilibiliRiskControlWithRemedy(
+            reason = reason,
+            maxAttempts = PLAYURL_RISK_MAX_ATTEMPTS,
+            initialDelayMs = PLAYURL_RISK_INITIAL_DELAY_MS,
+            maxDelayMs = PLAYURL_RISK_MAX_DELAY_MS,
+        ) {
+            val attemptParams = baseParams.toMutableMap()
+            updateParams(attemptParams)
+            applyWebPlayurlRiskParams(attemptParams, allowTryLook)
+            val signed =
+                BilibiliWbiSigner.sign(attemptParams) {
+                    fetchWbiKeys()
+                }
+
+            requestBilibiliAuthed(reason = reason) {
+                service.playurl(BASE_API, signed)
+            }.recoverTimeout(MSG_PLAYURL_TIMEOUT)
+                .mapCatching(::ensurePlayableStream)
+        }
+
+    private suspend fun requestTvPlayurlWithRetry(
+        reason: String,
+        baseParams: Map<String, Any?>
+    ): Result<BilibiliPlayurlData> =
+        retryBilibiliRiskControlWithRemedy(
+            reason = reason,
+            maxAttempts = PLAYURL_RISK_MAX_ATTEMPTS,
+            initialDelayMs = PLAYURL_RISK_INITIAL_DELAY_MS,
+            maxDelayMs = PLAYURL_RISK_MAX_DELAY_MS,
+        ) block@{
+            val signedParams =
+                buildSignedTvPlayurlParams(baseParams)
+                    .getOrElse { return@block Result.failure(it) }
+
+            requestBilibili {
+                service.playurlOld(BASE_API, signedParams)
+            }.recoverTimeout(MSG_PLAYURL_TIMEOUT)
+                .mapCatching(::ensurePlayableStream)
+        }
+
+    private fun buildSignedTvPlayurlParams(baseParams: Map<String, Any?>): Result<RequestParams> {
+        val attemptParams = baseParams.toMutableMap()
+        val auth = BilibiliAuthStore.read(storageKey)
+        auth.appAccessToken?.takeIf { it.isNotBlank() }?.let { attemptParams["access_key"] = it }
+        attemptParams["mobi_app"] = BilibiliTvClient.MOBI_APP
+        attemptParams["platform"] = BilibiliTvClient.PLATFORM
+        return runCatching { BilibiliTvClient.sign(attemptParams) }
+    }
+
+    private fun ensurePlayableStream(data: BilibiliPlayurlData): BilibiliPlayurlData {
+        if (hasPlayableStream(data)) {
+            return data
+        }
+        if (!data.vVoucher.isNullOrBlank()) {
+            throw BilibiliException.from(code = -352, message = "风控校验失败（v_voucher=${data.vVoucher}）")
+        }
+        throw BilibiliException.from(code = -1, message = MSG_PLAYURL_EMPTY_STREAM)
     }
 
     suspend fun playurlFallbackOrNull(

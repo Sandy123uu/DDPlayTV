@@ -9,7 +9,7 @@
 ## 汇总
 
 - 模块数：21
-- 依赖条目数：87（生产 86 / 测试 1）
+- 依赖条目数：86（生产 85 / 测试 1）
 
 ## 依赖列表（按模块）
 
@@ -56,7 +56,7 @@
 ### :player_component
 
 **生产依赖**
-- `implementation`：:core_contract_component, :core_database_component, :core_log_component, :core_network_component, :core_storage_component, :core_system_component, :core_ui_component, :data_component, :repository:danmaku, :repository:panel_switch, :repository:video_cache
+- `implementation`：:core_contract_component, :core_database_component, :core_log_component, :core_network_component, :core_storage_component, :core_system_component, :core_ui_component, :data_component, :repository:danmaku, :repository:video_cache
 
 **测试依赖**
 - （无）
@@ -120,8 +120,7 @@
 ### :core_ui_component
 
 **生产依赖**
-- `api`：:repository:immersion_bar
-- `implementation`：:core_contract_component, :core_log_component, :core_system_component, :data_component
+- `implementation`：:core_contract_component, :core_log_component, :core_system_component, :data_component, :repository:immersion_bar
 
 **测试依赖**
 - （无）
@@ -274,7 +273,6 @@ graph TD
   player_component --> core_ui_component
   player_component --> data_component
   player_component --> repository_danmaku
-  player_component --> repository_panel_switch
   player_component --> repository_video_cache
   storage_component --> bilibili_component
   storage_component --> core_contract_component

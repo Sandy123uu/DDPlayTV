@@ -33,6 +33,7 @@ object EntropyUtils {
     private const val v2HeaderSizeBytes = 6
     private const val v2IvSizeBytes = 12
     private const val v2TagSizeBits = 128
+    private const val LEGACY_CBC_BLOCK_SIZE_BYTES = 16
 
     /**
      * md5加密字符串
@@ -105,7 +106,8 @@ object EntropyUtils {
         return runCatching {
             when (version) {
                 AES_VERSION_GCM_V2 -> encodeV2(normalizedKey, content)
-                AES_VERSION_LEGACY_CBC_V1 -> encodeLegacyCbc(normalizedKey, content)
+                // Legacy CBC is kept only for read compatibility. New payloads always use v2.
+                AES_VERSION_LEGACY_CBC_V1 -> encodeV2(normalizedKey, content)
                 else -> throw IllegalArgumentException("Unknown aes version: $version")
             }
         }.mapCatching { Base64.encodeToString(it, base64Flag) }
@@ -250,24 +252,40 @@ object EntropyUtils {
         return String(cipher.doFinal(cipherText), Charsets.UTF_8)
     }
 
-    private fun encodeLegacyCbc(
-        key: String,
-        content: String
-    ): ByteArray {
-        val secretKey = createLegacyAesKey(key)
-        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, IvParameterSpec(ByteArray(16)))
-        return cipher.doFinal(content.toByteArray(Charsets.UTF_8))
-    }
-
     private fun decodeLegacyCbc(
         key: String,
         cipherText: ByteArray
     ): String {
+        if (cipherText.isEmpty() || cipherText.size % LEGACY_CBC_BLOCK_SIZE_BYTES != 0) {
+            throw IllegalArgumentException("Invalid legacy cipher length: ${cipherText.size}")
+        }
         val secretKey = createLegacyAesKey(key)
-        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(ByteArray(16)))
-        return String(cipher.doFinal(cipherText), Charsets.UTF_8)
+        val cipher = Cipher.getInstance("AES/CBC/NoPadding")
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(ByteArray(LEGACY_CBC_BLOCK_SIZE_BYTES)))
+        val rawPlainText = cipher.doFinal(cipherText)
+        val plainText = removePkcs5Padding(rawPlainText)
+        return String(plainText, Charsets.UTF_8)
+    }
+
+    private fun removePkcs5Padding(plainText: ByteArray): ByteArray {
+        if (plainText.isEmpty() || plainText.size % LEGACY_CBC_BLOCK_SIZE_BYTES != 0) {
+            throw IllegalArgumentException("Invalid legacy plain text length: ${plainText.size}")
+        }
+        val paddingLength = plainText.last().toInt() and 0xFF
+        if (
+            paddingLength <= 0 ||
+            paddingLength > LEGACY_CBC_BLOCK_SIZE_BYTES ||
+            paddingLength > plainText.size
+        ) {
+            throw IllegalArgumentException("Invalid legacy padding length: $paddingLength")
+        }
+        val paddingStart = plainText.size - paddingLength
+        for (index in paddingStart until plainText.size) {
+            if ((plainText[index].toInt() and 0xFF) != paddingLength) {
+                throw IllegalArgumentException("Invalid legacy padding content")
+            }
+        }
+        return plainText.copyOfRange(0, paddingStart)
     }
 
     private fun createV2AesKey(key: String): SecretKeySpec {

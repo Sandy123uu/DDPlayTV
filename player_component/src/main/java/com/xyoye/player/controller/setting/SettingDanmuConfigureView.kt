@@ -292,136 +292,190 @@ class SettingDanmuConfigureView(
         applyDanmuConfigureStatus()
     }
 
+    private enum class DanmuFocusNode {
+        LANGUAGE_ORIGIN,
+        LANGUAGE_SC,
+        LANGUAGE_TC,
+        KEYWORD_BLOCK,
+        MODE_SCROLL,
+        MODE_TOP,
+        MODE_BOTTOM,
+        SWITCH_ENABLE,
+        LINE_LIMIT_GROUP_TV,
+        LINE_LIMIT_NONE,
+        LINE_LIMIT_INPUT,
+        SCREEN_LIMIT_NONE,
+        SCREEN_LIMIT_AUTO,
+        SCREEN_LIMIT_INPUT,
+        UNKNOWN,
+    }
+
     private fun handleKeyCode(keyCode: Int) {
-        if (viewBinding.tvLanguageOrigin.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.tvLanguageSc.requestFocus()
-                KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.tvKeywordBlock.requestFocus()
-            }
-            return
-        } else if (viewBinding.tvLanguageSc.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_LEFT -> viewBinding.tvLanguageOrigin.requestFocus()
-                KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.tvLanguageTc.requestFocus()
-                KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.tvKeywordBlock.requestFocus()
-            }
-            return
-        } else if (viewBinding.tvLanguageTc.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_LEFT -> viewBinding.tvLanguageSc.requestFocus()
-                KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.tvKeywordBlock.requestFocus()
-            }
-            return
+        when (currentDanmuFocusNode()) {
+            DanmuFocusNode.LANGUAGE_ORIGIN -> handleLanguageOriginKey(keyCode)
+            DanmuFocusNode.LANGUAGE_SC -> handleLanguageScKey(keyCode)
+            DanmuFocusNode.LANGUAGE_TC -> handleLanguageTcKey(keyCode)
+            DanmuFocusNode.KEYWORD_BLOCK -> handleKeywordBlockKey(keyCode)
+            DanmuFocusNode.MODE_SCROLL -> handleScrollModeKey(keyCode)
+            DanmuFocusNode.MODE_TOP -> handleTopModeKey(keyCode)
+            DanmuFocusNode.MODE_BOTTOM -> handleBottomModeKey(keyCode)
+            DanmuFocusNode.SWITCH_ENABLE -> handleSwitchEnableKey(keyCode)
+            DanmuFocusNode.LINE_LIMIT_GROUP_TV -> handleTvLineLimitGroupKey(keyCode)
+            DanmuFocusNode.LINE_LIMIT_NONE -> handleLineNoLimitKey(keyCode)
+            DanmuFocusNode.LINE_LIMIT_INPUT -> handleLineLimitInputKey(keyCode)
+            DanmuFocusNode.SCREEN_LIMIT_NONE -> handleScreenNoLimitKey(keyCode)
+            DanmuFocusNode.SCREEN_LIMIT_AUTO -> handleScreenAutoLimitKey(keyCode)
+            DanmuFocusNode.SCREEN_LIMIT_INPUT -> handleScreenLimitInputKey(keyCode)
+            DanmuFocusNode.UNKNOWN -> viewBinding.llScrollDanmu.requestFocus()
+        }
+    }
+
+    private fun currentDanmuFocusNode(): DanmuFocusNode =
+        when {
+            viewBinding.tvLanguageOrigin.hasFocus() -> DanmuFocusNode.LANGUAGE_ORIGIN
+            viewBinding.tvLanguageSc.hasFocus() -> DanmuFocusNode.LANGUAGE_SC
+            viewBinding.tvLanguageTc.hasFocus() -> DanmuFocusNode.LANGUAGE_TC
+            viewBinding.tvKeywordBlock.hasFocus() -> DanmuFocusNode.KEYWORD_BLOCK
+            viewBinding.llScrollDanmu.hasFocus() -> DanmuFocusNode.MODE_SCROLL
+            viewBinding.llTopDanmu.hasFocus() -> DanmuFocusNode.MODE_TOP
+            viewBinding.llBottomDanmu.hasFocus() -> DanmuFocusNode.MODE_BOTTOM
+            viewBinding.switchDanmuEnable.hasFocus() -> DanmuFocusNode.SWITCH_ENABLE
+            viewBinding.groupLineLimitTv.hasFocus() -> DanmuFocusNode.LINE_LIMIT_GROUP_TV
+            viewBinding.tvLineNoLimit.hasFocus() -> DanmuFocusNode.LINE_LIMIT_NONE
+            viewBinding.etMaxLine.hasFocus() -> DanmuFocusNode.LINE_LIMIT_INPUT
+            viewBinding.tvScreenNoLimit.hasFocus() -> DanmuFocusNode.SCREEN_LIMIT_NONE
+            viewBinding.tvScreenAutoLimit.hasFocus() -> DanmuFocusNode.SCREEN_LIMIT_AUTO
+            viewBinding.etScreenMaxNum.hasFocus() -> DanmuFocusNode.SCREEN_LIMIT_INPUT
+            else -> DanmuFocusNode.UNKNOWN
         }
 
-        if (viewBinding.tvKeywordBlock.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> selectedLanguageView().requestFocus()
-                KeyEvent.KEYCODE_DPAD_DOWN -> {
-                    when (settingMode) {
-                        BaseDanmaku.TYPE_SCROLL_RL -> viewBinding.llScrollDanmu.requestFocus()
-                        BaseDanmaku.TYPE_FIX_TOP -> viewBinding.llTopDanmu.requestFocus()
-                        BaseDanmaku.TYPE_FIX_BOTTOM -> viewBinding.llBottomDanmu.requestFocus()
-                    }
-                }
-            }
-        } else if (viewBinding.llScrollDanmu.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> viewBinding.tvKeywordBlock.requestFocus()
-                KeyEvent.KEYCODE_DPAD_LEFT -> viewBinding.llTopDanmu.requestFocus()
-                KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.llBottomDanmu.requestFocus()
-                KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.switchDanmuEnable.requestFocus()
-            }
-        } else if (viewBinding.llBottomDanmu.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> viewBinding.tvKeywordBlock.requestFocus()
-                KeyEvent.KEYCODE_DPAD_LEFT -> viewBinding.llScrollDanmu.requestFocus()
-                KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.llTopDanmu.requestFocus()
-                KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.switchDanmuEnable.requestFocus()
-            }
-        } else if (viewBinding.llTopDanmu.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> viewBinding.tvKeywordBlock.requestFocus()
-                KeyEvent.KEYCODE_DPAD_LEFT -> viewBinding.llBottomDanmu.requestFocus()
-                KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.llScrollDanmu.requestFocus()
-                KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.switchDanmuEnable.requestFocus()
-            }
-        } else if (viewBinding.switchDanmuEnable.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> {
-                    when (settingMode) {
-                        BaseDanmaku.TYPE_SCROLL_RL -> viewBinding.llScrollDanmu.requestFocus()
-                        BaseDanmaku.TYPE_FIX_TOP -> viewBinding.llTopDanmu.requestFocus()
-                        BaseDanmaku.TYPE_FIX_BOTTOM -> viewBinding.llBottomDanmu.requestFocus()
-                    }
-                }
-                KeyEvent.KEYCODE_DPAD_DOWN -> {
-                    if (isTvUiMode) {
-                        viewBinding.groupLineLimitTv.requestFocus()
-                    } else {
-                        viewBinding.tvLineNoLimit.requestFocus()
-                    }
-                }
-            }
-        } else if (viewBinding.groupLineLimitTv.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> viewBinding.switchDanmuEnable.requestFocus()
-                KeyEvent.KEYCODE_DPAD_LEFT -> stepTvMaxLine(-1)
-                KeyEvent.KEYCODE_DPAD_RIGHT -> stepTvMaxLine(+1)
-                KeyEvent.KEYCODE_DPAD_DOWN -> {
-                    if (settingMode == BaseDanmaku.TYPE_SCROLL_RL) {
-                        viewBinding.tvScreenNoLimit.requestFocus()
-                    }
-                }
-            }
-        } else if (viewBinding.tvLineNoLimit.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> viewBinding.switchDanmuEnable.requestFocus()
-                KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.etMaxLine.requestFocus()
-                KeyEvent.KEYCODE_DPAD_DOWN -> {
-                    if (settingMode == BaseDanmaku.TYPE_SCROLL_RL) {
-                        viewBinding.tvScreenNoLimit.requestFocus()
-                    }
-                }
-            }
-        } else if (viewBinding.etMaxLine.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> viewBinding.tvLineNoLimit.requestFocus()
-                KeyEvent.KEYCODE_DPAD_DOWN -> {
-                    if (settingMode == BaseDanmaku.TYPE_SCROLL_RL) {
-                        viewBinding.tvScreenNoLimit.requestFocus()
-                    }
-                }
-            }
-        } else if (viewBinding.tvScreenNoLimit.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> {
-                    if (isTvUiMode) {
-                        viewBinding.groupLineLimitTv.requestFocus()
-                    } else {
-                        viewBinding.tvLineNoLimit.requestFocus()
-                    }
-                }
-                KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.tvScreenAutoLimit.requestFocus()
-            }
-        } else if (viewBinding.tvScreenAutoLimit.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> {
-                    if (isTvUiMode) {
-                        viewBinding.groupLineLimitTv.requestFocus()
-                    } else {
-                        viewBinding.tvLineNoLimit.requestFocus()
-                    }
-                }
-                KeyEvent.KEYCODE_DPAD_LEFT -> viewBinding.tvScreenNoLimit.requestFocus()
-                KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.etScreenMaxNum.requestFocus()
-            }
-        } else if (viewBinding.etScreenMaxNum.hasFocus()) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> viewBinding.tvScreenAutoLimit.requestFocus()
-            }
+    private fun handleLanguageOriginKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.tvLanguageSc.requestFocus()
+            KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.tvKeywordBlock.requestFocus()
+        }
+    }
+
+    private fun handleLanguageScKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT -> viewBinding.tvLanguageOrigin.requestFocus()
+            KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.tvLanguageTc.requestFocus()
+            KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.tvKeywordBlock.requestFocus()
+        }
+    }
+
+    private fun handleLanguageTcKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT -> viewBinding.tvLanguageSc.requestFocus()
+            KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.tvKeywordBlock.requestFocus()
+        }
+    }
+
+    private fun handleKeywordBlockKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> selectedLanguageView().requestFocus()
+            KeyEvent.KEYCODE_DPAD_DOWN -> focusCurrentModeView()
+        }
+    }
+
+    private fun handleScrollModeKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> viewBinding.tvKeywordBlock.requestFocus()
+            KeyEvent.KEYCODE_DPAD_LEFT -> viewBinding.llTopDanmu.requestFocus()
+            KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.llBottomDanmu.requestFocus()
+            KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.switchDanmuEnable.requestFocus()
+        }
+    }
+
+    private fun handleTopModeKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> viewBinding.tvKeywordBlock.requestFocus()
+            KeyEvent.KEYCODE_DPAD_LEFT -> viewBinding.llBottomDanmu.requestFocus()
+            KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.llScrollDanmu.requestFocus()
+            KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.switchDanmuEnable.requestFocus()
+        }
+    }
+
+    private fun handleBottomModeKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> viewBinding.tvKeywordBlock.requestFocus()
+            KeyEvent.KEYCODE_DPAD_LEFT -> viewBinding.llScrollDanmu.requestFocus()
+            KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.llTopDanmu.requestFocus()
+            KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.switchDanmuEnable.requestFocus()
+        }
+    }
+
+    private fun handleSwitchEnableKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> focusCurrentModeView()
+            KeyEvent.KEYCODE_DPAD_DOWN -> focusLineLimitEntryView()
+        }
+    }
+
+    private fun handleTvLineLimitGroupKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> viewBinding.switchDanmuEnable.requestFocus()
+            KeyEvent.KEYCODE_DPAD_LEFT -> stepTvMaxLine(-1)
+            KeyEvent.KEYCODE_DPAD_RIGHT -> stepTvMaxLine(+1)
+            KeyEvent.KEYCODE_DPAD_DOWN -> focusScreenNoLimitIfScrollable()
+        }
+    }
+
+    private fun handleLineNoLimitKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> viewBinding.switchDanmuEnable.requestFocus()
+            KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.etMaxLine.requestFocus()
+            KeyEvent.KEYCODE_DPAD_DOWN -> focusScreenNoLimitIfScrollable()
+        }
+    }
+
+    private fun handleLineLimitInputKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> viewBinding.tvLineNoLimit.requestFocus()
+            KeyEvent.KEYCODE_DPAD_DOWN -> focusScreenNoLimitIfScrollable()
+        }
+    }
+
+    private fun handleScreenNoLimitKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> focusLineLimitEntryView()
+            KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.tvScreenAutoLimit.requestFocus()
+        }
+    }
+
+    private fun handleScreenAutoLimitKey(keyCode: Int) {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> focusLineLimitEntryView()
+            KeyEvent.KEYCODE_DPAD_LEFT -> viewBinding.tvScreenNoLimit.requestFocus()
+            KeyEvent.KEYCODE_DPAD_RIGHT -> viewBinding.etScreenMaxNum.requestFocus()
+        }
+    }
+
+    private fun handleScreenLimitInputKey(keyCode: Int) {
+        if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+            viewBinding.tvScreenAutoLimit.requestFocus()
+        }
+    }
+
+    private fun focusCurrentModeView() {
+        when (settingMode) {
+            BaseDanmaku.TYPE_SCROLL_RL -> viewBinding.llScrollDanmu.requestFocus()
+            BaseDanmaku.TYPE_FIX_TOP -> viewBinding.llTopDanmu.requestFocus()
+            BaseDanmaku.TYPE_FIX_BOTTOM -> viewBinding.llBottomDanmu.requestFocus()
+        }
+    }
+
+    private fun focusLineLimitEntryView() {
+        if (isTvUiMode) {
+            viewBinding.groupLineLimitTv.requestFocus()
         } else {
-            viewBinding.llScrollDanmu.requestFocus()
+            viewBinding.tvLineNoLimit.requestFocus()
+        }
+    }
+
+    private fun focusScreenNoLimitIfScrollable() {
+        if (settingMode == BaseDanmaku.TYPE_SCROLL_RL) {
+            viewBinding.tvScreenNoLimit.requestFocus()
         }
     }
 

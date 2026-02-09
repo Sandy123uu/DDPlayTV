@@ -45,9 +45,15 @@ class AnimeSeasonActivity : BaseActivity<AnimeSeasonViewModel, ActivityAnimeSeas
     }
 
     private fun initRv() {
+        initYearRv()
+        initSeasonRv()
+        initSortRv()
+        initAnimeRv()
+    }
+
+    private fun initYearRv() {
         dataBinding.yearRv.run {
             itemAnimator = null
-
             layoutManager = grid(4)
 
             adapter =
@@ -74,10 +80,11 @@ class AnimeSeasonActivity : BaseActivity<AnimeSeasonViewModel, ActivityAnimeSeas
                     }
                 }
         }
+    }
 
+    private fun initSeasonRv() {
         dataBinding.seasonRv.apply {
             itemAnimator = null
-
             layoutManager = grid(4)
 
             adapter =
@@ -103,10 +110,11 @@ class AnimeSeasonActivity : BaseActivity<AnimeSeasonViewModel, ActivityAnimeSeas
                     }
                 }
         }
+    }
 
+    private fun initSortRv() {
         dataBinding.sortRv.apply {
             itemAnimator = null
-
             layoutManager = grid(4)
 
             adapter =
@@ -126,10 +134,11 @@ class AnimeSeasonActivity : BaseActivity<AnimeSeasonViewModel, ActivityAnimeSeas
                     }
                 }
         }
+    }
 
+    private fun initAnimeRv() {
         dataBinding.animeRv.apply {
             layoutManager = gridEmpty(3)
-
             adapter = animeAdapter
 
             val pxValue = dp2px(10)

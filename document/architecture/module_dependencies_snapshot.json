@@ -308,11 +308,6 @@
         },
         {
           "configuration": "implementation",
-          "module": ":repository:panel_switch",
-          "scope": "main"
-        },
-        {
-          "configuration": "implementation",
           "module": ":repository:danmaku",
           "scope": "main"
         },
@@ -497,7 +492,7 @@
           "scope": "main"
         },
         {
-          "configuration": "api",
+          "configuration": "implementation",
           "module": ":repository:immersion_bar",
           "scope": "main"
         }

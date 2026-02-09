@@ -93,8 +93,9 @@ public class LabelsView extends ViewGroup implements View.OnClickListener, View.
                     return SINGLE_IRREVOCABLY;
                 case 4:
                     return MULTI;
+                default:
+                    return NONE;
             }
-            return NONE;
         }
     }
 

@@ -131,6 +131,26 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
 
     override fun serve(session: IHTTPSession): Response = serveInternal(session, allowRetry = true)
 
+    private data class ServeRequestContext(
+        val url: String,
+        val rangeHeader: String?,
+        val hasRange: Boolean,
+        val supportsRange: Boolean,
+        val requestedRange: Pair<Long, Long>?,
+        val invalidRange: Boolean,
+        val isRangeRequest: Boolean,
+        val cappedRange: Pair<Long, Long>?,
+        val upstreamRangeHeader: String?,
+        val urlHash: String,
+    )
+
+    private data class NanoResponseBuildResult(
+        val nanoResponse: Response,
+        val status: Response.Status,
+        val responseLength: Long,
+        val contentRange: String?,
+    )
+
     private fun serveInternal(
         session: IHTTPSession,
         allowRetry: Boolean
@@ -143,83 +163,23 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
                     "upstream not configured",
                 )
 
-        val rangeHeader = session.headers["range"]
-        val hasRange = !rangeHeader.isNullOrBlank()
-        val supportsRange = contentLength > 0
-        val requestedRange =
-            if (supportsRange && hasRange) {
-                RangeUtils.parseRange(rangeHeader!!, contentLength)
-            } else {
-                null
-            }
-        if (supportsRange && hasRange && requestedRange == null) {
+        val requestContext = buildServeRequestContext(session, url)
+        if (requestContext.invalidRange) {
             return newFixedLengthResponse(Response.Status.RANGE_NOT_SATISFIABLE, TEXT_PLAIN_CONTENT_TYPE, "")
         }
-        val isRangeRequest = supportsRange && hasRange && requestedRange != null
-        val cappedRange =
-            requestedRange?.let { range ->
-                val maxBytes = if (seekEnabled) maxRangeBytesAfterPlay else maxRangeBytesBeforePlay
-                val start = range.first
-                val end = minOf(range.second, start + maxBytes - 1)
-                start to end
-            }
-        val upstreamRangeHeader = cappedRange?.let { (start, end) -> "bytes=$start-$end" }
-        val urlHash = url.hashCode().toString()
 
-        if (supportsRange && !hasRange && !loggedNoRangeRequest) {
-            loggedNoRangeRequest = true
-            LogFacade.w(
-                LogModule.STORAGE,
-                logTag,
-                "proxy request without range header",
-                context =
-                    mapOf(
-                        "urlHash" to urlHash,
-                        "contentLength" to contentLength.toString(),
-                        "seekEnabled" to seekEnabled.toString(),
-                        "clientUa" to (session.headers["user-agent"] ?: "null"),
-                    ),
-            )
-        }
+        logNoRangeRequestIfNeeded(requestContext, session.headers)
 
         val response =
-            if (supportsRange && hasRange) {
-                synchronized(upstreamRangeLock) {
-                    throttleUpstreamRange()
-                    fetchUpstream(
-                        url,
-                        buildUpstreamHeaders(
-                            clientHeaders = session.headers,
-                            rangeHeader = upstreamRangeHeader,
-                            forwardRange = true,
-                        ),
-                    )
-                }
-            } else {
-                fetchUpstream(
-                    url,
-                    buildUpstreamHeaders(
-                        clientHeaders = session.headers,
-                        rangeHeader = null,
-                        forwardRange = false,
-                    ),
+            fetchUpstreamResponse(requestContext, session.headers)
+                ?: return newFixedLengthResponse(
+                    Response.Status.INTERNAL_ERROR,
+                    TEXT_PLAIN_CONTENT_TYPE,
+                    "upstream request failed",
                 )
-            } ?: return newFixedLengthResponse(
-                Response.Status.INTERNAL_ERROR,
-                TEXT_PLAIN_CONTENT_TYPE,
-                "upstream request failed",
-            )
 
         if (!response.isSuccessful) {
-            // If upstream rejects probing ranges (403), let mpv fall back to linear playback instead of failing open().
-            if (supportsRange && hasRange && !seekEnabled && response.code() == 403) {
-                return newFixedLengthResponse(Response.Status.RANGE_NOT_SATISFIABLE, TEXT_PLAIN_CONTENT_TYPE, "")
-            }
-            return newFixedLengthResponse(
-                toStatus(response.code()),
-                TEXT_PLAIN_CONTENT_TYPE,
-                "upstream http ${response.code()}",
-            )
+            return buildUpstreamFailureResponse(requestContext, response)
         }
 
         val body =
@@ -231,62 +191,224 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
                 )
 
         val upstreamContentRangeHeader = response.headers()["Content-Range"]
-        val upstreamContentRange = upstreamContentRangeHeader?.let { parseContentRange(it) }
-        val isPartial = isRangeRequest || response.code() == 206 || upstreamContentRangeHeader != null
+        val unsupportedRangeResponse =
+            handleUnsupportedRange(
+                session = session,
+                allowRetry = allowRetry,
+                requestContext = requestContext,
+                response = response,
+                body = body,
+                upstreamContentRangeHeader = upstreamContentRangeHeader,
+            )
+        if (unsupportedRangeResponse != null) {
+            return unsupportedRangeResponse
+        }
 
-        if (isRangeRequest && (response.code() != 206 || upstreamContentRangeHeader == null)) {
-            if (allowRetry && !rangeRetryDone) {
-                synchronized(rangeRetryLock) {
-                    if (!rangeRetryDone) {
-                        val refreshed = runCatching { rangeRetrySupplier?.invoke() }.getOrNull()
-                        if (refreshed != null) {
-                            rangeRetryDone = true
-                            upstreamUrl = refreshed.url
-                            upstreamHeaders = refreshed.headers
-                            contentType = refreshed.contentType
-                            contentLength = refreshed.contentLength
-                            upstreamTlsPolicy = refreshed.tlsPolicy
-                            return serveInternal(session, allowRetry = false)
-                        }
+        val upstreamContentRange = upstreamContentRangeHeader?.let { parseContentRange(it) }
+        val isPartial =
+            requestContext.isRangeRequest ||
+                response.code() == 206 ||
+                upstreamContentRangeHeader != null
+        val responseRange = resolveResponseRange(requestContext.cappedRange, upstreamContentRange)
+        val nanoResult = buildNanoResponse(body, requestContext.supportsRange, isPartial, responseRange)
+
+        applyRangeHeaders(
+            nanoResponse = nanoResult.nanoResponse,
+            supportsRange = requestContext.supportsRange,
+            isPartial = isPartial,
+            contentRange = nanoResult.contentRange,
+        )
+
+        logRangeResponse(
+            requestContext = requestContext,
+            response = response,
+            body = body,
+            upstreamContentRangeHeader = upstreamContentRangeHeader,
+            responseRange = responseRange,
+            status = nanoResult.status,
+            responseLength = nanoResult.responseLength,
+        )
+
+        return nanoResult.nanoResponse
+    }
+
+    private fun buildServeRequestContext(
+        session: IHTTPSession,
+        url: String
+    ): ServeRequestContext {
+        val rangeHeader = session.headers["range"]
+        val hasRange = !rangeHeader.isNullOrBlank()
+        val supportsRange = contentLength > 0
+        val requestedRange =
+            if (supportsRange && hasRange) {
+                RangeUtils.parseRange(rangeHeader!!, contentLength)
+            } else {
+                null
+            }
+        val invalidRange = supportsRange && hasRange && requestedRange == null
+        val isRangeRequest = supportsRange && hasRange && requestedRange != null
+        val cappedRange =
+            requestedRange?.let { range ->
+                val maxBytes = if (seekEnabled) maxRangeBytesAfterPlay else maxRangeBytesBeforePlay
+                val start = range.first
+                val end = minOf(range.second, start + maxBytes - 1)
+                start to end
+            }
+
+        return ServeRequestContext(
+            url = url,
+            rangeHeader = rangeHeader,
+            hasRange = hasRange,
+            supportsRange = supportsRange,
+            requestedRange = requestedRange,
+            invalidRange = invalidRange,
+            isRangeRequest = isRangeRequest,
+            cappedRange = cappedRange,
+            upstreamRangeHeader = cappedRange?.let { (start, end) -> "bytes=$start-$end" },
+            urlHash = url.hashCode().toString(),
+        )
+    }
+
+    private fun logNoRangeRequestIfNeeded(
+        requestContext: ServeRequestContext,
+        headers: Map<String, String>
+    ) {
+        if (!requestContext.supportsRange || requestContext.hasRange || loggedNoRangeRequest) {
+            return
+        }
+        loggedNoRangeRequest = true
+        LogFacade.w(
+            LogModule.STORAGE,
+            logTag,
+            "proxy request without range header",
+            context =
+                mapOf(
+                    "urlHash" to requestContext.urlHash,
+                    "contentLength" to contentLength.toString(),
+                    "seekEnabled" to seekEnabled.toString(),
+                    "clientUa" to (headers["user-agent"] ?: "null"),
+                ),
+        )
+    }
+
+    private fun fetchUpstreamResponse(
+        requestContext: ServeRequestContext,
+        headers: Map<String, String>
+    ): retrofit2.Response<okhttp3.ResponseBody>? {
+        val shouldForwardRange = requestContext.supportsRange && requestContext.hasRange
+        if (shouldForwardRange) {
+            return synchronized(upstreamRangeLock) {
+                throttleUpstreamRange()
+                fetchUpstream(
+                    requestContext.url,
+                    buildUpstreamHeaders(
+                        clientHeaders = headers,
+                        rangeHeader = requestContext.upstreamRangeHeader,
+                        forwardRange = true,
+                    ),
+                )
+            }
+        }
+
+        return fetchUpstream(
+            requestContext.url,
+            buildUpstreamHeaders(
+                clientHeaders = headers,
+                rangeHeader = null,
+                forwardRange = false,
+            ),
+        )
+    }
+
+    private fun buildUpstreamFailureResponse(
+        requestContext: ServeRequestContext,
+        response: retrofit2.Response<okhttp3.ResponseBody>
+    ): Response {
+        // If upstream rejects probing ranges (403), let mpv fall back to linear playback instead of failing open().
+        if (requestContext.supportsRange && requestContext.hasRange && !seekEnabled && response.code() == 403) {
+            return newFixedLengthResponse(Response.Status.RANGE_NOT_SATISFIABLE, TEXT_PLAIN_CONTENT_TYPE, "")
+        }
+        return newFixedLengthResponse(
+            toStatus(response.code()),
+            TEXT_PLAIN_CONTENT_TYPE,
+            "upstream http ${response.code()}",
+        )
+    }
+
+    private fun handleUnsupportedRange(
+        session: IHTTPSession,
+        allowRetry: Boolean,
+        requestContext: ServeRequestContext,
+        response: retrofit2.Response<okhttp3.ResponseBody>,
+        body: okhttp3.ResponseBody,
+        upstreamContentRangeHeader: String?
+    ): Response? {
+        if (!requestContext.isRangeRequest || (response.code() == 206 && upstreamContentRangeHeader != null)) {
+            return null
+        }
+
+        if (allowRetry && !rangeRetryDone) {
+            synchronized(rangeRetryLock) {
+                if (!rangeRetryDone) {
+                    val refreshed = runCatching { rangeRetrySupplier?.invoke() }.getOrNull()
+                    if (refreshed != null) {
+                        rangeRetryDone = true
+                        upstreamUrl = refreshed.url
+                        upstreamHeaders = refreshed.headers
+                        contentType = refreshed.contentType
+                        contentLength = refreshed.contentLength
+                        upstreamTlsPolicy = refreshed.tlsPolicy
+                        return serveInternal(session, allowRetry = false)
                     }
                 }
             }
-            val upstreamBodyLength = body.contentLength()
-            LogFacade.w(
-                LogModule.STORAGE,
-                logTag,
-                "upstream range unsupported",
-                context =
-                    mapOf(
-                        "urlHash" to urlHash,
-                        "rangeHeader" to (rangeHeader ?: "null"),
-                        "requestedRange" to formatRange(requestedRange),
-                        "upstreamRange" to (upstreamRangeHeader ?: "null"),
-                        "upstreamCode" to response.code().toString(),
-                        "upstreamContentRange" to (upstreamContentRangeHeader ?: "null"),
-                        "upstreamBodyLength" to upstreamBodyLength.toString(),
-                        "contentLength" to contentLength.toString(),
-                        "seekEnabled" to seekEnabled.toString(),
-                    ),
-            )
-            return newFixedLengthResponse(
-                Response.Status.INTERNAL_ERROR,
-                TEXT_PLAIN_CONTENT_TYPE,
-                "upstream range unsupported",
-            )
         }
 
-        val responseRange =
-            when {
-                cappedRange != null && upstreamContentRange != null -> {
-                    val start = maxOf(cappedRange.first, upstreamContentRange.first)
-                    val end = minOf(cappedRange.second, upstreamContentRange.second)
-                    if (start <= end) start to end else upstreamContentRange
-                }
-                upstreamContentRange != null -> upstreamContentRange
-                else -> cappedRange
-            }
+        val upstreamBodyLength = body.contentLength()
+        LogFacade.w(
+            LogModule.STORAGE,
+            logTag,
+            "upstream range unsupported",
+            context =
+                mapOf(
+                    "urlHash" to requestContext.urlHash,
+                    "rangeHeader" to (requestContext.rangeHeader ?: "null"),
+                    "requestedRange" to formatRange(requestContext.requestedRange),
+                    "upstreamRange" to (requestContext.upstreamRangeHeader ?: "null"),
+                    "upstreamCode" to response.code().toString(),
+                    "upstreamContentRange" to (upstreamContentRangeHeader ?: "null"),
+                    "upstreamBodyLength" to upstreamBodyLength.toString(),
+                    "contentLength" to contentLength.toString(),
+                    "seekEnabled" to seekEnabled.toString(),
+                ),
+        )
+        return newFixedLengthResponse(
+            Response.Status.INTERNAL_ERROR,
+            TEXT_PLAIN_CONTENT_TYPE,
+            "upstream range unsupported",
+        )
+    }
 
+    private fun resolveResponseRange(
+        cappedRange: Pair<Long, Long>?,
+        upstreamContentRange: Pair<Long, Long>?
+    ): Pair<Long, Long>? =
+        when {
+            cappedRange != null && upstreamContentRange != null -> {
+                val start = maxOf(cappedRange.first, upstreamContentRange.first)
+                val end = minOf(cappedRange.second, upstreamContentRange.second)
+                if (start <= end) start to end else upstreamContentRange
+            }
+            upstreamContentRange != null -> upstreamContentRange
+            else -> cappedRange
+        }
+
+    private fun buildNanoResponse(
+        body: okhttp3.ResponseBody,
+        supportsRange: Boolean,
+        isPartial: Boolean,
+        responseRange: Pair<Long, Long>?
+    ): NanoResponseBuildResult {
         val status = if (isPartial) Response.Status.PARTIAL_CONTENT else Response.Status.OK
         val contentRange =
             if (isPartial && responseRange != null) {
@@ -309,6 +431,7 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
             } else {
                 body.byteStream()
             }
+
         val nanoResponse =
             if (responseLength > 0) {
                 newFixedLengthResponse(status, contentType, bodyStream, responseLength)
@@ -316,57 +439,83 @@ class HttpPlayServer private constructor() : NanoHTTPD(randomPort()) {
                 newChunkedResponse(status, contentType, bodyStream)
             }
 
-        if (supportsRange) {
-            nanoResponse.addHeader("Accept-Ranges", "bytes")
-            if (isPartial) {
-                contentRange?.let { nanoResponse.addHeader("Content-Range", it) }
-            }
+        return NanoResponseBuildResult(
+            nanoResponse = nanoResponse,
+            status = status,
+            responseLength = responseLength,
+            contentRange = contentRange,
+        )
+    }
+
+    private fun applyRangeHeaders(
+        nanoResponse: Response,
+        supportsRange: Boolean,
+        isPartial: Boolean,
+        contentRange: String?
+    ) {
+        if (!supportsRange) {
+            return
+        }
+        nanoResponse.addHeader("Accept-Ranges", "bytes")
+        if (isPartial) {
+            contentRange?.let { nanoResponse.addHeader("Content-Range", it) }
+        }
+    }
+
+    private fun logRangeResponse(
+        requestContext: ServeRequestContext,
+        response: retrofit2.Response<okhttp3.ResponseBody>,
+        body: okhttp3.ResponseBody,
+        upstreamContentRangeHeader: String?,
+        responseRange: Pair<Long, Long>?,
+        status: Response.Status,
+        responseLength: Long
+    ) {
+        if (!requestContext.isRangeRequest) {
+            return
         }
 
-        if (isRangeRequest) {
-            val upstreamBodyLength = body.contentLength()
-            val suspiciousUpstream = response.code() != 206 && upstreamContentRangeHeader == null
-            val sampleLimitBytes = 256L
-            val shouldSampleUpstreamBody =
-                response.code() == 200 &&
-                    upstreamContentRangeHeader == null &&
-                    upstreamBodyLength in 0..sampleLimitBytes
-            val upstreamBodySample =
-                if (shouldSampleUpstreamBody) {
-                    peekUpstreamBodySample(response, sampleLimitBytes)
-                } else {
-                    null
-                }
-            val nowMs = nowMs()
-            if (suspiciousUpstream || shouldLogRange(nowMs)) {
-                val logFn = if (suspiciousUpstream) LogFacade::w else LogFacade::d
-                val context =
-                    mutableMapOf(
-                        "urlHash" to urlHash,
-                        "rangeHeader" to (rangeHeader ?: "null"),
-                        "requestedRange" to formatRange(requestedRange),
-                        "cappedRange" to formatRange(cappedRange),
-                        "upstreamRange" to (upstreamRangeHeader ?: "null"),
-                        "upstreamCode" to response.code().toString(),
-                        "upstreamContentRange" to (upstreamContentRangeHeader ?: "null"),
-                        "upstreamBodyLength" to upstreamBodyLength.toString(),
-                        "responseRange" to formatRange(responseRange),
-                        "responseLength" to responseLength.toString(),
-                        "status" to status.toString(),
-                        "contentLength" to contentLength.toString(),
-                        "seekEnabled" to seekEnabled.toString(),
-                    )
-                upstreamBodySample?.let { context["upstreamBodySample"] = it }
-                logFn.invoke(
-                    LogModule.STORAGE,
-                    logTag,
-                    "proxy range response",
-                    context,
-                    null,
-                )
+        val upstreamBodyLength = body.contentLength()
+        val suspiciousUpstream = response.code() != 206 && upstreamContentRangeHeader == null
+        val sampleLimitBytes = 256L
+        val shouldSampleUpstreamBody =
+            response.code() == 200 &&
+                upstreamContentRangeHeader == null &&
+                upstreamBodyLength in 0..sampleLimitBytes
+        val upstreamBodySample =
+            if (shouldSampleUpstreamBody) {
+                peekUpstreamBodySample(response, sampleLimitBytes)
+            } else {
+                null
             }
+
+        if (suspiciousUpstream || shouldLogRange(nowMs())) {
+            val logFn = if (suspiciousUpstream) LogFacade::w else LogFacade::d
+            val context =
+                mutableMapOf(
+                    "urlHash" to requestContext.urlHash,
+                    "rangeHeader" to (requestContext.rangeHeader ?: "null"),
+                    "requestedRange" to formatRange(requestContext.requestedRange),
+                    "cappedRange" to formatRange(requestContext.cappedRange),
+                    "upstreamRange" to (requestContext.upstreamRangeHeader ?: "null"),
+                    "upstreamCode" to response.code().toString(),
+                    "upstreamContentRange" to (upstreamContentRangeHeader ?: "null"),
+                    "upstreamBodyLength" to upstreamBodyLength.toString(),
+                    "responseRange" to formatRange(responseRange),
+                    "responseLength" to responseLength.toString(),
+                    "status" to status.toString(),
+                    "contentLength" to contentLength.toString(),
+                    "seekEnabled" to seekEnabled.toString(),
+                )
+            upstreamBodySample?.let { context["upstreamBodySample"] = it }
+            logFn.invoke(
+                LogModule.STORAGE,
+                logTag,
+                "proxy range response",
+                context,
+                null,
+            )
         }
-        return nanoResponse
     }
 
     fun setSeekEnabled(enabled: Boolean) {
