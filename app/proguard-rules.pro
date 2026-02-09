@@ -54,3 +54,13 @@
 -dontwarn org.ietf.jgss.GSSName
 -dontwarn org.ietf.jgss.Oid
 -dontwarn org.slf4j.impl.StaticLoggerBinder
+
+# ARouter relies on generated route/provider maps discovered by class name at runtime.
+-keep class com.alibaba.android.arouter.routes.** { *; }
+
+# Keep generated autowire injectors and route targets used by ARouter reflection.
+-keep class * implements com.alibaba.android.arouter.facade.template.ISyringe { *; }
+-keep class * implements com.alibaba.android.arouter.facade.template.IProvider { *; }
+-keep @com.alibaba.android.arouter.facade.annotation.Route class * { *; }
+
+-dontwarn com.alibaba.android.arouter.**
