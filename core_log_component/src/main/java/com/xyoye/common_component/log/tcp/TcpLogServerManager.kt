@@ -2,6 +2,34 @@ package com.xyoye.common_component.log.tcp
 
 import com.xyoye.common_component.config.LogConfig
 
+internal interface TcpLogServerConfig {
+    fun isTcpLogServerEnabled(): Boolean
+
+    fun putTcpLogServerEnabled(enabled: Boolean)
+
+    fun getTcpLogServerPort(): Int
+
+    fun putTcpLogServerPort(port: Int)
+
+    fun isDebugSessionEnabled(): Boolean
+}
+
+private object MmkvTcpLogServerConfig : TcpLogServerConfig {
+    override fun isTcpLogServerEnabled(): Boolean = LogConfig.isTcpLogServerEnabled()
+
+    override fun putTcpLogServerEnabled(enabled: Boolean) {
+        LogConfig.putTcpLogServerEnabled(enabled)
+    }
+
+    override fun getTcpLogServerPort(): Int = LogConfig.getTcpLogServerPort()
+
+    override fun putTcpLogServerPort(port: Int) {
+        LogConfig.putTcpLogServerPort(port)
+    }
+
+    override fun isDebugSessionEnabled(): Boolean = LogConfig.isDebugSessionEnabled()
+}
+
 /**
  * Runtime manager for [TcpLogServer].
  *
@@ -15,6 +43,8 @@ object TcpLogServerManager {
     private const val DEFAULT_RING_BUFFER_SIZE = 200
     private const val DEBUG_SESSION_REQUIRED_ERROR = "TCP 日志仅在调试会话中可用"
 
+    internal var config: TcpLogServerConfig = MmkvTcpLogServerConfig
+
     private val lock = Any()
     private val bufferLock = Any()
     private val ringBuffer = ArrayDeque<String>(DEFAULT_RING_BUFFER_SIZE)
@@ -26,52 +56,52 @@ object TcpLogServerManager {
     private var lastError: String? = null
 
     fun applyFromStorage(): TcpLogServerState {
-        val enabled = LogConfig.isTcpLogServerEnabled()
-        val debugSessionEnabled = LogConfig.isDebugSessionEnabled()
-        val storedPort = LogConfig.getTcpLogServerPort()
+        val enabled = config.isTcpLogServerEnabled()
+        val debugSessionEnabled = config.isDebugSessionEnabled()
+        val storedPort = config.getTcpLogServerPort()
         val normalizedPort = normalizePort(storedPort)
         if (storedPort != normalizedPort) {
-            LogConfig.putTcpLogServerPort(normalizedPort)
+            config.putTcpLogServerPort(normalizedPort)
         }
         if (!debugSessionEnabled) {
-            if (enabled) {
+            return if (enabled) {
                 lastError = DEBUG_SESSION_REQUIRED_ERROR
+                stop(clearError = false)
+            } else {
+                stop(clearError = true)
             }
-            stop()
-            return snapshot()
         }
         lastError = null
         return if (enabled) {
             start(normalizedPort)
         } else {
-            stop()
+            stop(clearError = true)
         }
     }
 
     fun setEnabled(
         enabled: Boolean,
-        port: Int = LogConfig.getTcpLogServerPort()
+        port: Int = config.getTcpLogServerPort()
     ): TcpLogServerState {
         val normalizedPort = normalizePort(port)
-        LogConfig.putTcpLogServerEnabled(enabled)
-        LogConfig.putTcpLogServerPort(normalizedPort)
-        val debugSessionEnabled = LogConfig.isDebugSessionEnabled()
+        config.putTcpLogServerEnabled(enabled)
+        config.putTcpLogServerPort(normalizedPort)
+        val debugSessionEnabled = config.isDebugSessionEnabled()
         if (enabled && !debugSessionEnabled) {
             lastError = DEBUG_SESSION_REQUIRED_ERROR
-            stop()
-            return snapshot()
+            return stop(clearError = false)
         }
         lastError = null
         return if (enabled) {
             start(normalizedPort)
         } else {
-            stop()
+            stop(clearError = true)
         }
     }
 
     fun snapshot(): TcpLogServerState {
-        val enabled = LogConfig.isTcpLogServerEnabled()
-        val requestedPort = normalizePort(LogConfig.getTcpLogServerPort())
+        val enabled = config.isTcpLogServerEnabled()
+        val requestedPort = normalizePort(config.getTcpLogServerPort())
         val current = server
         val running = current?.isRunning() == true
         val boundPort = if (running) current?.boundPort() ?: -1 else -1
@@ -118,7 +148,7 @@ object TcpLogServerManager {
                     server = newServer
                 }.onFailure { error ->
                     lastError = error.message ?: error::class.java.simpleName
-                    LogConfig.putTcpLogServerEnabled(false)
+                    config.putTcpLogServerEnabled(false)
                     runCatching { newServer.stop() }
                     server = null
                 }
@@ -126,14 +156,16 @@ object TcpLogServerManager {
         }
     }
 
-    private fun stop(): TcpLogServerState {
+    private fun stop(clearError: Boolean): TcpLogServerState {
         synchronized(lock) {
             val current = server
             if (current != null) {
                 runCatching { current.stop() }
                 server = null
             }
-            lastError = null
+            if (clearError) {
+                lastError = null
+            }
             return snapshot()
         }
     }
@@ -157,5 +189,20 @@ object TcpLogServerManager {
         if (port == 0) return 0
         if (port in 1..65535) return port
         return DEFAULT_PORT
+    }
+
+    internal fun resetForTests() {
+        synchronized(lock) {
+            val current = server
+            if (current != null) {
+                runCatching { current.stop() }
+                server = null
+            }
+            lastError = null
+            config = MmkvTcpLogServerConfig
+        }
+        synchronized(bufferLock) {
+            ringBuffer.clear()
+        }
     }
 }
