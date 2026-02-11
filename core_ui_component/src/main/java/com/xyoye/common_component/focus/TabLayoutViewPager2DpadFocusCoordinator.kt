@@ -82,6 +82,10 @@ class TabLayoutViewPager2DpadFocusCoordinator(
         ViewTreeObserver.OnGlobalFocusChangeListener { _, newFocus ->
             if (!isEnabled()) return@OnGlobalFocusChangeListener
             val focus = newFocus ?: return@OnGlobalFocusChangeListener
+            if (mode == TabDpadMode.SettingsIndicatorOnly && shouldKeepFocusInCurrentPage(focus)) {
+                requestFocusToCurrentPage()
+                return@OnGlobalFocusChangeListener
+            }
             recordLastFocus(focus)
         }
 
@@ -108,6 +112,12 @@ class TabLayoutViewPager2DpadFocusCoordinator(
                     } else {
                         false
                     }
+                KeyEvent.KEYCODE_DPAD_DOWN ->
+                    if (mode == TabDpadMode.SettingsIndicatorOnly) {
+                        handleDpadDownAtBottomInSettingsMode()
+                    } else {
+                        false
+                    }
                 else -> false
             }
         }
@@ -131,14 +141,18 @@ class TabLayoutViewPager2DpadFocusCoordinator(
         viewPager.setOnKeyListener(contentKeyListener)
         ViewCompat.addOnUnhandledKeyEventListener(viewPager, contentUnhandledKeyListener)
         viewPager.viewTreeObserver.addOnGlobalFocusChangeListener(focusChangeListener)
-        pageFocusSync.attach()
+        if (mode == TabDpadMode.Default) {
+            pageFocusSync.attach()
+        }
         updateTabViews()
         tabLayout.post { updateTabViews() }
     }
 
     @MainThread
     fun detach() {
-        pageFocusSync.detach()
+        if (mode == TabDpadMode.Default) {
+            pageFocusSync.detach()
+        }
         viewPager.viewTreeObserver.removeOnGlobalFocusChangeListener(focusChangeListener)
         viewPager.setOnKeyListener(null)
         ViewCompat.removeOnUnhandledKeyEventListener(viewPager, contentUnhandledKeyListener)
@@ -176,6 +190,24 @@ class TabLayoutViewPager2DpadFocusCoordinator(
         }
 
         return requestTabFocus()
+    }
+
+    private fun handleDpadDownAtBottomInSettingsMode(): Boolean {
+        val focus = viewPager.findFocus() ?: return false
+        val pageRoot = currentPageItemView() ?: return false
+        if (!isDescendantOf(focus, pageRoot)) return false
+
+        val recyclerView = findNearestRecyclerView(focus, stopAt = pageRoot)
+        if (recyclerView != null && recyclerView.canScrollVertically(1)) {
+            return false
+        }
+
+        val next = focus.focusSearch(View.FOCUS_DOWN)
+        if (next != null && next !== focus && isDescendantOf(next, pageRoot)) {
+            return false
+        }
+
+        return true
     }
 
     private fun requestFocusToCurrentPage(): Boolean = requestFocusToPage(pageIndex = viewPager.currentItem)
@@ -235,6 +267,14 @@ class TabLayoutViewPager2DpadFocusCoordinator(
 
         viewPager.setCurrentItem(target, true)
         return requestFocusToPage(pageIndex = target)
+    }
+
+    private fun shouldKeepFocusInCurrentPage(focus: View): Boolean {
+        val viewPagerRv = viewPagerRecyclerView() ?: return false
+        if (!isDescendantOf(focus, viewPagerRv)) return false
+
+        val currentPageRoot = currentPageItemView() ?: return false
+        return !isDescendantOf(focus, currentPageRoot)
     }
 
     private fun recordLastFocus(focus: View) {
