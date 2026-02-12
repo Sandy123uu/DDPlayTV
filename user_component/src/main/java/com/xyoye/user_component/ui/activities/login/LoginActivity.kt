@@ -11,12 +11,15 @@ import com.xyoye.common_component.utils.showKeyboard
 import com.xyoye.user_component.BR
 import com.xyoye.user_component.R
 import com.xyoye.user_component.databinding.ActivityLoginBinding
+import com.xyoye.user_component.ui.dialog.DeveloperAuthenticateDialog
 
 @Route(path = RouteTable.User.UserLogin)
 class LoginActivity : BaseActivity<LoginViewModel, ActivityLoginBinding>() {
     @Autowired
     @JvmField
     var userAccount: String? = null
+
+    private var developerAuthenticateDialog: DeveloperAuthenticateDialog? = null
 
     override fun initViewModel() =
         ViewModelInit(
@@ -56,11 +59,29 @@ class LoginActivity : BaseActivity<LoginViewModel, ActivityLoginBinding>() {
         viewModel.loginLiveData.observe(this) {
             finish()
         }
+        viewModel.openDeveloperAuthDialogLiveData.observe(this) {
+            showDeveloperAuthenticateDialog()
+        }
+    }
+
+    override fun onDestroy() {
+        developerAuthenticateDialog?.dismiss()
+        developerAuthenticateDialog = null
+        super.onDestroy()
     }
 
     private fun showKeyboardWithView(view: View) {
         view.postDelayed({
             showKeyboard(view)
         }, 200)
+    }
+
+    private fun showDeveloperAuthenticateDialog() {
+        developerAuthenticateDialog?.dismiss()
+        developerAuthenticateDialog =
+            DeveloperAuthenticateDialog(this) {
+                // 登录页仅负责引导认证，认证成功后用户可手动再次点击登录。
+            }
+        developerAuthenticateDialog?.show()
     }
 }
