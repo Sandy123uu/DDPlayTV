@@ -11,7 +11,6 @@ import com.xyoye.common_component.network.repository.UserRepository
 import com.xyoye.common_component.network.request.NetworkException
 import com.xyoye.common_component.session.UserSessionManager
 import com.xyoye.common_component.utils.ErrorReportHelper
-import com.xyoye.common_component.utils.SecurityHelper
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.data_component.data.LoginData
 import com.xyoye.user_component.R
@@ -45,9 +44,6 @@ class LoginViewModel : BaseViewModel() {
             }
 
             val accountFingerprint = SensitiveDataSanitizer.fingerprint(account.orEmpty())
-            val unixTimestamp = System.currentTimeMillis() / 1000
-            val hashInfo = appId + password + unixTimestamp + account
-            val hash = SecurityHelper.getInstance().buildHash(hashInfo)
 
             viewModelScope.launch {
                 try {
@@ -56,9 +52,6 @@ class LoginViewModel : BaseViewModel() {
                         UserRepository.login(
                             account!!,
                             password!!,
-                            appId,
-                            unixTimestamp.toString(),
-                            hash,
                         )
                     hideLoading()
 
@@ -123,6 +116,11 @@ class LoginViewModel : BaseViewModel() {
     private fun resolveLoginErrorMessage(exception: Throwable?): String {
         val message = exception?.message.orEmpty()
         if (exception is NetworkException && exception.code == INVALID_PARAMETER_ERROR_CODE) {
+            val prefix = "x$INVALID_PARAMETER_ERROR_CODE "
+            val detail = message.removePrefix(prefix).trim()
+            if (detail.isNotBlank() && !detail.contains("一个或多个参数不符合规则")) {
+                return detail
+            }
             return R.string.login_error_invalid_params.toResString()
         }
         if (message.contains("一个或多个参数不符合规则")) {

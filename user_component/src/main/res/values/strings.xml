@@ -9,7 +9,7 @@
     <string name="action_login">登录</string>
     <string name="login_error_default">登录失败，请稍后再试</string>
     <string name="login_error_developer_credential_required">当前版本需先完成开发者认证（AppId/AppSecret）后再登录。</string>
-    <string name="login_error_invalid_params">登录请求参数校验失败，请先完成开发者认证（AppId/AppSecret）后重试。</string>
+    <string name="login_error_invalid_params">登录参数校验失败，请检查账号密码或签名配置后重试。</string>
     <string name="tips_user_register">帐号注册</string>
     <string name="tips_input_email">邮箱</string>
     <string name="tips_input_screen_name">昵称</string>
