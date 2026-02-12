@@ -710,7 +710,7 @@ void eventLoop(MpvSession* session) {
                     const char* level = log->level == nullptr ? "" : log->level;
                     const char* text = log->text == nullptr ? "" : log->text;
                     __android_log_print(ANDROID_LOG_INFO, kLogTag, "mpv[%s][%s] %s", prefix, level, text);
-                    // Forward to Kotlin logger so it can be written into log.txt.
+                    // Forward to Kotlin logger so it can be emitted to logcat / TCP log server.
                     // Note: do not include newlines; mpv log text usually ends with '\n'.
                     std::string forwarded = std::string(prefix) + "[" + level + "] " + text;
                     dispatchEvent(

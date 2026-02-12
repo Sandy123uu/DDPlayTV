@@ -2,7 +2,7 @@
 
 # DDPlayTV Privacy Policy
 
-Last updated: 2026-01-14
+Last updated: 2026-02-12
 
 DDPlayTV is an open-source local media player. This document describes what this repository version does (and does not) collect when you use the app.
 
@@ -49,9 +49,11 @@ Some permissions may be disabled for TV adaptation builds (see the merged Androi
 
 ## 5. Logs
 
-If “developer logging” is enabled in the app, DDPlayTV can write local log files (for debugging) to `Download/DDPlayTV/logs/` by default. These logs are stored locally and are not uploaded automatically.
+DDPlayTV always prints runtime logs to Android logcat (subject to the configured log level).
 
-See `document/monitoring/logging-system.md` for the current log location and adb pull steps.
+If “Debug Session” and “TCP Log Server” are enabled in the app, DDPlayTV can expose logs over the local network via a TCP server (high-risk output channel). These logs are only streamed to the client you connect with (for example `nc <ip> <port>`), and are not uploaded automatically by DDPlayTV.
+
+See `document/monitoring/logging-system.md` for how to enable and capture logs.
 
 ## 6. Third-Party Libraries
 
@@ -68,7 +70,7 @@ If you have questions or want to report an issue, please open an issue on GitHub
 
 # DDPlayTV 隐私政策
 
-最后更新：2026-01-14
+最后更新：2026-02-12
 
 DDPlayTV 是一款开源的本地媒体播放器。本文用于说明**本仓库当前版本**在使用过程中会（或不会）收集/处理哪些数据。
 
@@ -115,9 +117,11 @@ DDPlayTV 是一款开源的本地媒体播放器。本文用于说明**本仓库
 
 ## 5. 日志
 
-当你在应用内开启“开发者日志/调试日志写入”时，DDPlayTV 默认会把日志写入本地 `Download/DDPlayTV/logs/` 目录。日志默认仅本地保存，不会自动上传。
+DDPlayTV 默认会将运行日志输出到 Android logcat（受“日志级别”设置影响）。
 
-当前日志路径与 adb 拉取方式见：`document/monitoring/logging-system.md`。
+当你在应用内开启“调试会话”并显式授权开启“TCP 日志服务”时，DDPlayTV 会在局域网内启动 TCP 日志服务（高风险输出通道），将日志实时流式输出给已连接的客户端（例如 `nc <ip> <port>`）。日志默认不会自动上传。
+
+开启方式与抓取示例见：`document/monitoring/logging-system.md`。
 
 ## 6. 第三方库
 

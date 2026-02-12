@@ -52,13 +52,11 @@ class DeveloperLoggingPreferenceTest {
 
         LogSystem.startDebugSession()
         val debugEnabled = LogSystem.getRuntimeState()
-        assertTrue(debugEnabled.activePolicy.enableDebugFile)
         assertTrue(debugEnabled.debugSessionEnabled)
         assertEquals(DebugToggleState.ON_CURRENT_SESSION, debugEnabled.debugToggleState)
 
         LogSystem.stopDebugSession()
         val debugDisabled = LogSystem.getRuntimeState()
-        assertFalse(debugDisabled.activePolicy.enableDebugFile)
         assertFalse(debugDisabled.debugSessionEnabled)
         assertEquals(DebugToggleState.OFF, debugDisabled.debugToggleState)
     }

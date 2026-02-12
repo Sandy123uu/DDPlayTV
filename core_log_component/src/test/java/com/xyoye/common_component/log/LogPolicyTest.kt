@@ -1,66 +1,32 @@
 package com.xyoye.common_component.log
 
-import com.xyoye.common_component.log.model.DebugToggleState
-import com.xyoye.common_component.log.model.LogEvent
 import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.log.model.LogPolicy
-import com.xyoye.common_component.log.model.LogRuntimeState
 import com.xyoye.common_component.log.model.SamplingRule
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
+import org.junit.runners.JUnit4
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(JUnit4::class)
 class LogPolicyTest {
-    @Rule
-    @JvmField
-    val tempFolder = TemporaryFolder()
-
     @Test
-    fun defaultReleasePolicyDisablesFileWrites() {
+    fun defaultReleasePolicyUsesInfoLevel() {
         val policy = LogPolicy.defaultReleasePolicy()
+        assertEquals(LogPolicy.DEFAULT_RELEASE_POLICY_NAME, policy.name)
         assertEquals(LogLevel.INFO, policy.defaultLevel)
-        assertFalse(policy.enableDebugFile)
-        assertFalse(policy.exportable)
     }
 
     @Test
-    fun debugSessionPolicyEnablesFileWrites() {
-        val policy = LogPolicy.debugSessionPolicy(minLevel = LogLevel.DEBUG, enableFile = true)
+    fun debugSessionPolicyUsesConfiguredLevel() {
+        val policy = LogPolicy.debugSessionPolicy(minLevel = LogLevel.DEBUG)
+        assertEquals(LogPolicy.DEBUG_SESSION_POLICY_NAME, policy.name)
         assertEquals(LogLevel.DEBUG, policy.defaultLevel)
-        assertEquals(true, policy.enableDebugFile)
-        assertEquals(true, policy.exportable)
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun samplingRuleRequiresValidRange() {
         SamplingRule(LogModule.CORE, LogLevel.INFO, sampleRate = 1.5)
-    }
-
-    @Test
-    fun disableDebugFilePreventsDiskWrites() {
-        val context = TestLogContext(tempFolder.newFolder("policy_files"))
-        val writer = LogWriter(context)
-        val runtimeState =
-            LogRuntimeState(
-                activePolicy = LogPolicy.defaultReleasePolicy(),
-                debugToggleState = DebugToggleState.ON_CURRENT_SESSION,
-                debugSessionEnabled = true,
-            )
-        writer.updateRuntimeState(runtimeState)
-        writer.submit(
-            LogEvent(
-                level = LogLevel.INFO,
-                module = LogModule.CORE,
-                message = "should stay in logcat only",
-            ),
-        )
-        Thread.sleep(200)
-        assertFalse(LogPaths.currentLogFile(context).exists())
     }
 }

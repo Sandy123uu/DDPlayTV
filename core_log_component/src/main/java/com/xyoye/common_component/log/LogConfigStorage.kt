@@ -8,10 +8,6 @@ interface LogConfigStorage {
 
     fun readDefaultLevel(): String?
 
-    fun readDebugFileEnabled(): Boolean
-
-    fun readExportable(): Boolean
-
     fun readPolicySource(): String?
 
     fun readDebugToggleState(): String?
@@ -26,10 +22,6 @@ class MmkvLogConfigStorage : LogConfigStorage {
 
     override fun readDefaultLevel(): String? = LogConfig.getDefaultLevel()
 
-    override fun readDebugFileEnabled(): Boolean = LogConfig.isDebugFileEnabled()
-
-    override fun readExportable(): Boolean = LogConfig.isExportable()
-
     override fun readPolicySource(): String? = LogConfig.getPolicySource()
 
     override fun readDebugToggleState(): String? = LogConfig.getDebugToggleState()
@@ -40,8 +32,6 @@ class MmkvLogConfigStorage : LogConfigStorage {
         val policy = state.activePolicy
         LogConfig.putPolicyName(policy.name)
         LogConfig.putDefaultLevel(policy.defaultLevel.name)
-        LogConfig.putDebugFileEnabled(policy.enableDebugFile)
-        LogConfig.putExportable(policy.exportable)
         LogConfig.putPolicySource(state.policySource.name)
         LogConfig.putDebugToggleState(state.debugToggleState.name)
         LogConfig.putDebugSessionEnabled(state.debugSessionEnabled)

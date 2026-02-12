@@ -51,15 +51,11 @@ class LogPolicyRepository(
         }
 
     fun updateDebugState(
-        toggleState: DebugToggleState,
-        forceEnableFile: Boolean? = null
+        toggleState: DebugToggleState
     ): LogRuntimeState =
         updateState { current ->
-            val policyToUse =
-                forceEnableFile?.let { current.activePolicy.copy(enableDebugFile = it) }
-                    ?: current.activePolicy
             buildRuntimeState(
-                policy = policyToUse,
+                policy = current.activePolicy,
                 source = current.policySource,
                 toggleState = toggleState,
                 lastUpdated = timeProvider(),
@@ -96,9 +92,7 @@ class LogPolicyRepository(
             LogPolicy(
                 name = storage.readPolicyName() ?: defaultPolicy.name,
                 defaultLevel = storedLevel,
-                enableDebugFile = storage.readDebugFileEnabled(),
                 samplingRules = emptyList(),
-                exportable = storage.readExportable(),
             )
         val source = safePolicySource(storage.readPolicySource()) ?: PolicySource.DEFAULT
         val toggle = safeDebugToggle(storage.readDebugToggleState()) ?: DebugToggleState.OFF
@@ -122,7 +116,7 @@ class LogPolicyRepository(
         lastUpdated: Long
     ): LogRuntimeState {
         val effectiveToggle = toggleState
-        val sessionEnabled = effectiveToggle == DebugToggleState.ON_CURRENT_SESSION && policy.enableDebugFile
+        val sessionEnabled = effectiveToggle == DebugToggleState.ON_CURRENT_SESSION
         return LogRuntimeState(
             activePolicy = policy,
             policySource = source,

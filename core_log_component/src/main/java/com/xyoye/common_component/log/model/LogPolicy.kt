@@ -6,9 +6,7 @@ package com.xyoye.common_component.log.model
 data class LogPolicy(
     val name: String,
     val defaultLevel: LogLevel,
-    val enableDebugFile: Boolean,
     val samplingRules: List<SamplingRule> = emptyList(),
-    val exportable: Boolean = false
 ) {
     init {
         require(name.isNotBlank()) { "LogPolicy name must not be blank" }
@@ -29,25 +27,23 @@ data class LogPolicy(
             LogPolicy(
                 name = DEFAULT_RELEASE_POLICY_NAME,
                 defaultLevel = LogLevel.INFO,
-                enableDebugFile = false,
                 samplingRules = emptyList(),
-                exportable = false,
             )
 
         fun debugSessionPolicy(
             minLevel: LogLevel = LogLevel.DEBUG,
-            enableFile: Boolean = true
+            samplingRules: List<SamplingRule> = emptyList(),
         ): LogPolicy =
             LogPolicy(
                 name = DEBUG_SESSION_POLICY_NAME,
                 defaultLevel = minLevel,
-                enableDebugFile = enableFile,
-                samplingRules = emptyList(),
-                exportable = true,
+                samplingRules = samplingRules,
             )
 
         /**
-         * 高日志量策略：打开文件写入与 DEBUG 级别，保持总文件大小约 10MB（由 LogFileManager 的 5MB*2 限制保证）。
+         * 高日志量策略：用于压测/排查阶段，打开 DEBUG 级别并允许业务自定义采样规则。
+         *
+         * 注意：当前版本已移除本地文件日志落盘，高日志量策略会放大 logcat/TCP 输出量。
          */
         fun highVolumePolicy(
             minLevel: LogLevel = LogLevel.DEBUG,
@@ -56,9 +52,7 @@ data class LogPolicy(
             LogPolicy(
                 name = HIGH_VOLUME_POLICY_NAME,
                 defaultLevel = minLevel,
-                enableDebugFile = true,
                 samplingRules = samplingRules,
-                exportable = true,
             )
     }
 }

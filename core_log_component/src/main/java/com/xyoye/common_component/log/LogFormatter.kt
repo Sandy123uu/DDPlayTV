@@ -12,8 +12,8 @@ import java.util.Locale
 import java.util.TimeZone
 
 /**
- * 将 LogEvent 序列化为结构化的单行文本，便于文件落盘与脚本解析。
- * - 文件格式突出时间、级别、模块、关键上下文字段，并在 DEBUG 级别下对噪声上下文做简单裁剪。
+ * 将 LogEvent 序列化为结构化的单行文本，便于 TCP 抓取与脚本解析。
+ * - 单行格式突出时间、级别、模块、关键上下文字段，并在 DEBUG 级别下对噪声上下文做简单裁剪。
  * - logcat 格式保持紧凑，但保留关键字段与序号，便于串联问题链路。
  */
 class LogFormatter(

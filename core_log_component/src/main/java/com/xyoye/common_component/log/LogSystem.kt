@@ -24,14 +24,10 @@ object LogSystem {
 
     private val defaultWriterFactory:
         (
-            Context,
             () -> Boolean,
             (String) -> Unit,
-            (Throwable) -> Unit,
-        ) -> LogWriter = { context, tcpEnabledProvider, tcpSink, onFileError ->
+        ) -> LogWriter = { tcpEnabledProvider, tcpSink ->
             LogWriter(
-                context = context,
-                onFileError = onFileError,
                 tcpLogEnabledProvider = tcpEnabledProvider,
                 tcpLogSink = tcpSink,
             )
@@ -62,10 +58,8 @@ object LogSystem {
 
     internal var writerFactory:
         (
-            Context,
             () -> Boolean,
             (String) -> Unit,
-            (Throwable) -> Unit,
         ) -> LogWriter = defaultWriterFactory
 
     internal var tcpRunningProvider: () -> Boolean = defaultTcpRunningProvider
@@ -98,10 +92,8 @@ object LogSystem {
             stateRef.set(initialState)
             writer =
                 writerFactory(
-                    context.applicationContext,
                     { tcpRunningProvider() },
                     { line -> tcpEmitSink(line) },
-                    { error -> handleWriterFileError(error) },
                 ).also { it.updateRuntimeState(initialState) }
             tcpApplyFromStorage()
             initialized = true
@@ -136,11 +128,11 @@ object LogSystem {
         source: PolicySource = PolicySource.USER_OVERRIDE
     ): LogRuntimeState = updateLoggingPolicy(policy, source)
 
-    fun startDebugSession(): LogRuntimeState = updateDebugState(DebugToggleState.ON_CURRENT_SESSION, forceEnableFile = true)
+    fun startDebugSession(): LogRuntimeState = updateDebugState(DebugToggleState.ON_CURRENT_SESSION)
 
-    fun stopDebugSession(): LogRuntimeState = updateDebugState(DebugToggleState.OFF, forceEnableFile = false)
+    fun stopDebugSession(): LogRuntimeState = updateDebugState(DebugToggleState.OFF)
 
-    fun markDiskError(): LogRuntimeState = updateDebugState(DebugToggleState.DISABLED_DUE_TO_ERROR, forceEnableFile = false)
+    fun markDiskError(): LogRuntimeState = updateDebugState(DebugToggleState.DISABLED_DUE_TO_ERROR)
 
     fun getRuntimeState(): LogRuntimeState = stateRef.get()
 
@@ -172,24 +164,14 @@ object LogSystem {
         writer?.submit(enriched)
     }
 
-    private fun handleWriterFileError(error: Throwable) {
-        val runtime = stateRef.get()
-        val alreadyDisabled = runtime.debugToggleState == DebugToggleState.DISABLED_DUE_TO_ERROR && !runtime.debugSessionEnabled
-        if (!alreadyDisabled) {
-            markDiskError()
-        }
-        Log.e(LOG_TAG, "log file write failed, debug file logging disabled", error)
-    }
-
     private fun updateDebugState(
-        state: DebugToggleState,
-        forceEnableFile: Boolean? = null
+        state: DebugToggleState
     ): LogRuntimeState {
         if (!initialized) {
             Log.w(LOG_TAG, "debug state change before init, ignore")
             return stateRef.get()
         }
-        val updated = policyRepository.updateDebugState(state, forceEnableFile)
+        val updated = policyRepository.updateDebugState(state)
         return applyRuntimeState(updated)
     }
 

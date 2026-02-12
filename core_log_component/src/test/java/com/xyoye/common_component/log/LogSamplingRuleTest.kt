@@ -19,7 +19,6 @@ class LogSamplingRuleTest {
             LogPolicy(
                 name = "sampling-zero",
                 defaultLevel = LogLevel.DEBUG,
-                enableDebugFile = true,
                 samplingRules =
                     listOf(
                         SamplingRule(LogModule.CORE, LogLevel.DEBUG, sampleRate = 0.0),
@@ -50,7 +49,6 @@ class LogSamplingRuleTest {
             LogPolicy(
                 name = "limit-per-minute",
                 defaultLevel = LogLevel.DEBUG,
-                enableDebugFile = true,
                 samplingRules = listOf(rule),
             )
 
@@ -69,7 +67,6 @@ class LogSamplingRuleTest {
             LogPolicy(
                 name = "min-level",
                 defaultLevel = LogLevel.DEBUG,
-                enableDebugFile = true,
                 samplingRules =
                     listOf(
                         SamplingRule(LogModule.NETWORK, LogLevel.WARN, sampleRate = 0.0, maxEventsPerMinute = 1),

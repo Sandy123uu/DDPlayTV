@@ -7,26 +7,18 @@ import com.xyoye.common_component.log.model.LogPolicy
 import com.xyoye.common_component.log.model.LogRuntimeState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
+import org.junit.runners.JUnit4
 import java.util.concurrent.CopyOnWriteArrayList
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(JUnit4::class)
 class LogWriterTcpSinkTest {
-    @Rule
-    @JvmField
-    val tempFolder = TemporaryFolder()
-
     @Test
     fun tcpSinkReceivesFormattedLineWhenEnabled() {
-        val context = TestLogContext(tempFolder.newFolder("tcp_sink_enabled"))
         val received = CopyOnWriteArrayList<String>()
         val writer =
             LogWriter(
-                context,
                 tcpLogEnabledProvider = { true },
                 tcpLogSink = { line -> received.add(line) },
             )
@@ -49,11 +41,9 @@ class LogWriterTcpSinkTest {
 
     @Test
     fun tcpSinkNotCalledWhenDisabled() {
-        val context = TestLogContext(tempFolder.newFolder("tcp_sink_disabled"))
         val received = CopyOnWriteArrayList<String>()
         val writer =
             LogWriter(
-                context,
                 tcpLogEnabledProvider = { false },
                 tcpLogSink = { line -> received.add(line) },
             )

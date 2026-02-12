@@ -3,13 +3,13 @@
 ## 背景
 
 仓库在 `document/code_quality_audit` 中明确了“日志/异常上报默认脱敏”的治理目标（对应 `G-T0012`）。  
-核心诉求是：在 **logcat / 文件日志 / TCP 日志 / 异常上报上下文** 中，默认不泄露 token、cookie、密码、secret、URL query 等敏感信息，同时仍保留足够的定位线索（host/path、指纹等）。
+核心诉求是：在 **logcat / TCP 日志 / 异常上报上下文** 中，默认不泄露 token、cookie、密码、secret、URL query 等敏感信息，同时仍保留足够的定位线索（host/path、指纹等）。
 
 ## 统一入口
 
 - 统一脱敏工具：`core_log_component/src/main/java/com/xyoye/common_component/log/privacy/SensitiveDataSanitizer.kt`
 - 统一接入点（默认生效）：
-  - `LogFormatter`：对日志 `message/context/throwable` 做脱敏后再落盘/输出
+  - `LogFormatter`：对日志 `message/context/throwable` 做脱敏后再输出到 logcat/TCP
   - `ErrorReportHelper`：对调试输出的 tag/extraInfo 做脱敏（避免本地调试阶段泄露）
 
 ## 默认规则（摘要）
@@ -61,4 +61,3 @@ TCP 日志属于高风险输出通道：
   - URL：使用 SAFE（host/path）+ 可选 fingerprint
   - 磁力链：仅 hash
   - 路径：仅文件名或 fingerprint
-

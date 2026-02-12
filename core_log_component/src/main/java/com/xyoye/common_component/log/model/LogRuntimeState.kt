@@ -12,6 +12,9 @@ data class LogRuntimeState(
     val recentErrors: List<LogEvent> = emptyList()
 ) {
     init {
+        require((debugToggleState == DebugToggleState.ON_CURRENT_SESSION) == debugSessionEnabled) {
+            "debugSessionEnabled must match debugToggleState"
+        }
         require(lastPolicyUpdateTime > 0) { "lastPolicyUpdateTime must be positive" }
     }
 }
