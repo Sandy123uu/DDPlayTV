@@ -13,7 +13,8 @@ import org.videolan.libvlc.util.VLCVideoLayout
  */
 
 class RenderVLCView(
-    context: Context
+    context: Context,
+    private val useTextureView: Boolean
 ) : InterSurfaceView {
     private lateinit var mVideoPlayer: VlcVideoPlayer
 
@@ -21,7 +22,7 @@ class RenderVLCView(
 
     override fun attachPlayer(player: AbstractVideoPlayer) {
         mVideoPlayer = (player as VlcVideoPlayer)
-        player.attachRenderView(vlcLayout)
+        player.attachRenderView(vlcLayout, isTextureView = useTextureView)
     }
 
     override fun setVideoSize(

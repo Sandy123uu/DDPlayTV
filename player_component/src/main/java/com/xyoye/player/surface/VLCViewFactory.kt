@@ -6,6 +6,8 @@ import android.content.Context
  * Created by xyoye on 2020/11/3.
  */
 
-class VLCViewFactory : SurfaceFactory() {
-    override fun createRenderView(context: Context): InterSurfaceView = RenderVLCView(context)
+class VLCViewFactory(
+    private val useTextureView: Boolean
+) : SurfaceFactory() {
+    override fun createRenderView(context: Context): InterSurfaceView = RenderVLCView(context, useTextureView)
 }

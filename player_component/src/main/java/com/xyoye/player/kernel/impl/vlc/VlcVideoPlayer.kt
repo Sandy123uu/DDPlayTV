@@ -59,6 +59,9 @@ class VlcVideoPlayer(
     private var proxySeekEnabled: Boolean = false
     private val mVideoSize = Point(0, 0)
     private var looping = PlayerInitializer.isLooping
+    private var attachedLayout: VLCVideoLayout? = null
+    private var isUsingTextureView = false
+    private var didTextureFallback = false
 
     override fun initPlayer() {
         audioOutput = PlayerInitializer.Player.vlcAudioOutput
@@ -113,6 +116,7 @@ class VlcVideoPlayer(
     }
 
     override fun setSurface(surface: Surface) {
+        // VLC uses VLCVideoLayout + attachViews as the render path.
     }
 
     override fun prepareAsync() {
@@ -136,6 +140,9 @@ class VlcVideoPlayer(
     }
 
     override fun reset() {
+        attachedLayout = null
+        isUsingTextureView = false
+        didTextureFallback = false
     }
 
     override fun release() {
@@ -150,6 +157,9 @@ class VlcVideoPlayer(
             setEventListener(null)
             release()
         }
+        attachedLayout = null
+        isUsingTextureView = false
+        didTextureFallback = false
         SupervisorScope.IO.launch {
             mMediaPlayer.release()
         }
@@ -251,12 +261,55 @@ class VlcVideoPlayer(
             else -> null
         }
 
-    fun attachRenderView(vlcVideoLayout: VLCVideoLayout) {
-        if (mMediaPlayer.vlcVout.areViewsAttached()) {
-            mMediaPlayer.detachViews()
+    fun attachRenderView(
+        vlcVideoLayout: VLCVideoLayout,
+        isTextureView: Boolean
+    ) {
+        attachedLayout = vlcVideoLayout
+        didTextureFallback = false
+
+        val attached = attachViewsSafely(vlcVideoLayout, isTextureView)
+        if (!attached && isTextureView) {
+            val fallbackAttached = attachViewsSafely(vlcVideoLayout, false)
+            if (fallbackAttached) {
+                didTextureFallback = true
+                VideoLog.e("$TAG--attachRenderView--> texture attach failed, fallback to SurfaceView")
+                return
+            }
         }
-        val isTextureView = false
-        mMediaPlayer.attachViews(vlcVideoLayout, null, true, isTextureView)
+
+        if (!attached) {
+            mPlayerEventListener.onError(IllegalStateException("VLC attachViews failed: isTextureView=$isTextureView"))
+        }
+    }
+
+    private fun attachViewsSafely(
+        vlcVideoLayout: VLCVideoLayout,
+        isTextureView: Boolean
+    ): Boolean =
+        runCatching {
+            if (mMediaPlayer.vlcVout.areViewsAttached()) {
+                mMediaPlayer.detachViews()
+            }
+            mMediaPlayer.attachViews(vlcVideoLayout, null, true, isTextureView)
+            isUsingTextureView = isTextureView
+            true
+        }.getOrElse { throwable ->
+            VideoLog.e("$TAG--attachViewsSafely--> failed isTextureView=$isTextureView, error=${throwable.message}")
+            false
+        }
+
+    private fun fallbackTextureAttachAfterErrorIfNeeded(): Boolean {
+        if (!isUsingTextureView || didTextureFallback) {
+            return false
+        }
+        val layout = attachedLayout ?: return false
+        val fallbackAttached = attachViewsSafely(layout, false)
+        if (fallbackAttached) {
+            didTextureFallback = true
+            VideoLog.e("$TAG--listener--onInfo--> texture mode encountered error, fallback to SurfaceView")
+        }
+        return fallbackAttached
     }
 
     fun setScale(scale: MediaPlayer.ScaleType) {
@@ -289,6 +342,10 @@ class VlcVideoPlayer(
                 MediaPlayer.Event.SeekableChanged -> seekable = it.seekable
                 // 播放错误
                 MediaPlayer.Event.EncounteredError -> {
+                    if (fallbackTextureAttachAfterErrorIfNeeded()) {
+                        VideoLog.d("$TAG--listener--onInfo--> texture fallback to SurfaceView")
+                        return@setEventListener
+                    }
                     VlcAudioPolicy.markCompatAfterError()
                     mPlayerEventListener.onError()
                     VideoLog.d("$TAG--listener--onInfo--> onError")
