@@ -807,6 +807,7 @@ class PlayerActivity :
         PlayerInitializer.Subtitle.textColor = SubtitleConfig.getTextColor()
         PlayerInitializer.Subtitle.strokeColor = SubtitleConfig.getStrokeColor()
         PlayerInitializer.Subtitle.alpha = SubtitleConfig.getAlpha()
+        PlayerInitializer.Subtitle.fontScaleOffsetPercent = SubtitleConfig.getSubtitleFontScaleOffsetPercent()
         PlayerInitializer.Subtitle.verticalOffset = SubtitleConfig.getVerticalOffset()
         val backend = SubtitleRendererBackend.LIBASS
         PlayerInitializer.Subtitle.backend = backend

@@ -33,6 +33,13 @@ interface SubtitleRenderer {
     }
 
     /**
+     * Applies a global font scale offset for ASS/SSA rendering, based on the track's own style.
+     */
+    fun updateFontScaleOffset(offsetPercent: Int) {
+        // default no-op
+    }
+
+    /**
      * Notifies the renderer that the playback position has jumped (seek/discontinuity).
      */
     fun onSeek(positionMs: Long) {

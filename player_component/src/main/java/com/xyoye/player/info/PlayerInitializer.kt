@@ -72,6 +72,7 @@ object PlayerInitializer {
         const val DEFAULT_TEXT_COLOR = Color.WHITE
         const val DEFAULT_STROKE_COLOR = Color.BLACK
         const val DEFAULT_ALPHA = 100
+        const val DEFAULT_FONT_SCALE_OFFSET_PERCENT = 0
         const val DEFAULT_VERTICAL_OFFSET = 0
         val DEFAULT_BACKEND = SubtitleRendererBackend.LIBASS
 
@@ -82,6 +83,7 @@ object PlayerInitializer {
         var textColor = DEFAULT_TEXT_COLOR
         var strokeColor = DEFAULT_STROKE_COLOR
         var alpha = DEFAULT_ALPHA
+        var fontScaleOffsetPercent = DEFAULT_FONT_SCALE_OFFSET_PERCENT
         var verticalOffset = DEFAULT_VERTICAL_OFFSET
         var backend = DEFAULT_BACKEND
     }

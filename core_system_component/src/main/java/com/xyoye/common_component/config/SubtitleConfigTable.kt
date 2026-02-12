@@ -33,6 +33,10 @@ object SubtitleConfigTable {
     @MMKVFiled
     const val alpha = 100
 
+    // 字幕字号偏移百分比（基于字幕原始字号缩放，仅 libass 生效）
+    @MMKVFiled
+    const val subtitleFontScaleOffsetPercent = 0
+
     // 字幕阴影开关
     @MMKVFiled
     const val shadowEnabled = true

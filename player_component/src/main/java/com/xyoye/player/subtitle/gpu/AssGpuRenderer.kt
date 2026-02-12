@@ -127,6 +127,15 @@ class AssGpuRenderer(
         }
     }
 
+    fun updateFontScale(scale: Float) {
+        if (released) return
+        val clampedScale = scale.coerceIn(0.1f, 5f)
+        renderHandler.postAtFrontOfQueue {
+            if (released) return@postAtFrontOfQueue
+            nativeBridge.setFontScale(clampedScale)
+        }
+    }
+
     fun detachSurface() {
         if (released) return
         renderHandler.postAtFrontOfQueue {

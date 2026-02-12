@@ -79,6 +79,7 @@ internal class LibassGpuSubtitleSession(
     fun start() {
         attachOverlay()
         gpuRenderer.updateOpacity(PlayerInitializer.Subtitle.alpha)
+        gpuRenderer.updateFontScale(offsetPercentToScale(PlayerInitializer.Subtitle.fontScaleOffsetPercent))
         registerEmbeddedSink()
         startFrameDriver()
     }
@@ -112,6 +113,12 @@ internal class LibassGpuSubtitleSession(
 
     fun updateOpacity(alphaPercent: Int) {
         gpuRenderer.updateOpacity(alphaPercent)
+    }
+
+    fun updateFontScaleOffset(offsetPercent: Int) {
+        gpuRenderer.updateFontScale(offsetPercentToScale(offsetPercent))
+        val positionMs = environment.playerView?.getCurrentPosition() ?: 0L
+        renderOnceIfPaused(positionMs)
     }
 
     fun onSeek(positionMs: Long) {
@@ -322,5 +329,17 @@ internal class LibassGpuSubtitleSession(
                 .coerceAtLeast(0L)
         val vsyncId = SystemClock.elapsedRealtimeNanos() / 1_000_000L
         gpuRenderer.renderFrame(pts, vsyncId)
+    }
+
+    private fun offsetPercentToScale(offsetPercent: Int): Float {
+        val clampedOffset = offsetPercent.coerceIn(-FONT_SCALE_OFFSET_MAX, FONT_SCALE_OFFSET_MAX)
+        val scale = 1f + clampedOffset / 100f
+        return scale.coerceIn(MIN_FONT_SCALE, MAX_FONT_SCALE)
+    }
+
+    private companion object {
+        private const val FONT_SCALE_OFFSET_MAX = 50
+        private const val MIN_FONT_SCALE = 0.1f
+        private const val MAX_FONT_SCALE = 5f
     }
 }

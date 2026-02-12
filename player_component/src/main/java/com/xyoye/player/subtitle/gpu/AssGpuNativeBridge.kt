@@ -82,6 +82,11 @@ class AssGpuNativeBridge {
         nativeSetGlobalOpacity(handle, percent)
     }
 
+    fun setFontScale(scale: Float) {
+        if (!isReady) return
+        nativeSetFontScale(handle, scale)
+    }
+
     fun loadTrack(
         path: String,
         fontDirs: List<String>,
@@ -165,6 +170,11 @@ class AssGpuNativeBridge {
     private external fun nativeSetGlobalOpacity(
         handle: Long,
         percent: Int
+    )
+
+    private external fun nativeSetFontScale(
+        handle: Long,
+        scale: Float
     )
 
     private external fun nativeLoadTrack(

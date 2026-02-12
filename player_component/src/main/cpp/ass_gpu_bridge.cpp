@@ -74,6 +74,7 @@ struct GpuContext {
     ASS_Renderer *renderer = nullptr;
     ASS_Track *track = nullptr;
     float user_alpha = 1.0F;
+    double user_font_scale = 1.0;
     bool pending_invalidate = false;
     struct TextureEntry {
         GLuint id = 0;
@@ -306,6 +307,7 @@ void EnsureAss(GpuContext *context) {
     }
     if (context->renderer == nullptr) {
         context->renderer = ass_renderer_init(context->library);
+        ass_set_font_scale(context->renderer, context->user_font_scale);
     }
 }
 
@@ -1022,6 +1024,26 @@ Java_com_xyoye_player_subtitle_gpu_AssGpuNativeBridge_nativeSetGlobalOpacity(
     std::lock_guard<std::mutex> guard(context->mutex);
     if (context->user_alpha != scaled) {
         context->user_alpha = scaled;
+        context->pending_invalidate = true;
+    }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_xyoye_player_subtitle_gpu_AssGpuNativeBridge_nativeSetFontScale(
+    JNIEnv *env, jobject /*thiz*/, jlong handle, jfloat scale) {
+    (void)env;
+    auto *context = reinterpret_cast<GpuContext *>(handle);
+    if (context == nullptr) {
+        return;
+    }
+    const double clamped =
+        std::max(0.1, std::min(5.0, static_cast<double>(scale)));
+    std::lock_guard<std::mutex> guard(context->mutex);
+    if (context->user_font_scale != clamped) {
+        context->user_font_scale = clamped;
+        if (context->renderer != nullptr) {
+            ass_set_font_scale(context->renderer, context->user_font_scale);
+        }
         context->pending_invalidate = true;
     }
 }

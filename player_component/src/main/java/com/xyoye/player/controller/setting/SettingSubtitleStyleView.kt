@@ -26,6 +26,7 @@ class SettingSubtitleStyleView(
 ) : BaseSettingView<LayoutSettingSubtitleStyleBinding>(context, attrs, defStyleAttr) {
     companion object {
         private const val VERTICAL_OFFSET_MAX = 30
+        private const val FONT_SCALE_OFFSET_MAX = 50
     }
 
     init {
@@ -103,6 +104,15 @@ class SettingSubtitleStyleView(
         viewBinding.subtitleAlphaTv.text = alphaText
         viewBinding.subtitleAlphaSb.progress = alphaPercent
 
+        val fontScaleOffsetPercent =
+            PlayerInitializer.Subtitle.fontScaleOffsetPercent.coerceIn(
+                -FONT_SCALE_OFFSET_MAX,
+                FONT_SCALE_OFFSET_MAX
+            )
+        viewBinding.subtitleFontScaleOffsetTv.text = formatOffsetText(fontScaleOffsetPercent)
+        viewBinding.subtitleFontScaleOffsetSb.progress =
+            fontScaleOffsetValueToProgress(fontScaleOffsetPercent)
+
         val verticalOffset = PlayerInitializer.Subtitle.verticalOffset
         viewBinding.subtitleVerticalOffsetTv.text = formatOffsetText(verticalOffset)
         viewBinding.subtitleVerticalOffsetSb.progress = offsetValueToProgress(verticalOffset)
@@ -112,6 +122,7 @@ class SettingSubtitleStyleView(
 
     private fun applyBackendVisibility() {
         val enableLegacyStyling = PlayerInitializer.Subtitle.backend != SubtitleRendererBackend.LIBASS
+        val enableLibassScaling = PlayerInitializer.Subtitle.backend == SubtitleRendererBackend.LIBASS
         // libass 使用字幕文件自身样式，仅保留字号/颜色/描边等在传统后端
         viewBinding.subtitleSizeRow.isVisible = enableLegacyStyling
         viewBinding.subtitleSizeSb.isVisible = enableLegacyStyling
@@ -124,6 +135,9 @@ class SettingSubtitleStyleView(
         // 透明度在 libass 下同样生效（作为全局系数），因此始终可见
         viewBinding.subtitleAlphaRow.isVisible = true
         viewBinding.subtitleAlphaSb.isVisible = true
+        // 字号偏移仅对 libass 生效
+        viewBinding.subtitleFontScaleOffsetRow.isVisible = enableLibassScaling
+        viewBinding.subtitleFontScaleOffsetSb.isVisible = enableLibassScaling
     }
 
     private fun initSettingListener() {
@@ -149,6 +163,10 @@ class SettingSubtitleStyleView(
 
         viewBinding.subtitleAlphaSb.observeProgressChange {
             updateAlpha(it)
+        }
+
+        viewBinding.subtitleFontScaleOffsetSb.observeProgressChange {
+            updateFontScaleOffset(fontScaleOffsetProgressToValue(it))
         }
 
         viewBinding.subtitleVerticalOffsetSb.observeProgressChange {
@@ -244,6 +262,21 @@ class SettingSubtitleStyleView(
         onConfigChanged()
     }
 
+    private fun updateFontScaleOffset(offsetPercent: Int) {
+        val clampedOffset = offsetPercent.coerceIn(-FONT_SCALE_OFFSET_MAX, FONT_SCALE_OFFSET_MAX)
+        if (PlayerInitializer.Subtitle.fontScaleOffsetPercent == clampedOffset) {
+            return
+        }
+
+        viewBinding.subtitleFontScaleOffsetTv.text = formatOffsetText(clampedOffset)
+        viewBinding.subtitleFontScaleOffsetSb.progress = fontScaleOffsetValueToProgress(clampedOffset)
+
+        SubtitleConfig.putSubtitleFontScaleOffsetPercent(clampedOffset)
+        PlayerInitializer.Subtitle.fontScaleOffsetPercent = clampedOffset
+        SubtitleRendererRegistry.current()?.updateFontScaleOffset(clampedOffset)
+        onConfigChanged()
+    }
+
     private fun updateVerticalOffset(offsetPercent: Int) {
         val clampedOffset = offsetPercent.coerceIn(-VERTICAL_OFFSET_MAX, VERTICAL_OFFSET_MAX)
         if (PlayerInitializer.Subtitle.verticalOffset == clampedOffset) {
@@ -263,6 +296,7 @@ class SettingSubtitleStyleView(
         updateSize(PlayerInitializer.Subtitle.DEFAULT_SIZE)
         updateStrokeWidth(PlayerInitializer.Subtitle.DEFAULT_STROKE)
         updateAlpha(PlayerInitializer.Subtitle.DEFAULT_ALPHA)
+        updateFontScaleOffset(PlayerInitializer.Subtitle.DEFAULT_FONT_SCALE_OFFSET_PERCENT)
         updateVerticalOffset(PlayerInitializer.Subtitle.DEFAULT_VERTICAL_OFFSET)
 
         val defaultTextColor = PlayerInitializer.Subtitle.DEFAULT_TEXT_COLOR
@@ -285,11 +319,16 @@ class SettingSubtitleStyleView(
             PlayerInitializer.Subtitle.textColor != PlayerInitializer.Subtitle.DEFAULT_TEXT_COLOR ||
             PlayerInitializer.Subtitle.strokeColor != PlayerInitializer.Subtitle.DEFAULT_STROKE_COLOR ||
             PlayerInitializer.Subtitle.alpha != PlayerInitializer.Subtitle.DEFAULT_ALPHA ||
+            PlayerInitializer.Subtitle.fontScaleOffsetPercent != PlayerInitializer.Subtitle.DEFAULT_FONT_SCALE_OFFSET_PERCENT ||
             PlayerInitializer.Subtitle.verticalOffset != PlayerInitializer.Subtitle.DEFAULT_VERTICAL_OFFSET
 
     private fun offsetValueToProgress(value: Int): Int = value + VERTICAL_OFFSET_MAX
 
     private fun offsetProgressToValue(progress: Int): Int = progress - VERTICAL_OFFSET_MAX
+
+    private fun fontScaleOffsetValueToProgress(value: Int): Int = value + FONT_SCALE_OFFSET_MAX
+
+    private fun fontScaleOffsetProgressToValue(progress: Int): Int = progress - FONT_SCALE_OFFSET_MAX
 
     private fun formatOffsetText(offsetPercent: Int): String =
         if (offsetPercent > 0) {
@@ -305,6 +344,7 @@ class SettingSubtitleStyleView(
         COLOR,
         STROKE_COLOR,
         ALPHA,
+        FONT_SCALE_OFFSET,
         VERTICAL_OFFSET,
         UNKNOWN,
     }
@@ -322,6 +362,12 @@ class SettingSubtitleStyleView(
             SubtitleFocusNode.COLOR -> handleColorFocusKey(keyCode)
             SubtitleFocusNode.STROKE_COLOR -> handleStrokeColorFocusKey(keyCode)
             SubtitleFocusNode.ALPHA -> handleAlphaFocusKey(keyCode)
+            SubtitleFocusNode.FONT_SCALE_OFFSET -> {
+                when (keyCode) {
+                    KeyEvent.KEYCODE_DPAD_UP -> viewBinding.subtitleAlphaSb.requestFocus()
+                    KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.subtitleVerticalOffsetSb.requestFocus()
+                }
+            }
             SubtitleFocusNode.VERTICAL_OFFSET -> handleVerticalOffsetFocusKey(keyCode, fallbackToAlpha = false)
             SubtitleFocusNode.UNKNOWN -> viewBinding.subtitleSizeSb.requestFocus()
         }
@@ -340,10 +386,27 @@ class SettingSubtitleStyleView(
             SubtitleFocusNode.ALPHA -> {
                 when (keyCode) {
                     KeyEvent.KEYCODE_DPAD_UP -> focusResetOrVerticalOffset()
+                    KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.subtitleFontScaleOffsetSb.requestFocus()
+                }
+            }
+            SubtitleFocusNode.FONT_SCALE_OFFSET -> {
+                when (keyCode) {
+                    KeyEvent.KEYCODE_DPAD_UP -> viewBinding.subtitleAlphaSb.requestFocus()
                     KeyEvent.KEYCODE_DPAD_DOWN -> viewBinding.subtitleVerticalOffsetSb.requestFocus()
                 }
             }
-            SubtitleFocusNode.VERTICAL_OFFSET -> handleVerticalOffsetFocusKey(keyCode, fallbackToAlpha = true)
+            SubtitleFocusNode.VERTICAL_OFFSET -> {
+                when (keyCode) {
+                    KeyEvent.KEYCODE_DPAD_UP -> viewBinding.subtitleFontScaleOffsetSb.requestFocus()
+                    KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        if (isConfigChanged()) {
+                            viewBinding.tvResetSubtitleConfig.requestFocus()
+                        } else {
+                            viewBinding.subtitleAlphaSb.requestFocus()
+                        }
+                    }
+                }
+            }
             SubtitleFocusNode.UNKNOWN -> viewBinding.subtitleAlphaSb.requestFocus()
             else -> viewBinding.subtitleAlphaSb.requestFocus()
         }
@@ -353,6 +416,7 @@ class SettingSubtitleStyleView(
         when {
             viewBinding.tvResetSubtitleConfig.hasFocus() -> SubtitleFocusNode.RESET
             viewBinding.subtitleAlphaSb.hasFocus() -> SubtitleFocusNode.ALPHA
+            viewBinding.subtitleFontScaleOffsetSb.hasFocus() -> SubtitleFocusNode.FONT_SCALE_OFFSET
             viewBinding.subtitleVerticalOffsetSb.hasFocus() -> SubtitleFocusNode.VERTICAL_OFFSET
             else -> SubtitleFocusNode.UNKNOWN
         }
@@ -365,6 +429,7 @@ class SettingSubtitleStyleView(
             viewBinding.subtitleColorSb.hasFocus() -> SubtitleFocusNode.COLOR
             viewBinding.subtitleStrokeColorSb.hasFocus() -> SubtitleFocusNode.STROKE_COLOR
             viewBinding.subtitleAlphaSb.hasFocus() -> SubtitleFocusNode.ALPHA
+            viewBinding.subtitleFontScaleOffsetSb.hasFocus() -> SubtitleFocusNode.FONT_SCALE_OFFSET
             viewBinding.subtitleVerticalOffsetSb.hasFocus() -> SubtitleFocusNode.VERTICAL_OFFSET
             else -> SubtitleFocusNode.UNKNOWN
         }
@@ -441,4 +506,3 @@ class SettingSubtitleStyleView(
         }
     }
 }
-
