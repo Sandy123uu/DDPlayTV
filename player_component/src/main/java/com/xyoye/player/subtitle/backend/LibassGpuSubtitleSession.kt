@@ -332,13 +332,14 @@ internal class LibassGpuSubtitleSession(
     }
 
     private fun offsetPercentToScale(offsetPercent: Int): Float {
-        val clampedOffset = offsetPercent.coerceIn(-FONT_SCALE_OFFSET_MAX, FONT_SCALE_OFFSET_MAX)
+        val clampedOffset = offsetPercent.coerceIn(FONT_SCALE_OFFSET_MIN, FONT_SCALE_OFFSET_MAX)
         val scale = 1f + clampedOffset / 100f
         return scale.coerceIn(MIN_FONT_SCALE, MAX_FONT_SCALE)
     }
 
     private companion object {
-        private const val FONT_SCALE_OFFSET_MAX = 50
+        private const val FONT_SCALE_OFFSET_MIN = -50
+        private const val FONT_SCALE_OFFSET_MAX = 400
         private const val MIN_FONT_SCALE = 0.1f
         private const val MAX_FONT_SCALE = 5f
     }

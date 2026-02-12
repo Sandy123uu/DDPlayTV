@@ -284,7 +284,7 @@
                 android:layout_marginTop="5dp"
                 android:layout_marginEnd="10dp"
                 android:focusable="true"
-                android:max="100"
+                android:max="450"
                 app:theme="@style/Theme.DanDanPlay.SeekBar"
                 tools:progress="50" />
 

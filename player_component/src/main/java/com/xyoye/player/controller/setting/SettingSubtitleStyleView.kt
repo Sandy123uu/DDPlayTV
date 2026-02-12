@@ -26,7 +26,8 @@ class SettingSubtitleStyleView(
 ) : BaseSettingView<LayoutSettingSubtitleStyleBinding>(context, attrs, defStyleAttr) {
     companion object {
         private const val VERTICAL_OFFSET_MAX = 30
-        private const val FONT_SCALE_OFFSET_MAX = 50
+        private const val FONT_SCALE_OFFSET_MIN = -50
+        private const val FONT_SCALE_OFFSET_MAX = 400
     }
 
     init {
@@ -105,10 +106,7 @@ class SettingSubtitleStyleView(
         viewBinding.subtitleAlphaSb.progress = alphaPercent
 
         val fontScaleOffsetPercent =
-            PlayerInitializer.Subtitle.fontScaleOffsetPercent.coerceIn(
-                -FONT_SCALE_OFFSET_MAX,
-                FONT_SCALE_OFFSET_MAX
-            )
+            PlayerInitializer.Subtitle.fontScaleOffsetPercent.coerceIn(FONT_SCALE_OFFSET_MIN, FONT_SCALE_OFFSET_MAX)
         viewBinding.subtitleFontScaleOffsetTv.text = formatOffsetText(fontScaleOffsetPercent)
         viewBinding.subtitleFontScaleOffsetSb.progress =
             fontScaleOffsetValueToProgress(fontScaleOffsetPercent)
@@ -263,7 +261,7 @@ class SettingSubtitleStyleView(
     }
 
     private fun updateFontScaleOffset(offsetPercent: Int) {
-        val clampedOffset = offsetPercent.coerceIn(-FONT_SCALE_OFFSET_MAX, FONT_SCALE_OFFSET_MAX)
+        val clampedOffset = offsetPercent.coerceIn(FONT_SCALE_OFFSET_MIN, FONT_SCALE_OFFSET_MAX)
         if (PlayerInitializer.Subtitle.fontScaleOffsetPercent == clampedOffset) {
             return
         }
@@ -326,9 +324,9 @@ class SettingSubtitleStyleView(
 
     private fun offsetProgressToValue(progress: Int): Int = progress - VERTICAL_OFFSET_MAX
 
-    private fun fontScaleOffsetValueToProgress(value: Int): Int = value + FONT_SCALE_OFFSET_MAX
+    private fun fontScaleOffsetValueToProgress(value: Int): Int = value - FONT_SCALE_OFFSET_MIN
 
-    private fun fontScaleOffsetProgressToValue(progress: Int): Int = progress - FONT_SCALE_OFFSET_MAX
+    private fun fontScaleOffsetProgressToValue(progress: Int): Int = progress + FONT_SCALE_OFFSET_MIN
 
     private fun formatOffsetText(offsetPercent: Int): String =
         if (offsetPercent > 0) {
