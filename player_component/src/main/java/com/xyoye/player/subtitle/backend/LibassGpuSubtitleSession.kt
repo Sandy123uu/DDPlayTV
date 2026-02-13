@@ -71,6 +71,7 @@ internal class LibassGpuSubtitleSession(
 
     private var overlay: SubtitleSurfaceOverlay? = null
     private var embeddedSink: EmbeddedSubtitleSink? = null
+    private var embeddedSinkController: EmbeddedSubtitleSinkController? = null
     private var frameDriver: SubtitleFrameDriver? = null
 
     private var choreographer: Choreographer? = null
@@ -88,6 +89,7 @@ internal class LibassGpuSubtitleSession(
         runCatching { stopFrameDriver() }
         runCatching { embeddedSink?.onRelease() }
         embeddedSink = null
+        embeddedSinkController = null
         runCatching { kernelBridge?.setEmbeddedSubtitleSink(null) }
         overlay?.let { view ->
             environment.playerView?.let { playerView ->
@@ -103,10 +105,18 @@ internal class LibassGpuSubtitleSession(
     }
 
     fun loadExternalTrack(path: String) {
+        embeddedSinkController?.setEnabled(false)
         val fonts = buildFontDirectories(environment.context)
         val defaultFont = SubtitleFontManager.getDefaultFontPath(environment.context)
         gpuRenderer.loadTrack(path, fonts, defaultFont)
         gpuRenderer.frameCleaner.onTrackChanged()
+        val positionMs = environment.playerView?.getCurrentPosition() ?: 0L
+        renderOnceIfPaused(positionMs)
+    }
+
+    fun clearActiveTrack() {
+        gpuRenderer.frameCleaner.onTrackChanged()
+        gpuRenderer.flushEmbeddedEvents()
         val positionMs = environment.playerView?.getCurrentPosition() ?: 0L
         renderOnceIfPaused(positionMs)
     }
@@ -305,8 +315,12 @@ internal class LibassGpuSubtitleSession(
     private fun registerEmbeddedSink() {
         val fonts = buildFontDirectories(environment.context)
         val defaultFont = SubtitleFontManager.getDefaultFontPath(environment.context)
-        val sink = LibassEmbeddedSubtitleSink(gpuRenderer, fonts, defaultFont)
+        val sink =
+            SwitchableEmbeddedSubtitleSink(
+                LibassEmbeddedSubtitleSink(gpuRenderer, fonts, defaultFont),
+            )
         embeddedSink = sink
+        embeddedSinkController = sink
         kernelBridge?.setEmbeddedSubtitleSink(sink)
     }
 

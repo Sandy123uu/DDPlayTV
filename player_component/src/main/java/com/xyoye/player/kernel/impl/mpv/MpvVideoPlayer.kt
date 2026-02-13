@@ -7,6 +7,7 @@ import android.view.Surface
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import com.xyoye.common_component.config.PlayerConfig
+import com.xyoye.common_component.enums.SubtitleRendererBackend
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.LogSystem
 import com.xyoye.common_component.log.model.LogModule
@@ -431,9 +432,22 @@ class MpvVideoPlayer(
         return decodeType
     }
 
-    override fun supportAddTrack(type: TrackType): Boolean = type == TrackType.AUDIO || type == TrackType.SUBTITLE
+    override fun supportAddTrack(type: TrackType): Boolean =
+        when (type) {
+            TrackType.AUDIO -> true
+            TrackType.SUBTITLE -> !shouldRouteExternalSubtitleToController()
+            else -> false
+        }
 
     override fun addTrack(track: VideoTrackBean): Boolean {
+        if (track.type == TrackType.SUBTITLE && shouldRouteExternalSubtitleToController()) {
+            LogFacade.i(
+                LogModule.PLAYER,
+                "MpvVideoPlayer",
+                "external subtitle routed to subtitle controller (libass+mediacodec_embed): ${track.trackResource}",
+            )
+            return false
+        }
         val path = track.trackResource as? String ?: return false
         if (path.isBlank()) return false
         val added = nativeBridge.addExternalTrack(track.type, path)
@@ -458,6 +472,9 @@ class MpvVideoPlayer(
         )
         return true
     }
+
+    private fun shouldRouteExternalSubtitleToController(): Boolean =
+        canStartGpuSubtitlePipeline() && PlayerInitializer.Subtitle.backend == SubtitleRendererBackend.LIBASS
 
     override fun getTracks(type: TrackType): List<VideoTrackBean> {
         if (!isPrepared) return emptyList()

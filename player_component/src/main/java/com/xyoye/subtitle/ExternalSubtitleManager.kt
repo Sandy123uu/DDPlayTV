@@ -52,6 +52,15 @@ class ExternalSubtitleManager(
         return mTimedTextObject != null
     }
 
+    fun clearBackendSubtitle(): Boolean {
+        if (!handledByBackend) {
+            return false
+        }
+        SubtitleRendererRegistry.current()?.clearExternalSubtitle()
+        handledByBackend = false
+        return true
+    }
+
     fun getSubtitle(position: Long): MixedSubtitle? {
         if (handledByBackend) {
             return null
@@ -63,8 +72,8 @@ class ExternalSubtitleManager(
     }
 
     fun release() {
+        clearBackendSubtitle()
         mTimedTextObject = null
-        handledByBackend = false
     }
 
     private fun notifyUnsupportedFormat(

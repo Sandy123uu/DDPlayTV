@@ -28,6 +28,13 @@ interface SubtitleRenderer {
 
     fun loadExternalSubtitle(path: String): Boolean
 
+    /**
+     * Clears any active external subtitle track owned by this renderer.
+     */
+    fun clearExternalSubtitle() {
+        // default no-op
+    }
+
     fun updateOpacity(alphaPercent: Int) {
         // default no-op
     }

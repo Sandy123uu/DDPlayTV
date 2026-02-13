@@ -137,6 +137,32 @@ class ControlWrapperQualityRegressionTest {
         assertEquals(listOf(TrackType.SUBTITLE), videoController.updatedTrackTypes)
         assertEquals(listOf(track), videoController.addedTracks)
     }
+
+    @Test
+    fun selectTrackUsesVideoPlayerForInternalSubtitleEvenWhenExternalSubtitlesAreRoutedToController() {
+        val videoPlayer = FakeVideoPlayer()
+        val videoController = FakeVideoController()
+        val subtitleController = FakeSubtitleController()
+        val wrapper =
+            ControlWrapper(
+                mVideoPlayer = videoPlayer,
+                mController = videoController,
+                mDanmuController = FakeDanmuController(),
+                mSubtitleController = subtitleController,
+                mSettingController = FakeSettingController(),
+            )
+
+        videoPlayer.setTrackSupport(TrackType.SUBTITLE, false)
+        subtitleController.setTrackSupport(TrackType.SUBTITLE, true)
+        val internalSubtitle = VideoTrackBean.internal(id = "2:1", name = "embedded", type = TrackType.SUBTITLE, selected = false)
+
+        wrapper.selectTrack(internalSubtitle)
+
+        assertEquals(listOf(internalSubtitle), videoPlayer.selectedTracks)
+        assertEquals(listOf(TrackType.SUBTITLE), subtitleController.deselectedTypes)
+        assertTrue(subtitleController.selectedTracks.isEmpty())
+        assertEquals(listOf(TrackType.SUBTITLE), videoController.updatedTrackTypes)
+    }
 }
 
 private data class DanmuSeekCall(
@@ -153,6 +179,7 @@ private class FakeVideoPlayer : InterVideoPlayer {
 
     val seekCalls = mutableListOf<Long>()
     val deselectedTypes = mutableListOf<TrackType>()
+    val selectedTracks = mutableListOf<VideoTrackBean>()
 
     private val supportTrackTypes = mutableSetOf<TrackType>()
     private val tracks = mutableMapOf<TrackType, List<VideoTrackBean>>()
@@ -245,7 +272,7 @@ private class FakeVideoPlayer : InterVideoPlayer {
     override fun getTracks(type: TrackType): List<VideoTrackBean> = tracks[type].orEmpty()
 
     override fun selectTrack(track: VideoTrackBean) {
-        // no-op
+        selectedTracks += track
     }
 
     override fun deselectTrack(type: TrackType) {

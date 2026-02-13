@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import androidx.media3.common.util.UnstableApi
 import com.xyoye.player.subtitle.backend.EmbeddedSubtitleSink
+import com.xyoye.player.subtitle.backend.EmbeddedSubtitleSinkController
 import java.util.concurrent.TimeUnit
 
 @UnstableApi
@@ -34,9 +35,11 @@ internal class MpvEmbeddedSubtitleBridge(
                 lastAssFull = null
                 return@post
             }
-            lastAssExtradata?.let { extradata ->
-                activeSink.onFormat(extradata.toByteArray(Charsets.UTF_8))
-            }
+            lastAssExtradata
+                ?.takeIf { it.isNotBlank() }
+                ?.let { extradata ->
+                    activeSink.onFormat(extradata.toByteArray(Charsets.UTF_8))
+                }
             lastAssFull?.let { assFull ->
                 deliverAssFull(activeSink, assFull)
             }
@@ -48,6 +51,7 @@ internal class MpvEmbeddedSubtitleBridge(
         post {
             lastAssFull = value
             val activeSink = activeSink() ?: return@post
+            enableSinkIfNeeded(activeSink)
             deliverAssFull(activeSink, value)
         }
     }
@@ -56,7 +60,11 @@ internal class MpvEmbeddedSubtitleBridge(
         post {
             lastAssExtradata = value
             val activeSink = activeSink() ?: return@post
-            activeSink.onFormat(value?.takeIf { it.isNotBlank() }?.toByteArray(Charsets.UTF_8))
+            if (value.isNullOrBlank()) {
+                return@post
+            }
+            enableSinkIfNeeded(activeSink)
+            activeSink.onFormat(value.toByteArray(Charsets.UTF_8))
         }
     }
 
@@ -64,6 +72,10 @@ internal class MpvEmbeddedSubtitleBridge(
         post {
             if (lastSid == value) return@post
             lastSid = value
+            val normalized = value?.trim()
+            if (!normalized.isNullOrEmpty() && !normalized.equals("no", ignoreCase = true)) {
+                activeSink()?.let { enableSinkIfNeeded(it) }
+            }
             lastAssExtradata = null
             lastAssFull = null
             resetForTimelineChangeInternal()
@@ -111,6 +123,13 @@ internal class MpvEmbeddedSubtitleBridge(
         synchronized(lock) {
             sink
         }
+
+    private fun enableSinkIfNeeded(sink: EmbeddedSubtitleSink) {
+        val controller = sink as? EmbeddedSubtitleSinkController ?: return
+        if (!controller.isEnabled()) {
+            controller.setEnabled(true)
+        }
+    }
 
     private fun resetForTimelineChangeInternal() {
         parser.reset()

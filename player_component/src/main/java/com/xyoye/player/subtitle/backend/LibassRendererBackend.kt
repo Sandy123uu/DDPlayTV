@@ -60,6 +60,10 @@ class LibassRendererBackend(
         return true
     }
 
+    override fun clearExternalSubtitle() {
+        session?.clearActiveTrack()
+    }
+
     override fun updateOpacity(alphaPercent: Int) {
         session?.updateOpacity(alphaPercent)
     }

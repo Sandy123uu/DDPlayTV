@@ -46,6 +46,9 @@ class ExternalSubtitleView(
     // 寻找字幕的Job
     private var mFindSubtitleJob: Job? = null
 
+    // 加载字幕的Job（用于取消旧任务，避免并发加载）
+    private var mLoadSubtitleJob: Job? = null
+
     // 当前已添加的字幕轨道，不一定被成功加载或选中
     private var mAddedTrack: VideoTrackBean? = null
 
@@ -53,7 +56,11 @@ class ExternalSubtitleView(
     private var mTrackSelected = false
 
     // 字幕是否加载完成
+    @Volatile
     private var mSubtitleLoaded = false
+
+    @Volatile
+    private var mSubtitleLoading = false
 
     private var unsupportedFormatDialog: AlertDialog? = null
 
@@ -139,7 +146,24 @@ class ExternalSubtitleView(
     fun getAddedTrack(): VideoTrackBean? = mAddedTrack?.copy(selected = mTrackSelected)
 
     fun setTrackSelected(selected: Boolean) {
+        if (mTrackSelected == selected) {
+            return
+        }
         mTrackSelected = selected
+        if (!selected) {
+            mFindSubtitleJob?.cancel()
+            lifecycleScope.launch(Dispatchers.Main) {
+                sendEmptySubtitle()
+            }
+            if (mSubtitleManager.clearBackendSubtitle()) {
+                mSubtitleLoaded = false
+            }
+            return
+        }
+
+        if (!mSubtitleLoaded && !mSubtitleLoading) {
+            reloadCurrentTrack()
+        }
     }
 
     fun updateOffsetTime() {
@@ -148,17 +172,24 @@ class ExternalSubtitleView(
     }
 
     private fun loadSubtitleAsync(subtitlePath: String) {
-        lifecycleScope.launch(Dispatchers.IO) {
+        mLoadSubtitleJob?.cancel()
+        mSubtitleLoaded = false
+        mSubtitleLoading = true
+        mLoadSubtitleJob =
+            lifecycleScope.launch(Dispatchers.IO) {
             // 设置加载状态未完成
-            mSubtitleLoaded = false
-            // 释放旧的已加载的弹幕数据
-            mSubtitleManager.release()
-            // 发送一条空字幕，用于清空上一条显示的字幕
-            sendEmptySubtitle()
+                try {
+                    // 释放旧的已加载的字幕数据
+                    mSubtitleManager.release()
+                    // 发送一条空字幕，用于清空上一条显示的字幕
+                    launch(Dispatchers.Main) { sendEmptySubtitle() }
 
-            // 加载字幕
-            mSubtitleLoaded = mSubtitleManager.loadSubtitle(subtitlePath)
-        }
+                    // 加载字幕
+                    mSubtitleLoaded = mSubtitleManager.loadSubtitle(subtitlePath)
+                } finally {
+                    mSubtitleLoading = false
+                }
+            }
     }
 
     fun reloadCurrentTrack() {
