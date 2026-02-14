@@ -873,11 +873,41 @@ class PlayerActivity :
         val diagnostics = linkedMapOf<String, String>()
         diagnostics["playerType"] = PlayerInitializer.playerType.name
         diagnostics["playState"] = danDanPlayer.getPlayState().name
-        diagnostics["positionMs"] = danDanPlayer.getCurrentPosition().toString()
+        val playerPositionMs = danDanPlayer.getCurrentPosition()
+        diagnostics["positionMs"] = playerPositionMs.toString()
         diagnostics["durationMs"] = danDanPlayer.getDuration().toString()
         diagnostics["bufferedPct"] = danDanPlayer.getBufferedPercentage().toString()
-        diagnostics["isLiveFlag"] = danDanPlayer.isLive().toString()
+        val isLive = danDanPlayer.isLive()
+        diagnostics["isLiveFlag"] = isLive.toString()
         diagnostics["videoTitle"] = source.getVideoTitle()
+        val sourcePositionMs = source.getCurrentPosition()
+        diagnostics["sourcePositionMs"] = sourcePositionMs.toString()
+        diagnostics["pendingSeekPositionMs"] = pendingSeekPositionMs?.toString() ?: "null"
+
+        val resumeCandidateMs =
+            if (isLive) {
+                0L
+            } else {
+                playerPositionMs.takeIf { it > 0 } ?: sourcePositionMs
+            }
+        val resumeCandidateOrigin =
+            if (isLive) {
+                "live_no_seek"
+            } else if (playerPositionMs > 0) {
+                "lastKnownPositionMs_cache"
+            } else if (sourcePositionMs > 0) {
+                "playHistory_fallback"
+            } else {
+                "unknown_zero"
+            }
+        diagnostics["resumeCandidateMs"] = resumeCandidateMs.toString()
+        diagnostics["resumeCandidateOrigin"] = resumeCandidateOrigin
+
+        danDanPlayer.exoPlayerOrNull()?.let { exoPlayer ->
+            diagnostics["media3.currentPositionMs"] = exoPlayer.currentPosition.toString()
+            diagnostics["media3.contentPositionMs"] = exoPlayer.contentPosition.toString()
+            diagnostics["media3.bufferedPositionMs"] = exoPlayer.bufferedPosition.toString()
+        }
 
         latestMedia3Session?.let {
             diagnostics["media3.sessionId"] = it.sessionId
