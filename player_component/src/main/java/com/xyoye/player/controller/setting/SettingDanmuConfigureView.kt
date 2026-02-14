@@ -1,6 +1,8 @@
 package com.xyoye.player.controller.setting
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
@@ -26,6 +28,12 @@ class SettingDanmuConfigureView(
 ) : BaseSettingView<LayoutSettingDanmuConfigureBinding>(context, attrs, defStyleAttr) {
     private var settingMode = BaseDanmaku.TYPE_SCROLL_RL
     private val isTvUiMode: Boolean = context.isTelevisionUiMode()
+    private val maxLineCommitCoordinator =
+        DanmuMaxLineCommitCoordinator(
+            debounceMillis = MAX_LINE_COMMIT_DEBOUNCE_MS,
+            scheduler = HandlerScheduler(Handler(Looper.getMainLooper())),
+            commitAction = ::commitMaxLine
+        )
 
     init {
         initView()
@@ -41,9 +49,16 @@ class SettingDanmuConfigureView(
     }
 
     override fun onViewHide() {
+        flushPendingMaxLineCommit()
         hideKeyboard(viewBinding.etScreenMaxNum)
         hideKeyboard(viewBinding.etMaxLine)
         viewBinding.playerSettingNsv.focusedChild?.clearFocus()
+    }
+
+    override fun onDetachedFromWindow() {
+        flushPendingMaxLineCommit()
+        maxLineCommitCoordinator.cancelPending()
+        super.onDetachedFromWindow()
     }
 
     override fun onViewShowed() {
@@ -137,7 +152,7 @@ class SettingDanmuConfigureView(
 
         viewBinding.tvLineNoLimit.setOnClickListener {
             viewBinding.etMaxLine.clearFocus()
-            updateMaxLine(PlayerInitializer.Danmu.DEFAULT_MAX_LINE)
+            requestMaxLineChange(PlayerInitializer.Danmu.DEFAULT_MAX_LINE)
         }
 
         viewBinding.etMaxLine.setOnEditorActionListener { _, actionId, _ ->
@@ -150,7 +165,7 @@ class SettingDanmuConfigureView(
                 newMaxLine =
                     if (newMaxLine <= 0) PlayerInitializer.Danmu.DEFAULT_MAX_LINE else newMaxLine
 
-                updateMaxLine(newMaxLine)
+                requestMaxLineChange(newMaxLine)
                 hideKeyboard(viewBinding.etMaxLine)
                 return@setOnEditorActionListener true
             }
@@ -194,6 +209,7 @@ class SettingDanmuConfigureView(
         if (settingMode == mode) {
             return
         }
+        flushPendingMaxLineCommit()
         settingMode = mode
         applyDanmuConfigureStatus()
     }
@@ -266,23 +282,85 @@ class SettingDanmuConfigureView(
         }
     }
 
-    private fun updateMaxLine(line: Int) {
-        when (settingMode) {
-            BaseDanmaku.TYPE_SCROLL_RL -> {
-                PlayerInitializer.Danmu.maxScrollLine = line
-                DanmuConfig.putDanmuScrollMaxLine(line)
-            }
-            BaseDanmaku.TYPE_FIX_TOP -> {
-                PlayerInitializer.Danmu.maxTopLine = line
-                DanmuConfig.putDanmuTopMaxLine(line)
-            }
-            BaseDanmaku.TYPE_FIX_BOTTOM -> {
-                PlayerInitializer.Danmu.maxBottomLine = line
-                DanmuConfig.putDanmuBottomMaxLine(line)
-            }
+    private fun requestMaxLineChange(
+        line: Int,
+        debounce: Boolean = true
+    ) {
+        val mode = settingMode
+        val currentLine = getMaxLineByMode(mode)
+        val normalizedLine = normalizeMaxLineValue(line)
+        if (currentLine == normalizedLine) {
+            return
         }
-        mControlWrapper.updateMaxLine()
+        setMaxLineByMode(mode, normalizedLine)
         applyDanmuConfigureStatus()
+        maxLineCommitCoordinator.request(mode, currentLine, normalizedLine, debounce)
+    }
+
+    private fun flushPendingMaxLineCommit() {
+        maxLineCommitCoordinator.flush()
+    }
+
+    private fun commitMaxLine(
+        mode: Int,
+        line: Int
+    ) {
+        val normalizedLine = normalizeMaxLineValue(line)
+        setMaxLineByMode(mode, normalizedLine)
+        persistMaxLineByMode(mode, normalizedLine)
+        mControlWrapper.updateMaxLine()
+    }
+
+    private fun persistMaxLineByMode(
+        mode: Int,
+        line: Int
+    ) {
+        when (mode) {
+            BaseDanmaku.TYPE_SCROLL_RL -> DanmuConfig.putDanmuScrollMaxLine(line)
+            BaseDanmaku.TYPE_FIX_TOP -> DanmuConfig.putDanmuTopMaxLine(line)
+            BaseDanmaku.TYPE_FIX_BOTTOM -> DanmuConfig.putDanmuBottomMaxLine(line)
+            else -> Unit
+        }
+    }
+
+    private fun getMaxLineByMode(mode: Int): Int =
+        when (mode) {
+            BaseDanmaku.TYPE_SCROLL_RL -> PlayerInitializer.Danmu.maxScrollLine
+            BaseDanmaku.TYPE_FIX_TOP -> PlayerInitializer.Danmu.maxTopLine
+            BaseDanmaku.TYPE_FIX_BOTTOM -> PlayerInitializer.Danmu.maxBottomLine
+            else -> PlayerInitializer.Danmu.maxScrollLine
+        }
+
+    private fun setMaxLineByMode(
+        mode: Int,
+        line: Int
+    ): Boolean {
+        val normalizedLine = normalizeMaxLineValue(line)
+        val currentLine = getMaxLineByMode(mode)
+        if (currentLine == normalizedLine) {
+            return false
+        }
+        when (mode) {
+            BaseDanmaku.TYPE_SCROLL_RL -> PlayerInitializer.Danmu.maxScrollLine = normalizedLine
+            BaseDanmaku.TYPE_FIX_TOP -> PlayerInitializer.Danmu.maxTopLine = normalizedLine
+            BaseDanmaku.TYPE_FIX_BOTTOM -> PlayerInitializer.Danmu.maxBottomLine = normalizedLine
+            else -> return false
+        }
+        return true
+    }
+
+    private fun normalizeMaxLineValue(line: Int): Int {
+        val normalizedLine =
+            if (line <= PlayerInitializer.Danmu.DEFAULT_MAX_LINE) {
+                PlayerInitializer.Danmu.DEFAULT_MAX_LINE
+            } else {
+                line
+            }
+        return if (isTvUiMode) {
+            normalizedLine.coerceIn(PlayerInitializer.Danmu.DEFAULT_MAX_LINE, TV_MAX_LINE_LIMIT)
+        } else {
+            normalizedLine
+        }
     }
 
     private fun updateScreenLimit(limit: Int) {
@@ -499,7 +577,7 @@ class SettingDanmuConfigureView(
 
             // Keep TV UI range and actual behavior consistent.
             if (tvMaxLine != normalizedMaxLine) {
-                updateMaxLine(tvMaxLine)
+                requestMaxLineChange(tvMaxLine, debounce = false)
             }
         } else {
             if (normalizedMaxLine == PlayerInitializer.Danmu.DEFAULT_MAX_LINE) {
@@ -527,7 +605,7 @@ class SettingDanmuConfigureView(
         val tvCurrent = currentMaxLine.coerceIn(PlayerInitializer.Danmu.DEFAULT_MAX_LINE, TV_MAX_LINE_LIMIT)
         val tvNext = (tvCurrent + delta).coerceIn(PlayerInitializer.Danmu.DEFAULT_MAX_LINE, TV_MAX_LINE_LIMIT)
         if (tvNext != tvCurrent) {
-            updateMaxLine(tvNext)
+            requestMaxLineChange(tvNext)
         }
     }
 
@@ -549,5 +627,21 @@ class SettingDanmuConfigureView(
 
     private companion object {
         private const val TV_MAX_LINE_LIMIT = 12
+        private const val MAX_LINE_COMMIT_DEBOUNCE_MS = 180L
+    }
+}
+
+private class HandlerScheduler(
+    private val handler: Handler
+) : DanmuMaxLineCommitCoordinator.Scheduler {
+    override fun postDelayed(
+        delayMillis: Long,
+        action: () -> Unit
+    ): DanmuMaxLineCommitCoordinator.Cancelable {
+        val runnable = Runnable { action() }
+        handler.postDelayed(runnable, delayMillis)
+        return DanmuMaxLineCommitCoordinator.Cancelable {
+            handler.removeCallbacks(runnable)
+        }
     }
 }
