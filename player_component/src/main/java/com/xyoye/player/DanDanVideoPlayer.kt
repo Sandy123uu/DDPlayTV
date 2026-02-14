@@ -66,6 +66,8 @@ class DanDanVideoPlayer(
 
     @Volatile
     private var lastPlaybackError: Exception? = null
+    @Volatile
+    private var lastKnownPositionMs: Long = 0
 
     // 默认组件参数
     private val mDefaultLayoutParams =
@@ -150,7 +152,14 @@ class DanDanVideoPlayer(
 
     override fun getCurrentPosition(): Long {
         if (isInPlayState()) {
-            return mVideoPlayer.getCurrentPosition()
+            val positionMs = mVideoPlayer.getCurrentPosition()
+            if (positionMs > 0) {
+                lastKnownPositionMs = positionMs
+            }
+            return positionMs
+        }
+        if (mCurrentPlayState == PlayState.STATE_ERROR) {
+            return lastKnownPositionMs
         }
         return 0
     }
@@ -480,6 +489,7 @@ class DanDanVideoPlayer(
         }
         mRenderView = null
         mAudioFocusHelper.abandonFocus()
+        lastKnownPositionMs = 0
         setPlayState(PlayState.STATE_IDLE)
     }
 
@@ -492,6 +502,7 @@ class DanDanVideoPlayer(
 
     fun setVideoSource(source: BaseVideoSource) {
         lastPlaybackError = null
+        lastKnownPositionMs = 0
         videoSource = source
     }
 
