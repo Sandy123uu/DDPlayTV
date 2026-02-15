@@ -510,7 +510,6 @@ class MpvVideoPlayer(
     }
 
     override fun deselectTrack(type: TrackType) {
-        if (!isPrepared) return
         val nativeType =
             when (type) {
                 TrackType.SUBTITLE -> MpvNativeBridge.TRACK_TYPE_SUBTITLE
