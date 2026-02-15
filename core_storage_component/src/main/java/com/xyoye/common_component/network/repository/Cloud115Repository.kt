@@ -1,6 +1,7 @@
 package com.xyoye.common_component.network.repository
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonEncodingException
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.network.RetrofitManager
@@ -294,13 +295,20 @@ class Cloud115Repository(
 
         val cookie = requireCookie()
         val response =
-            RetrofitManager.cloud115Service.cookieStatus(
-                baseUrl = Api.CLOUD_115_MY,
-                cookie = cookie,
-                ct = "guide",
-                ac = "status",
-                timestamp = nowMs.toString(),
-            )
+            try {
+                RetrofitManager.cloud115Service.cookieStatus(
+                    baseUrl = Api.CLOUD_115_MY,
+                    cookie = cookie,
+                    userAgent = Cloud115Headers.USER_AGENT,
+                    ct = "guide",
+                    ac = "status",
+                    timestamp = nowMs.toString(),
+                )
+            } catch (e: JsonEncodingException) {
+                lastCookieCheckAtMs = nowMs
+                lastCookieValid = false
+                throw Cloud115ReAuthRequiredException("授权校验失败（返回非 JSON），请重试或重新授权")
+            }
 
         lastCookieCheckAtMs = nowMs
         lastCookieValid = response.state

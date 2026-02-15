@@ -23,6 +23,7 @@ object Cloud115TokenValidator {
                     RetrofitManager.cloud115Service.cookieStatus(
                         baseUrl = Api.CLOUD_115_MY,
                         cookie = cookie,
+                        userAgent = Cloud115Headers.USER_AGENT,
                         ct = "guide",
                         ac = "status",
                         timestamp = System.currentTimeMillis().toString(),

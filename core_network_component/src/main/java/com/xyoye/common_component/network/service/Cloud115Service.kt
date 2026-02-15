@@ -53,6 +53,7 @@ interface Cloud115Service {
     suspend fun cookieStatus(
         @Header(HeaderKey.BASE_URL) baseUrl: String,
         @Header("Cookie") cookie: String,
+        @Header("User-Agent") userAgent: String,
         @Query("ct") ct: String,
         @Query("ac") ac: String,
         @Query("_") timestamp: String? = null

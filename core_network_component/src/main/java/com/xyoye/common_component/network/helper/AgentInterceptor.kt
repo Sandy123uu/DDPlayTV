@@ -10,11 +10,17 @@ import okhttp3.Response
 
 class AgentInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response =
-        chain.proceed(
-            chain
-                .request()
-                .newBuilder()
-                .header("User-Agent", "dandanplay/android ${AppUtils.getVersionName()}")
-                .build(),
-        )
+        chain
+            .request()
+            .let { request ->
+                val existing = request.header("User-Agent")
+                if (existing.isNullOrBlank()) {
+                    request
+                        .newBuilder()
+                        .header("User-Agent", "dandanplay/android ${AppUtils.getVersionName()}")
+                        .build()
+                } else {
+                    request
+                }
+            }.let { chain.proceed(it) }
 }
