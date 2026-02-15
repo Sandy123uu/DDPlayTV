@@ -79,6 +79,9 @@ public class RegexFilter extends DanmakuFilters.BaseDanmakuFilter<List<String>> 
     }
 
     public void addRegex(String regex) {
+        if (regex == null || regex.trim().isEmpty()) {
+            return;
+        }
         if (!mRegexList.contains(regex)) {
             mRegexList.add(regex);
         }
@@ -89,6 +92,9 @@ public class RegexFilter extends DanmakuFilters.BaseDanmakuFilter<List<String>> 
     }
 
     private void logDebug(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            return;
+        }
         LogFacade.INSTANCE.d(
                 LogModule.PLAYER,
                 "RegexFilter",
