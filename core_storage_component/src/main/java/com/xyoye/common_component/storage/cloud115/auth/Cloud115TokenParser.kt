@@ -34,7 +34,8 @@ object Cloud115TokenParser {
                 throw IllegalArgumentException("token 缺少 ${missing.joinToString(separator = "/")}")
             }
 
-            if (!Regex("^\\d+$").matches(uid)) {
+            val userId = uid.takeWhile { it.isDigit() }
+            if (userId.isBlank()) {
                 throw IllegalArgumentException("token 的 UID 格式不正确")
             }
 
@@ -50,7 +51,7 @@ object Cloud115TokenParser {
             }
 
             ParsedToken(
-                userId = uid,
+                userId = userId,
                 cookieHeader = cookieHeader,
             )
         }

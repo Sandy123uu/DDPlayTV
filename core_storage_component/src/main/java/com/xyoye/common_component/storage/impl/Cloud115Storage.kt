@@ -452,7 +452,7 @@ class Cloud115Storage(
                 ?.trim()
                 .orEmpty()
         return buildMap {
-            put(Cloud115Headers.HEADER_USER_AGENT, Cloud115Headers.USER_AGENT)
+            put(Cloud115Headers.HEADER_USER_AGENT, Cloud115Headers.appUserAgent())
             if (cookie.isNotBlank()) {
                 put(Cloud115Headers.HEADER_COOKIE, cookie)
             }

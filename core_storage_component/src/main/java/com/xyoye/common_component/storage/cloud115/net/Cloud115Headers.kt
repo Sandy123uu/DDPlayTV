@@ -1,5 +1,6 @@
 package com.xyoye.common_component.storage.cloud115.net
 
+import com.xyoye.common_component.utils.AppUtils
 import com.xyoye.data_component.data.cloud115.Cloud115Credential
 
 /**
@@ -15,7 +16,19 @@ object Cloud115Headers {
     const val HEADER_COOKIE = "Cookie"
 
     // 115Browser/115disk 风格 UA，具体版本不敏感，保持稳定即可
-    const val USER_AGENT = "Mozilla/5.0 115Browser/27.0.0.0"
+    const val WEB_USER_AGENT = "Mozilla/5.0 115Browser/27.0.0.0"
+
+    // 兼容旧命名：WEB_USER_AGENT 才是其真实语义
+    const val USER_AGENT = WEB_USER_AGENT
+
+    fun appUserAgent(): String {
+        val version = AppUtils.getVersionName().trim()
+        return if (version.isBlank()) {
+            "dandanplay/android"
+        } else {
+            "dandanplay/android $version"
+        }
+    }
 
     fun buildCookieHeader(cookie: Cloud115Credential?): String =
         if (cookie == null) {

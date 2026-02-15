@@ -14,6 +14,14 @@ class Cloud115TokenParserTest {
     }
 
     @Test
+    fun parseSuccessWithUidContainingSegments() {
+        val input = "UID=12345678_D1_1771127930; CID=abc; SEID=def; KID=ghi"
+        val result = Cloud115TokenParser.parse(input).getOrThrow()
+        assertEquals("12345678", result.userId)
+        assertEquals(input, result.cookieHeader)
+    }
+
+    @Test
     fun parseSuccessWithCookiePrefixCaseInsensitiveAndSpaces() {
         val input = "Cookie: uid = 123 ; cid= abc; SEID =def  "
         val result = Cloud115TokenParser.parse(input).getOrThrow()

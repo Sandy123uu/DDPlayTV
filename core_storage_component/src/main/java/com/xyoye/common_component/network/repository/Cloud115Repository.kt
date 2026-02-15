@@ -248,7 +248,7 @@ class Cloud115Repository(
 
     suspend fun downloadUrl(
         pickCode: String,
-        userAgent: String = Cloud115Headers.USER_AGENT
+        userAgent: String = Cloud115Headers.appUserAgent()
     ): Result<PlayUrl> =
         requestProApi(
             reason = "downloadUrl",
