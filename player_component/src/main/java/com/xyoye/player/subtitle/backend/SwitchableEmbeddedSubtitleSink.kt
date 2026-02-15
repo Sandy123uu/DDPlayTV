@@ -1,5 +1,7 @@
 package com.xyoye.player.subtitle.backend
 
+import androidx.media3.common.util.UnstableApi
+
 /**
  * Optional control interface for embedded subtitle sinks.
  *
@@ -16,6 +18,7 @@ interface EmbeddedSubtitleSinkController {
  * Wraps an [EmbeddedSubtitleSink] and allows muting it without detaching the sink
  * from the kernel bridge.
  */
+@UnstableApi
 class SwitchableEmbeddedSubtitleSink(
     private val delegate: EmbeddedSubtitleSink
 ) : EmbeddedSubtitleSink,
@@ -53,4 +56,3 @@ class SwitchableEmbeddedSubtitleSink(
         delegate.onRelease()
     }
 }
-

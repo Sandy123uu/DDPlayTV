@@ -21,10 +21,48 @@
             app:icon="@drawable/ic_app_setting" />
 
         <SwitchPreference
-            android:key="tcp_log_server_enable"
-            android:title="@string/developer_tcp_log_server_title"
-            android:summary="@string/developer_tcp_log_server_summary_off"
+            android:key="http_log_server_enable"
+            android:title="@string/developer_http_log_server_title"
+            android:summary="@string/developer_http_log_server_summary_off"
             app:icon="@drawable/ic_app_setting" />
+
+        <Preference
+            android:key="http_log_server_address"
+            android:title="@string/developer_http_log_server_address_title"
+            android:summary="@string/developer_http_log_server_address_summary_off"
+            app:icon="@drawable/ic_app_setting_about_us" />
+
+        <Preference
+            android:key="http_log_server_token"
+            android:title="@string/developer_http_log_server_token_title"
+            android:summary="@string/developer_http_log_server_token_summary_empty"
+            app:icon="@drawable/ic_app_setting_about_us" />
+
+        <Preference
+            android:key="http_log_server_reset_token"
+            android:title="@string/developer_http_log_server_reset_token_title"
+            android:summary="@string/developer_http_log_server_reset_token_summary"
+            app:icon="@drawable/ic_feedback" />
+
+        <Preference
+            android:key="http_log_server_clear_logs"
+            android:title="@string/developer_http_log_server_clear_logs_title"
+            android:summary="@string/developer_http_log_server_clear_logs_summary"
+            app:icon="@drawable/ic_feedback" />
+
+        <ListPreference
+            android:key="http_log_server_retention_days"
+            android:title="@string/developer_http_log_server_retention_title"
+            android:summary="@string/developer_http_log_server_retention_summary"
+            app:entries="@array/developer_http_log_retention_entries"
+            app:entryValues="@array/developer_http_log_retention_values"
+            app:icon="@drawable/ic_app_setting" />
+
+        <Preference
+            android:key="http_log_server_storage_usage"
+            android:title="@string/developer_http_log_server_usage_title"
+            android:summary="@string/developer_http_log_server_usage_summary"
+            app:icon="@drawable/ic_app_setting_about_us" />
     </PreferenceCategory>
 
     <PreferenceCategory

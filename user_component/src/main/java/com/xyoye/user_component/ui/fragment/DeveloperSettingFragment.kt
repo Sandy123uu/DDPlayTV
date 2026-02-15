@@ -4,22 +4,27 @@ import android.os.Bundle
 import android.view.View
 import androidx.preference.ListPreference
 import androidx.preference.Preference
+import androidx.preference.PreferenceGroup
 import androidx.preference.SwitchPreference
 import com.xyoye.common_component.base.BasePreferenceFragmentCompat
 import com.xyoye.common_component.config.BilibiliTvCredentialStore
 import com.xyoye.common_component.config.DevelopConfig
 import com.xyoye.common_component.config.DeveloperCredentialStore
+import com.xyoye.common_component.extension.addToClipboard
+import com.xyoye.common_component.extension.isTelevisionUiMode
 import com.xyoye.common_component.log.BuglyReporter
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.LogSystem
+import com.xyoye.common_component.log.http.HttpLogServerState
+import com.xyoye.common_component.log.http.model.HttpDegradeMode
 import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.log.model.PolicySource
-import com.xyoye.common_component.log.tcp.TcpLogServerState
 import com.xyoye.common_component.preference.MappingPreferenceDataStore
 import com.xyoye.common_component.utils.ErrorReportHelper
 import com.xyoye.common_component.utils.SecurityHelperConfig
 import com.xyoye.common_component.utils.SupervisorScope
+import com.xyoye.common_component.utils.formatFileSize
 import com.xyoye.common_component.weight.ToastCenter
 import com.xyoye.common_component.weight.dialog.CommonDialog
 import com.xyoye.user_component.R
@@ -42,7 +47,13 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
         private const val TAG = "DeveloperSetting"
         private const val SUBTITLE_TAG = "DeveloperSubtitle"
         private const val KEY_APP_LOG_ENABLE = "app_log_enable"
-        private const val KEY_TCP_LOG_SERVER_ENABLE = "tcp_log_server_enable"
+        private const val KEY_HTTP_LOG_SERVER_ENABLE = "http_log_server_enable"
+        private const val KEY_HTTP_LOG_SERVER_ADDRESS = "http_log_server_address"
+        private const val KEY_HTTP_LOG_SERVER_TOKEN = "http_log_server_token"
+        private const val KEY_HTTP_LOG_SERVER_RESET_TOKEN = "http_log_server_reset_token"
+        private const val KEY_HTTP_LOG_SERVER_CLEAR_LOGS = "http_log_server_clear_logs"
+        private const val KEY_HTTP_LOG_SERVER_RETENTION_DAYS = "http_log_server_retention_days"
+        private const val KEY_HTTP_LOG_SERVER_STORAGE_USAGE = "http_log_server_storage_usage"
         private const val KEY_LOG_LEVEL = "developer_log_level"
         private const val KEY_BUGLY_STATUS = "bugly_status"
         private const val KEY_BUGLY_TEST_REPORT = "bugly_test_report"
@@ -55,7 +66,7 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
     }
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
-    private var tcpLogServerIpText: String = "-"
+    private var httpLogServerIpText: String = "-"
 
     override fun onCreatePreferences(
         savedInstanceState: Bundle?,
@@ -86,12 +97,17 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
         initBuglyTestPreference()
         initDeveloperCredentialPreferences()
         initBilibiliTvCredentialPreference()
+
+        if (requireContext().isTelevisionUiMode()) {
+            view.post { requestPreferenceItemFocus(KEY_HTTP_LOG_SERVER_ENABLE) }
+        }
     }
 
     override fun onResume() {
         super.onResume()
         refreshLogPreferenceState()
         updateSubtitleSessionSummary()
+        refreshHttpLogServerDetailPreferences(LogSystem.getHttpLogServerState())
     }
 
     private fun initLogPreferences() {
@@ -137,27 +153,106 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
             }
         }
 
-        initTcpLogServerPreference()
+        initHttpLogServerPreference()
+        initHttpLogServerDetailPreferences()
     }
 
-    private fun initTcpLogServerPreference() {
-        findPreference<SwitchPreference>(KEY_TCP_LOG_SERVER_ENABLE)?.apply {
-            refreshTcpLogServerPreferenceState(this, LogSystem.getTcpLogServerState())
+    private fun initHttpLogServerPreference() {
+        findPreference<SwitchPreference>(KEY_HTTP_LOG_SERVER_ENABLE)?.apply {
+            refreshHttpLogServerPreferenceState(this, LogSystem.getHttpLogServerState())
             setOnPreferenceChangeListener { _, newValue ->
                 val enable = newValue as? Boolean ?: return@setOnPreferenceChangeListener false
-                val updated = LogSystem.setTcpLogServerEnabled(enable)
+                val updated = LogSystem.setHttpLogServerEnabled(enable)
                 isChecked = updated.enabled
-                refreshTcpLogServerPreferenceState(this, updated)
+                refreshHttpLogServerPreferenceState(this, updated)
+                refreshHttpLogServerDetailPreferences(updated)
 
                 if (enable) {
                     if (updated.running) {
-                        ToastCenter.showSuccess(getString(R.string.developer_tcp_log_server_toast_on))
+                        ToastCenter.showSuccess(getString(R.string.developer_http_log_server_toast_on))
                     } else {
                         val reason = updated.lastError ?: "-"
-                        ToastCenter.showError(getString(R.string.developer_tcp_log_server_toast_on_failed, reason))
+                        ToastCenter.showError(getString(R.string.developer_http_log_server_toast_on_failed, reason))
                     }
                 } else {
-                    ToastCenter.showSuccess(getString(R.string.developer_tcp_log_server_toast_off))
+                    ToastCenter.showSuccess(getString(R.string.developer_http_log_server_toast_off))
+                }
+                false
+            }
+        }
+    }
+
+    private fun initHttpLogServerDetailPreferences() {
+        findPreference<Preference>(KEY_HTTP_LOG_SERVER_TOKEN)?.apply {
+            summary = getString(R.string.developer_http_log_server_token_summary_empty)
+            setOnPreferenceClickListener {
+                val token = LogSystem.getHttpLogServerState().token
+                if (token.isNotBlank()) {
+                    token.addToClipboard()
+                    ToastCenter.showSuccess(getString(R.string.developer_http_log_server_token_toast_copied))
+                }
+                true
+            }
+        }
+
+        findPreference<Preference>(KEY_HTTP_LOG_SERVER_RESET_TOKEN)?.apply {
+            setOnPreferenceClickListener {
+                CommonDialog
+                    .Builder(requireActivity())
+                    .apply {
+                        content = getString(R.string.developer_http_log_server_reset_token_confirm)
+                        addPositive {
+                            it.dismiss()
+                            val updated = LogSystem.resetHttpLogServerToken()
+                            findPreference<SwitchPreference>(KEY_HTTP_LOG_SERVER_ENABLE)?.let { pref ->
+                                refreshHttpLogServerPreferenceState(pref, updated)
+                            }
+                            refreshHttpLogServerDetailPreferences(updated)
+                            ToastCenter.showSuccess(getString(R.string.developer_http_log_server_reset_token_toast))
+                        }
+                        addNegative { dialog -> dialog.dismiss() }
+                    }.build()
+                    .show()
+                true
+            }
+        }
+
+        findPreference<Preference>(KEY_HTTP_LOG_SERVER_CLEAR_LOGS)?.apply {
+            setOnPreferenceClickListener {
+                CommonDialog
+                    .Builder(requireActivity())
+                    .apply {
+                        content = getString(R.string.developer_http_log_server_clear_logs_confirm)
+                        addPositive {
+                            it.dismiss()
+                            val updated = LogSystem.clearHttpLogServerLogs()
+                            refreshHttpLogServerDetailPreferences(updated)
+                            ToastCenter.showSuccess(getString(R.string.developer_http_log_server_clear_logs_toast))
+                        }
+                        addNegative { dialog -> dialog.dismiss() }
+                    }.build()
+                    .show()
+                true
+            }
+        }
+
+        findPreference<ListPreference>(KEY_HTTP_LOG_SERVER_RETENTION_DAYS)?.apply {
+            isPersistent = false
+            setOnPreferenceChangeListener { _, newValue ->
+                val requestedDays = (newValue as? String)?.toIntOrNull() ?: return@setOnPreferenceChangeListener false
+                val updated = LogSystem.setHttpLogRetentionDays(requestedDays)
+                refreshHttpLogServerDetailPreferences(updated)
+                val label = resolveRetentionLabel(updated.retention.days)
+                when {
+                    updated.degradeMode == HttpDegradeMode.PERSISTENCE_PAUSED -> {
+                        ToastCenter.showWarning(getString(R.string.developer_http_log_server_persistence_paused_toast))
+                    }
+                    updated.retention.days != requestedDays -> {
+                        ToastCenter.showWarning(getString(R.string.developer_http_log_server_retention_fallback_toast, label))
+                    }
+                    else -> {
+                        ToastCenter.showSuccess(getString(R.string.developer_http_log_server_retention_toast, label))
+                    }
                 }
                 false
             }
@@ -543,50 +638,103 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
             val level = LogSystem.getRuntimeState().activePolicy.defaultLevel
             updateLogLevelPreference(it, level)
         }
-        findPreference<SwitchPreference>(KEY_TCP_LOG_SERVER_ENABLE)?.let {
-            refreshTcpLogServerPreferenceState(it, LogSystem.getTcpLogServerState())
+        findPreference<SwitchPreference>(KEY_HTTP_LOG_SERVER_ENABLE)?.let {
+            refreshHttpLogServerPreferenceState(it, LogSystem.getHttpLogServerState())
         }
     }
 
-    private fun refreshTcpLogServerPreferenceState(
+    private fun refreshHttpLogServerPreferenceState(
         preference: SwitchPreference,
-        state: TcpLogServerState
+        state: HttpLogServerState
     ) {
         preference.isChecked = state.enabled
-        updateTcpLogServerSummary(preference, state)
+        updateHttpLogServerSummary(preference, state)
         if (state.enabled && state.running) {
-            refreshTcpLogServerIpTextAsync()
+            refreshHttpLogServerIpTextAsync()
         }
     }
 
-    private fun updateTcpLogServerSummary(
+    private fun updateHttpLogServerSummary(
         preference: SwitchPreference,
-        state: TcpLogServerState
+        state: HttpLogServerState
     ) {
         preference.summary =
             when {
-                !state.enabled -> getString(R.string.developer_tcp_log_server_summary_off)
-                !state.running -> getString(R.string.developer_tcp_log_server_summary_error, state.lastError ?: "-")
+                !state.enabled -> getString(R.string.developer_http_log_server_summary_off)
+                !state.running -> getString(R.string.developer_http_log_server_summary_error, state.lastError ?: "-")
                 else -> {
                     val port = if (state.boundPort > 0) state.boundPort else state.requestedPort
+                    val ipText = state.ipAddresses.joinToString(separator = "\n").ifBlank { httpLogServerIpText.ifBlank { "-" } }
                     getString(
-                        R.string.developer_tcp_log_server_summary_on,
+                        R.string.developer_http_log_server_summary_on,
                         port,
-                        tcpLogServerIpText.ifBlank { "-" },
+                        ipText,
                     )
                 }
             }
     }
 
-    private fun refreshTcpLogServerIpTextAsync() {
+    private fun refreshHttpLogServerDetailPreferences(state: HttpLogServerState) {
+        val port = if (state.boundPort > 0) state.boundPort else state.requestedPort
+
+        findPreference<Preference>(KEY_HTTP_LOG_SERVER_ADDRESS)?.apply {
+            summary =
+                if (!state.enabled || !state.running) {
+                    getString(R.string.developer_http_log_server_address_summary_off)
+                } else {
+                    val urls =
+                        state.ipAddresses
+                            .map { ip -> "http://${wrapHttpHost(ip)}:$port/" }
+                            .ifEmpty { listOf("http://<ip>:$port/") }
+                    urls.joinToString(separator = "\n") + "\n\n/?token=<token>"
+                }
+        }
+
+        findPreference<Preference>(KEY_HTTP_LOG_SERVER_TOKEN)?.apply {
+            summary = state.token.ifBlank { getString(R.string.developer_http_log_server_token_summary_empty) }
+        }
+
+        findPreference<ListPreference>(KEY_HTTP_LOG_SERVER_RETENTION_DAYS)?.apply {
+            value = state.retention.days.toString()
+            summary = resolveRetentionLabel(state.retention.days)
+        }
+
+        findPreference<Preference>(KEY_HTTP_LOG_SERVER_STORAGE_USAGE)?.apply {
+            val used = formatFileSize(state.storeUsedBytes)
+            val max = formatFileSize(state.retention.maxBytes)
+            val base = getString(R.string.developer_http_log_server_usage_summary_format, used, max)
+            summary =
+                if (state.degradeMode == HttpDegradeMode.PERSISTENCE_PAUSED) {
+                    val extra = state.message?.takeIf { it.isNotBlank() }.orEmpty()
+                    if (extra.isBlank()) base else base + "\n" + extra
+                } else {
+                    base
+                }
+        }
+    }
+
+    private fun resolveRetentionLabel(days: Int): String =
+        when (days) {
+            14 -> getString(R.string.developer_http_log_retention_14d)
+            30 -> getString(R.string.developer_http_log_retention_30d)
+            else -> getString(R.string.developer_http_log_retention_7d)
+        }
+
+    private fun wrapHttpHost(raw: String): String {
+        val host = raw.trim()
+        if (host.isEmpty()) return raw
+        return if (host.contains(':') && !host.startsWith("[") && !host.endsWith("]")) "[$host]" else host
+    }
+
+    private fun refreshHttpLogServerIpTextAsync() {
         SupervisorScope.IO.launch {
             val ipText = resolveLocalIpText()
             SupervisorScope.Main.launch {
                 if (!isAdded) return@launch
-                tcpLogServerIpText = ipText
-                val state = LogSystem.getTcpLogServerState()
-                findPreference<SwitchPreference>(KEY_TCP_LOG_SERVER_ENABLE)?.let { pref ->
-                    updateTcpLogServerSummary(pref, state)
+                httpLogServerIpText = ipText
+                val state = LogSystem.getHttpLogServerState()
+                findPreference<SwitchPreference>(KEY_HTTP_LOG_SERVER_ENABLE)?.let { pref ->
+                    updateHttpLogServerSummary(pref, state)
                 }
             }
         }
@@ -634,7 +782,7 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
         booleanReaders =
             mapOf(
                 KEY_APP_LOG_ENABLE to { LogSystem.getRuntimeState().debugSessionEnabled },
-                KEY_TCP_LOG_SERVER_ENABLE to { LogSystem.getTcpLogServerState().enabled },
+                KEY_HTTP_LOG_SERVER_ENABLE to { LogSystem.getHttpLogServerState().enabled },
             ),
         booleanWriters =
             mapOf(
@@ -665,4 +813,39 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
                 },
             ),
     )
+
+    private fun requestPreferenceItemFocus(key: String) {
+        val preference = findPreference<Preference>(key) ?: return
+        val recyclerView = listView ?: return
+        val position = findPreferenceAdapterPosition(preference)
+        if (position < 0) return
+
+        recyclerView.scrollToPosition(position)
+        recyclerView.post {
+            if (!isAdded) return@post
+            recyclerView.findViewHolderForAdapterPosition(position)?.itemView?.requestFocus()
+        }
+    }
+
+    private fun findPreferenceAdapterPosition(target: Preference): Int {
+        val screen = preferenceScreen ?: return -1
+        val flat = ArrayList<Preference>(64)
+        for (i in 0 until screen.preferenceCount) {
+            flattenPreference(screen.getPreference(i), flat)
+        }
+        val visible = flat.filter { it.isVisible }
+        return visible.indexOf(target)
+    }
+
+    private fun flattenPreference(
+        preference: Preference,
+        output: MutableList<Preference>,
+    ) {
+        output.add(preference)
+        if (preference is PreferenceGroup) {
+            for (i in 0 until preference.preferenceCount) {
+                flattenPreference(preference.getPreference(i), output)
+            }
+        }
+    }
 }

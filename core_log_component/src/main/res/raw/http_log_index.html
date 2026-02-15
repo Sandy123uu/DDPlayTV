@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DDPlayTV 日志</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0f14;
+        --panel: #121826;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --border: #2d3748;
+        --btn: #1f6feb;
+        --btn2: #238636;
+        --warn: #ffb86c;
+        --err: #ff6b6b;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei",
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      header {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(180deg, #111827, #0b0f14);
+      }
+      header h1 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      header .sub {
+        margin-top: 6px;
+        font-size: 12px;
+        color: var(--muted);
+        white-space: pre-wrap;
+      }
+      main {
+        padding: 16px;
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 14px;
+      }
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      input,
+      select {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid var(--border);
+        background: #0b1220;
+        color: var(--text);
+        padding: 8px 10px;
+        border-radius: 8px;
+        outline: none;
+      }
+      .levels {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+      .levels label {
+        margin: 0;
+        color: var(--text);
+        font-size: 12px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #0b1220;
+        cursor: pointer;
+        user-select: none;
+      }
+      .levels input {
+        width: auto;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      button {
+        border: 0;
+        border-radius: 8px;
+        padding: 9px 12px;
+        cursor: pointer;
+        color: white;
+        font-weight: 600;
+      }
+      button.primary {
+        background: var(--btn);
+      }
+      button.success {
+        background: var(--btn2);
+      }
+      button.secondary {
+        background: #30363d;
+        color: var(--text);
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 8px;
+        white-space: pre-wrap;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      th,
+      td {
+        border-bottom: 1px solid var(--border);
+        padding: 8px 8px;
+        vertical-align: top;
+      }
+      th {
+        text-align: left;
+        color: var(--muted);
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        background: var(--panel);
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .lvl-DEBUG {
+        color: var(--muted);
+      }
+      .lvl-INFO {
+        color: #79c0ff;
+      }
+      .lvl-WARN {
+        color: var(--warn);
+      }
+      .lvl-ERROR {
+        color: var(--err);
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>DDPlayTV HTTP 日志</h1>
+      <div class="sub" id="statusText">加载状态中...</div>
+    </header>
+    <main>
+      <section class="panel">
+        <div class="row">
+          <div>
+            <label>开始时间（epoch ms，可空）</label>
+            <input id="startMs" class="mono" placeholder="例如：1700000000000" />
+          </div>
+          <div>
+            <label>结束时间（epoch ms，可空）</label>
+            <input id="endMs" class="mono" placeholder="例如：1700003600000" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Tag（前缀匹配，可空）</label>
+            <input id="tag" placeholder="例如：Player" />
+          </div>
+          <div>
+            <label>关键词（包含匹配，可空）</label>
+            <input id="keyword" placeholder="例如：timeout" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>来源</label>
+            <select id="source">
+              <option value="BOTH">BOTH</option>
+              <option value="APP">APP</option>
+              <option value="LOGCAT">LOGCAT</option>
+            </select>
+          </div>
+          <div>
+            <label>单次条数</label>
+            <select id="limit">
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="200" selected>200</option>
+              <option value="500">500</option>
+            </select>
+          </div>
+        </div>
+
+        <label>级别（不选表示不过滤）</label>
+        <div class="levels">
+          <label><input type="checkbox" value="DEBUG" />DEBUG</label>
+          <label><input type="checkbox" value="INFO" />INFO</label>
+          <label><input type="checkbox" value="WARN" />WARN</label>
+          <label><input type="checkbox" value="ERROR" />ERROR</label>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="btnSearch">查询</button>
+          <button class="secondary" id="btnLoadMore" disabled>加载更多</button>
+          <button class="secondary" id="btnClear">清空结果</button>
+        </div>
+        <div class="hint mono" id="hintText"></div>
+      </section>
+
+      <section class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 160px">时间</th>
+              <th style="width: 70px">级别</th>
+              <th style="width: 70px">来源</th>
+              <th style="width: 160px">模块/Tag</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script>
+      const token = new URLSearchParams(location.search).get("token") || "";
+      let nextCursor = "";
+
+      function headers() {
+        const h = {};
+        if (token) h["Authorization"] = "Bearer " + token;
+        return h;
+      }
+
+      function setHint(text) {
+        document.getElementById("hintText").textContent = text || "";
+      }
+
+      function formatTime(ms) {
+        if (!ms) return "-";
+        const d = new Date(ms);
+        return d.toLocaleString();
+      }
+
+      function selectedLevels() {
+        const boxes = document.querySelectorAll(".levels input[type=checkbox]");
+        const levels = [];
+        boxes.forEach((b) => {
+          if (b.checked) levels.push(b.value);
+        });
+        return levels;
+      }
+
+      function buildQuery(includeCursor) {
+        const p = new URLSearchParams();
+        const startMs = document.getElementById("startMs").value.trim();
+        const endMs = document.getElementById("endMs").value.trim();
+        const tag = document.getElementById("tag").value.trim();
+        const keyword = document.getElementById("keyword").value.trim();
+        const source = document.getElementById("source").value;
+        const limit = document.getElementById("limit").value;
+
+        if (startMs) p.set("startMs", startMs);
+        if (endMs) p.set("endMs", endMs);
+        if (tag) p.set("tag", tag);
+        if (keyword) p.set("keyword", keyword);
+        if (source) p.set("source", source);
+        if (limit) p.set("limit", limit);
+        selectedLevels().forEach((lvl) => p.append("levels", lvl));
+        if (includeCursor && nextCursor) p.set("cursor", nextCursor);
+        return p;
+      }
+
+      function appendRows(items) {
+        const tbody = document.getElementById("tbody");
+        items.forEach((it) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="mono">${formatTime(it.timestampMs)}</td>
+            <td class="mono lvl-${it.level}">${it.level}</td>
+            <td class="mono"><span class="pill">${it.source}</span></td>
+            <td class="mono">${(it.module || "-") + (it.tag ? "/" + it.tag : "")}</td>
+            <td class="mono">${(it.message || "").replace(/</g, "&lt;")}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      async function fetchStatus() {
+        try {
+          const res = await fetch("/api/v1/status", { headers: headers() });
+          const data = await res.json();
+          const lines = [];
+          lines.push(`running=${data.running}  port=${data.boundPort || data.requestedPort}  clients=${data.clientCount}`);
+          lines.push(`retention=${data.retention?.days}d/${Math.round((data.retention?.maxBytes || 0) / 1024 / 1024)}MB  used=${Math.round((data.storeUsedBytes || 0) / 1024 / 1024)}MB`);
+          lines.push(`logcatAvailable=${data.logcatAvailable}  degrade=${data.degradeMode}`);
+          if (data.message) lines.push(`message=${data.message}`);
+          if (!token) lines.push("提示：URL 未携带 token，页面/接口可能返回 401。");
+          document.getElementById("statusText").textContent = lines.join("\n");
+        } catch (e) {
+          document.getElementById("statusText").textContent = "加载状态失败：" + (e && e.message ? e.message : String(e));
+        }
+      }
+
+      async function doQuery(loadMore) {
+        const btnSearch = document.getElementById("btnSearch");
+        const btnLoadMore = document.getElementById("btnLoadMore");
+        btnSearch.disabled = true;
+        btnLoadMore.disabled = true;
+        setHint("请求中...");
+        try {
+          const qs = buildQuery(loadMore);
+          const url = "/api/v1/logs?" + qs.toString();
+          const res = await fetch(url, { headers: headers() });
+          const text = await res.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch (_) {
+            throw new Error("invalid response: " + text.slice(0, 200));
+          }
+          if (!res.ok) {
+            throw new Error(`${res.status} ${data?.errorMessage || "request failed"}`);
+          }
+          appendRows(data.items || []);
+          nextCursor = data.nextCursor || "";
+          btnLoadMore.disabled = !data.hasMore || !nextCursor;
+          setHint(`items=${(data.items || []).length}  hasMore=${!!data.hasMore}  nextCursor=${nextCursor || "-"}`);
+          await fetchStatus();
+        } catch (e) {
+          setHint("失败：" + (e && e.message ? e.message : String(e)));
+          await fetchStatus();
+        } finally {
+          btnSearch.disabled = false;
+        }
+      }
+
+      document.getElementById("btnSearch").addEventListener("click", async () => {
+        document.getElementById("tbody").innerHTML = "";
+        nextCursor = "";
+        await doQuery(false);
+      });
+      document.getElementById("btnLoadMore").addEventListener("click", async () => {
+        await doQuery(true);
+      });
+      document.getElementById("btnClear").addEventListener("click", async () => {
+        document.getElementById("tbody").innerHTML = "";
+        nextCursor = "";
+        document.getElementById("btnLoadMore").disabled = true;
+        setHint("");
+        await fetchStatus();
+      });
+
+      fetchStatus();
+    </script>
+  </body>
+</html>
+

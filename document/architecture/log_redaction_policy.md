@@ -3,13 +3,13 @@
 ## 背景
 
 仓库在 `document/code_quality_audit` 中明确了“日志/异常上报默认脱敏”的治理目标（对应 `G-T0012`）。  
-核心诉求是：在 **logcat / TCP 日志 / 异常上报上下文** 中，默认不泄露 token、cookie、密码、secret、URL query 等敏感信息，同时仍保留足够的定位线索（host/path、指纹等）。
+核心诉求是：在 **logcat / HTTP 对外日志 / 异常上报上下文** 中，默认不泄露 token、cookie、密码、secret、URL query 等敏感信息，同时仍保留足够的定位线索（host/path、指纹等）。
 
 ## 统一入口
 
 - 统一脱敏工具：`core_log_component/src/main/java/com/xyoye/common_component/log/privacy/SensitiveDataSanitizer.kt`
 - 统一接入点（默认生效）：
-  - `LogFormatter`：对日志 `message/context/throwable` 做脱敏后再输出到 logcat/TCP
+  - `LogFormatter`：对日志 `message/context/throwable` 做脱敏后再输出到 logcat/HTTP（对外接口同样要求默认脱敏）
   - `ErrorReportHelper`：对调试输出的 tag/extraInfo 做脱敏（避免本地调试阶段泄露）
 
 ## 默认规则（摘要）
@@ -41,12 +41,13 @@
 
 - 默认输出 `文件名#指纹`，避免输出完整目录结构：`movie.mp4#1a2b3c4d`
 
-## 调试会话与 TCP 日志门禁
+## HTTP 日志服务安全门禁
 
-TCP 日志属于高风险输出通道：
+HTTP 日志服务属于“仅局域网调试”的对外输出通道：
 
-- 仅在 **调试会话开启** 且 **用户显式授权开启 TCP server** 时允许运行
-- 调试会话关闭后，TCP server 会自动停止（保留用户开关状态用于下次会话）
+- 必须 Token 鉴权（Header + URL 参数，Header 优先）
+- 强制限制仅局域网来源可访问
+- 对外输出与落盘默认先脱敏（优先“先脱敏再存储/返回”）
 
 ## 调用建议
 

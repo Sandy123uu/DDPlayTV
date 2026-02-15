@@ -31,8 +31,14 @@ object LogConfigTable {
     var lastPolicyUpdateTime: Long = 0L
 
     @MMKVFiled
-    var tcpLogServerEnabled: Boolean = false
+    var httpLogServerEnabled: Boolean = false
 
     @MMKVFiled
-    var tcpLogServerPort: Int = 17010
+    var httpLogServerPort: Int = 17010
+
+    @MMKVFiled
+    var httpLogServerToken: String = ""
+
+    @MMKVFiled
+    var httpLogRetentionDays: Int = 7
 }

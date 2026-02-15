@@ -51,7 +51,7 @@ Some permissions may be disabled for TV adaptation builds (see the merged Androi
 
 DDPlayTV always prints runtime logs to Android logcat (subject to the configured log level).
 
-If “Debug Session” and “TCP Log Server” are enabled in the app, DDPlayTV can expose logs over the local network via a TCP server (high-risk output channel). These logs are only streamed to the client you connect with (for example `nc <ip> <port>`), and are not uploaded automatically by DDPlayTV.
+If “HTTP Log Server” is enabled in the app, DDPlayTV can expose logs over the local network via an HTTP server for debugging (page + structured APIs + SSE). Access is protected by a token (Authorization header or `?token=`) and restricted to LAN clients. Outputs are redacted by default. Logs are not uploaded automatically by DDPlayTV.
 
 See `document/monitoring/logging-system.md` for how to enable and capture logs.
 
@@ -119,7 +119,7 @@ DDPlayTV 是一款开源的本地媒体播放器。本文用于说明**本仓库
 
 DDPlayTV 默认会将运行日志输出到 Android logcat（受“日志级别”设置影响）。
 
-当你在应用内开启“调试会话”并显式授权开启“TCP 日志服务”时，DDPlayTV 会在局域网内启动 TCP 日志服务（高风险输出通道），将日志实时流式输出给已连接的客户端（例如 `nc <ip> <port>`）。日志默认不会自动上传。
+当你在应用内开启“HTTP 日志服务”时，DDPlayTV 会在局域网内启动仅用于调试的 HTTP 日志服务，提供日志页面、结构化查询接口与实时推送（SSE）。访问需要 Token 鉴权，并限制仅局域网来源可访问。日志默认不会自动上传。
 
 开启方式与抓取示例见：`document/monitoring/logging-system.md`。
 

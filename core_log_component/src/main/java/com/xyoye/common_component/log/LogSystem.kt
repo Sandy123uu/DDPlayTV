@@ -3,14 +3,14 @@ package com.xyoye.common_component.log
 import android.content.Context
 import android.util.Log
 import androidx.annotation.VisibleForTesting
+import com.xyoye.common_component.log.http.HttpLogServerManager
+import com.xyoye.common_component.log.http.HttpLogServerState
 import com.xyoye.common_component.log.model.DebugToggleState
 import com.xyoye.common_component.log.model.LogEvent
 import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogPolicy
 import com.xyoye.common_component.log.model.LogRuntimeState
 import com.xyoye.common_component.log.model.PolicySource
-import com.xyoye.common_component.log.tcp.TcpLogServerManager
-import com.xyoye.common_component.log.tcp.TcpLogServerState
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
@@ -22,27 +22,10 @@ object LogSystem {
         LogPolicyRepository(defaultPolicy)
     }
 
-    private val defaultWriterFactory:
-        (
-            () -> Boolean,
-            (String) -> Unit,
-        ) -> LogWriter = { tcpEnabledProvider, tcpSink ->
-            LogWriter(
-                tcpLogEnabledProvider = tcpEnabledProvider,
-                tcpLogSink = tcpSink,
-            )
-        }
-
-    private val defaultTcpRunningProvider: () -> Boolean = { TcpLogServerManager.isRunning() }
-
-    private val defaultTcpEmitSink: (String) -> Unit = { line -> TcpLogServerManager.tryEmit(line) }
-
-    private val defaultTcpApplyFromStorage: () -> TcpLogServerState = { TcpLogServerManager.applyFromStorage() }
-
-    private val defaultTcpSnapshotProvider: () -> TcpLogServerState = { TcpLogServerManager.snapshot() }
-
-    private val defaultTcpSetEnabled: (Boolean, Int) -> TcpLogServerState = { enabled, port ->
-        TcpLogServerManager.setEnabled(enabled, port)
+    private val defaultWriterFactory: ((LogEvent) -> Unit) -> LogWriter = { httpSink ->
+        LogWriter(
+            httpLogSink = httpSink,
+        )
     }
 
     private val stateRef =
@@ -56,21 +39,7 @@ object LogSystem {
 
     internal var policyRepositoryFactory: (LogPolicy) -> LogPolicyRepository = defaultPolicyRepositoryFactory
 
-    internal var writerFactory:
-        (
-            () -> Boolean,
-            (String) -> Unit,
-        ) -> LogWriter = defaultWriterFactory
-
-    internal var tcpRunningProvider: () -> Boolean = defaultTcpRunningProvider
-
-    internal var tcpEmitSink: (String) -> Unit = defaultTcpEmitSink
-
-    internal var tcpApplyFromStorage: () -> TcpLogServerState = defaultTcpApplyFromStorage
-
-    internal var tcpSnapshotProvider: () -> TcpLogServerState = defaultTcpSnapshotProvider
-
-    internal var tcpSetEnabled: (Boolean, Int) -> TcpLogServerState = defaultTcpSetEnabled
+    internal var writerFactory: ((LogEvent) -> Unit) -> LogWriter = defaultWriterFactory
 
     private var policyRepository: LogPolicyRepository = policyRepositoryFactory(LogPolicy.defaultReleasePolicy())
 
@@ -87,15 +56,15 @@ object LogSystem {
         if (initialized) return
         synchronized(initLock) {
             if (initialized) return
+            HttpLogServerManager.init(context)
             policyRepository = policyRepositoryFactory(defaultPolicy)
             val initialState = policyRepository.loadFromStorage()
             stateRef.set(initialState)
             writer =
                 writerFactory(
-                    { tcpRunningProvider() },
-                    { line -> tcpEmitSink(line) },
+                    { event -> HttpLogServerManager.ingestAppEvent(event) },
                 ).also { it.updateRuntimeState(initialState) }
-            tcpApplyFromStorage()
+            HttpLogServerManager.applyFromStorage()
             initialized = true
         }
     }
@@ -138,17 +107,41 @@ object LogSystem {
 
     fun isInitialized(): Boolean = initialized
 
-    fun getTcpLogServerState(): TcpLogServerState = tcpSnapshotProvider()
+    fun getHttpLogServerState(): HttpLogServerState = HttpLogServerManager.snapshot()
 
-    fun setTcpLogServerEnabled(
+    fun setHttpLogServerEnabled(
         enabled: Boolean,
-        port: Int = TcpLogServerManager.DEFAULT_PORT
-    ): TcpLogServerState {
+        port: Int = HttpLogServerManager.DEFAULT_PORT,
+    ): HttpLogServerState {
         if (!initialized) {
-            Log.w(LOG_TAG, "tcp log server state change before init, ignore")
-            return tcpSnapshotProvider()
+            Log.w(LOG_TAG, "http log server state change before init, ignore")
+            return HttpLogServerManager.snapshot()
         }
-        return tcpSetEnabled(enabled, port)
+        return HttpLogServerManager.setEnabled(enabled, port)
+    }
+
+    fun resetHttpLogServerToken(): HttpLogServerState {
+        if (!initialized) {
+            Log.w(LOG_TAG, "http log server token reset before init, ignore")
+            return HttpLogServerManager.snapshot()
+        }
+        return HttpLogServerManager.resetToken()
+    }
+
+    fun clearHttpLogServerLogs(): HttpLogServerState {
+        if (!initialized) {
+            Log.w(LOG_TAG, "http log server clear logs before init, ignore")
+            return HttpLogServerManager.snapshot()
+        }
+        return HttpLogServerManager.clearLogs()
+    }
+
+    fun setHttpLogRetentionDays(days: Int): HttpLogServerState {
+        if (!initialized) {
+            Log.w(LOG_TAG, "http log server retention change before init, ignore")
+            return HttpLogServerManager.snapshot()
+        }
+        return HttpLogServerManager.setRetentionDays(days)
     }
 
     fun log(event: LogEvent) {
@@ -159,10 +152,12 @@ object LogSystem {
         }
         val enriched =
             event.copy(
-                sequenceId = if (event.sequenceId == 0L) sequenceGenerator.incrementAndGet() else event.sequenceId,
+                sequenceId = if (event.sequenceId == 0L) nextSequenceId() else event.sequenceId,
             )
         writer?.submit(enriched)
     }
+
+    internal fun nextSequenceId(): Long = sequenceGenerator.incrementAndGet()
 
     private fun updateDebugState(
         state: DebugToggleState
@@ -190,8 +185,6 @@ object LogSystem {
         stateRef.set(state)
         writer?.updateRuntimeState(state)
         SubtitleTelemetryLogger.updateFromRuntime(state)
-        // TCP 日志输出门禁：仅在“调试会话 + 显式授权”下允许运行
-        tcpApplyFromStorage()
         return state
     }
 
@@ -203,11 +196,7 @@ object LogSystem {
             sequenceGenerator.set(0)
             policyRepositoryFactory = defaultPolicyRepositoryFactory
             writerFactory = defaultWriterFactory
-            tcpRunningProvider = defaultTcpRunningProvider
-            tcpEmitSink = defaultTcpEmitSink
-            tcpApplyFromStorage = defaultTcpApplyFromStorage
-            tcpSnapshotProvider = defaultTcpSnapshotProvider
-            tcpSetEnabled = defaultTcpSetEnabled
+            HttpLogServerManager.resetForTests()
             policyRepository = policyRepositoryFactory(LogPolicy.defaultReleasePolicy())
             stateRef.set(
                 LogRuntimeState(

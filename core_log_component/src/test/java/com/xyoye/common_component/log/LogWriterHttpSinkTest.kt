@@ -13,41 +13,37 @@ import org.junit.runners.JUnit4
 import java.util.concurrent.CopyOnWriteArrayList
 
 @RunWith(JUnit4::class)
-class LogWriterTcpSinkTest {
+class LogWriterHttpSinkTest {
     @Test
-    fun tcpSinkReceivesFormattedLineWhenEnabled() {
-        val received = CopyOnWriteArrayList<String>()
-        val writer =
-            LogWriter(
-                tcpLogEnabledProvider = { true },
-                tcpLogSink = { line -> received.add(line) },
-            )
+    fun httpSinkReceivesEventWhenAllowed() {
+        val received = CopyOnWriteArrayList<LogEvent>()
+        val writer = LogWriter(httpLogSink = { event -> received.add(event) })
         writer.updateRuntimeState(LogRuntimeState(activePolicy = LogPolicy.defaultReleasePolicy()))
         writer.submit(
             LogEvent(
                 level = LogLevel.INFO,
                 module = LogModule.CORE,
-                message = "hello tcp",
+                message = "hello http",
             ),
         )
 
         Thread.sleep(200)
 
         assertEquals(1, received.size)
-        assertTrue(received.first().contains("msg=\"hello tcp\""))
-        assertTrue(received.first().contains("level=INFO"))
-        assertTrue(received.first().contains("module=core"))
+        assertEquals("hello http", received.first().message)
+        assertEquals(LogLevel.INFO, received.first().level)
+        assertEquals(LogModule.CORE, received.first().module)
     }
 
     @Test
-    fun tcpSinkNotCalledWhenDisabled() {
-        val received = CopyOnWriteArrayList<String>()
-        val writer =
-            LogWriter(
-                tcpLogEnabledProvider = { false },
-                tcpLogSink = { line -> received.add(line) },
-            )
-        writer.updateRuntimeState(LogRuntimeState(activePolicy = LogPolicy.defaultReleasePolicy()))
+    fun httpSinkNotCalledWhenBelowThreshold() {
+        val received = CopyOnWriteArrayList<LogEvent>()
+        val writer = LogWriter(httpLogSink = { event -> received.add(event) })
+        writer.updateRuntimeState(
+            LogRuntimeState(
+                activePolicy = LogPolicy.defaultReleasePolicy().copy(defaultLevel = LogLevel.ERROR),
+            ),
+        )
         writer.submit(
             LogEvent(
                 level = LogLevel.INFO,

@@ -16,6 +16,10 @@ dependencies {
     implementation(Dependencies.AndroidX.core)
     implementation(Dependencies.Tencent.mmkv)
     implementation(Dependencies.Tencent.bugly)
+    implementation(Dependencies.Github.nano_http)
+    implementation(Dependencies.Kotlin.coroutines_core)
+    implementation(Dependencies.Square.moshi_kotlin)
+    implementation(kotlin("reflect"))
 
     // MMKV 配置表注解处理器：jar 统一放在 repository/mmkv
     implementation(files("../repository/mmkv/mmkv-annotation.jar"))

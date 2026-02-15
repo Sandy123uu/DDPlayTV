@@ -9,13 +9,12 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * 单线程写入执行器：根据策略决定 logcat / TCP 输出。
+ * 单线程写入执行器：根据策略决定 logcat 输出，并可选写入 HTTP 日志通道。
  */
 class LogWriter(
     private val formatter: LogFormatter = LogFormatter(),
     private val sampler: LogSampler = LogSampler(),
-    private val tcpLogEnabledProvider: () -> Boolean = { false },
-    private val tcpLogSink: (String) -> Unit = {},
+    private val httpLogSink: (LogEvent) -> Unit = {},
 ) {
     private val stateRef =
         AtomicReference(
@@ -45,17 +44,8 @@ class LogWriter(
         if (!sampler.shouldAllow(event, policy)) {
             return
         }
-        val shouldWriteTcp = tcpLogEnabledProvider()
-        val formattedLine =
-            if (shouldWriteTcp) {
-                formatter.format(event)
-            } else {
-                null
-            }
         writeToLogcat(event)
-        if (shouldWriteTcp && formattedLine != null) {
-            runCatching { tcpLogSink(formattedLine) }
-        }
+        runCatching { httpLogSink(event) }
     }
 
     private fun shouldEmit(
