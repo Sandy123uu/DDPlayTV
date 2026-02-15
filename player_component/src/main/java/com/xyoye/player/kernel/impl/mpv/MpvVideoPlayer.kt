@@ -8,6 +8,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import com.xyoye.common_component.config.PlayerConfig
 import com.xyoye.common_component.enums.SubtitleRendererBackend
+import com.xyoye.common_component.log.BuglyReporter
 import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.LogSystem
 import com.xyoye.common_component.log.model.LogModule
@@ -22,7 +23,9 @@ import com.xyoye.player.kernel.subtitle.SubtitleKernelBridge
 import com.xyoye.player.subtitle.backend.EmbeddedSubtitleSink
 import com.xyoye.player.utils.DecodeType
 import com.xyoye.player.utils.PlayerConstant
+import com.xyoye.player_component.BuildConfig
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 
 @androidx.annotation.OptIn(UnstableApi::class)
 class MpvVideoPlayer(
@@ -52,6 +55,9 @@ class MpvVideoPlayer(
     private var anime4kMode: Int = Anime4kShaderManager.MODE_OFF
     private val embeddedSubtitleBridge = MpvEmbeddedSubtitleBridge()
     private val pendingExternalTracks = mutableListOf<PendingExternalTrack>()
+    private var playbackSessionId: String = "-"
+    private var buglyLogEnabledForSession: Boolean = false
+    private var userAgentMode: String = "none"
 
     private fun failInitialization(
         message: String,
@@ -70,11 +76,25 @@ class MpvVideoPlayer(
         nativeBridge.setEventListener(::onNativeEvent)
         if (!nativeBridge.isAvailable) {
             val reason = nativeBridge.availabilityReason ?: "libmpv.so missing or failed to link"
+            BuglyReporter.updateContext(
+                mapOf(
+                    "play.kernel" to "mpv",
+                    "mpv.event" to "initPlayerUnavailable",
+                    "mpv.last_error" to reason,
+                ),
+            )
             failInitialization(reason)
             return
         }
         if (!nativeBridge.ensureCreated()) {
             val reason = nativeBridge.lastError() ?: "Failed to initialize mpv native session"
+            BuglyReporter.updateContext(
+                mapOf(
+                    "play.kernel" to "mpv",
+                    "mpv.event" to "initPlayerCreateFailed",
+                    "mpv.last_error" to reason,
+                ),
+            )
             failInitialization(reason)
             return
         }
@@ -94,6 +114,16 @@ class MpvVideoPlayer(
         nativeBridge.setSubtitleFonts(fontsDir, SubtitleFontManager.DEFAULT_FONT_FAMILY)
         nativeBridge.setLooping(looping)
         nativeBridge.setSpeed(playbackSpeed)
+        BuglyReporter.updateContext(
+            mapOf(
+                "play.kernel" to "mpv",
+                "play.looping" to looping.toString(),
+                "play.speed" to playbackSpeed.toString(),
+                "play.sub_backend" to PlayerInitializer.Subtitle.backend.name,
+                "play.sub_gpu_pipe" to canStartGpuSubtitlePipeline().toString(),
+                "play.anime4k" to formatAnime4kMode(anime4kMode),
+            ),
+        )
         applyHwdecPriority()
         applyAudioOutputPreference()
         applyVideoSyncPreference()
@@ -107,6 +137,8 @@ class MpvVideoPlayer(
         setAnime4kMode(Anime4kShaderManager.MODE_OFF)
         dataSource = path
         pendingExternalTracks.clear()
+        playbackSessionId = createPlaybackSessionId()
+        buglyLogEnabledForSession = shouldEnableBuglyLogForSession()
         runCatching {
             if (LocalProxy.setSeekEnabledIfServing(path, enabled = false)) {
                 proxySeekEnabled = false
@@ -123,12 +155,19 @@ class MpvVideoPlayer(
 
         userAgent =
             when {
-                userAgentEntry != null -> userAgentEntry.value
+                userAgentEntry != null -> {
+                    userAgentMode = "provided"
+                    userAgentEntry.value
+                }
                 shouldInjectUserAgent ->
                     runCatching {
+                        userAgentMode = "injected"
                         Util.getUserAgent(appContext, appContext.applicationInfo.name ?: appContext.packageName)
                     }.getOrElse { "DDPlayTV" }
-                else -> null
+                else -> {
+                    userAgentMode = "none"
+                    null
+                }
             }
 
         this.headers =
@@ -137,12 +176,46 @@ class MpvVideoPlayer(
             } else {
                 originalHeaders
             }
+
+        BuglyReporter.updateContext(
+            mapOf(
+                "play.kernel" to "mpv",
+                "play.session" to playbackSessionId,
+                "play.src" to path,
+                "play.src_hash" to Integer.toHexString(path.hashCode()),
+                "play.src_scheme" to (runCatching { Uri.parse(path).scheme }.getOrNull() ?: ""),
+                "play.headers_n" to this.headers.size.toString(),
+                "play.ua_mode" to userAgentMode,
+                "play.sub_backend" to PlayerInitializer.Subtitle.backend.name,
+                "play.sub_gpu_pipe" to canStartGpuSubtitlePipeline().toString(),
+            ),
+        )
+        for (i in 0 until BUGLY_BREADCRUMB_MAX) {
+            BuglyReporter.updateContext("bc.$i", "-")
+        }
+        recordBuglyBreadcrumb(
+            message = "setDataSource",
+            context =
+                mapOf(
+                    "src_hash" to Integer.toHexString(path.hashCode()),
+                    "headers_n" to this.headers.size.toString(),
+                    "ua_mode" to userAgentMode,
+                ),
+        )
     }
 
     override fun setSurface(surface: Surface) {
         if (!nativeBridge.isAvailable) return
         applyVideoOutputPreference()
         nativeBridge.setSurface(surface)
+        BuglyReporter.updateContext("surf.set", "1")
+        recordBuglyBreadcrumb(
+            message = "setSurface",
+            context =
+                mapOf(
+                    "vo" to MpvOptions.resolveVideoOutput(PlayerConfig.getMpvVideoOutput()),
+                ),
+        )
         setAnime4kMode(anime4kMode)
     }
 
@@ -152,6 +225,14 @@ class MpvVideoPlayer(
     ) {
         if (!nativeBridge.isAvailable) return
         nativeBridge.setSurfaceSize(width, height)
+        BuglyReporter.updateContext("surf.size", "${width}x$height")
+        recordBuglyBreadcrumb(
+            message = "setSurfaceSize",
+            context =
+                mapOf(
+                    "size" to "${width}x$height",
+                ),
+        )
     }
 
     /**
@@ -203,7 +284,15 @@ class MpvVideoPlayer(
                 Anime4kShaderManager.MODE_QUALITY -> Anime4kShaderManager.MODE_QUALITY
                 else -> Anime4kShaderManager.MODE_OFF
             }
+        val previousMode = anime4kMode
         anime4kMode = safeMode
+        if (previousMode != safeMode) {
+            BuglyReporter.updateContext("play.anime4k", formatAnime4kMode(safeMode))
+            recordBuglyBreadcrumb(
+                message = "anime4k mode",
+                context = mapOf("mode" to formatAnime4kMode(safeMode)),
+            )
+        }
 
         if (!nativeBridge.isAvailable) {
             return
@@ -260,14 +349,24 @@ class MpvVideoPlayer(
 
     override fun prepareAsync() {
         if (initializationError != null) {
+            recordBuglyBreadcrumb(
+                message = "prepareAsync skipped (initError)",
+                context = mapOf("reason" to (initializationError?.message.orEmpty())),
+            )
             mPlayerEventListener.onError(initializationError)
             return
         }
         val path = dataSource
         if (path.isNullOrEmpty()) {
+            recordBuglyBreadcrumb(message = "prepareAsync skipped (empty dataSource)")
             mPlayerEventListener.onInfo(PlayerConstant.MEDIA_INFO_URL_EMPTY, 0)
             return
         }
+        BuglyReporter.updateContext("mpv.event", "PrepareStart")
+        recordBuglyBreadcrumb(
+            message = "prepareAsync",
+            context = mapOf("src_hash" to Integer.toHexString(path.hashCode())),
+        )
         if (PlayerInitializer.isPrintLog) {
             val uri = runCatching { Uri.parse(path) }.getOrNull()
             val queryKeys = runCatching { uri?.queryParameterNames?.sorted()?.joinToString(",") }.getOrNull().orEmpty()
@@ -302,6 +401,21 @@ class MpvVideoPlayer(
                 nativeBridge.lastError()
                     ?: dataSourceError?.message
                     ?: "mpv bridge rejected data source"
+            BuglyReporter.updateContext(
+                mapOf(
+                    "mpv.event" to "SetDataSourceFailed",
+                    "mpv.err" to reason,
+                    "mpv.last_error" to (nativeBridge.lastError().orEmpty()),
+                ),
+            )
+            recordBuglyBreadcrumb(
+                message = "setDataSource failed",
+                context =
+                    mapOf(
+                        "reason" to reason,
+                        "src_hash" to Integer.toHexString(path.hashCode()),
+                    ),
+            )
             failInitialization(reason, cause = dataSourceError)
             return
         }
@@ -337,6 +451,7 @@ class MpvVideoPlayer(
         decodeType = DecodeType.SW
         videoSize = Point(0, 0)
         initializationError = null
+        recordBuglyBreadcrumb(message = "reset")
     }
 
     override fun release() {
@@ -350,10 +465,15 @@ class MpvVideoPlayer(
         isPreparing = false
         isPlaying = false
         decodeType = DecodeType.SW
+        recordBuglyBreadcrumb(message = "release")
     }
 
     override fun seekTo(timeMs: Long) {
         if (!isPrepared) return
+        recordBuglyBreadcrumb(
+            message = "seekTo",
+            context = mapOf("pos_ms" to timeMs.toString()),
+        )
         if (canStartGpuSubtitlePipeline()) {
             embeddedSubtitleBridge.resetForTimelineChange()
         }
@@ -446,10 +566,25 @@ class MpvVideoPlayer(
                 "MpvVideoPlayer",
                 "external subtitle routed to subtitle controller (libass+mediacodec_embed): ${track.trackResource}",
             )
+            recordBuglyBreadcrumb(
+                message = "addTrack routed",
+                context =
+                    mapOf(
+                        "type" to track.type.name,
+                    ),
+            )
             return false
         }
         val path = track.trackResource as? String ?: return false
         if (path.isBlank()) return false
+        recordBuglyBreadcrumb(
+            message = "addTrack",
+            context =
+                mapOf(
+                    "type" to track.type.name,
+                    "path_hash" to Integer.toHexString(path.hashCode()),
+                ),
+        )
         val added = nativeBridge.addExternalTrack(track.type, path)
         if (added) {
             pendingExternalTracks.removeAll { it.type == track.type }
@@ -494,6 +629,10 @@ class MpvVideoPlayer(
     override fun selectTrack(track: VideoTrackBean) {
         if (!isPrepared) return
         if (track.disable) {
+            recordBuglyBreadcrumb(
+                message = "selectTrack disable",
+                context = mapOf("type" to track.type.name),
+            )
             if (canStartGpuSubtitlePipeline()) {
                 embeddedSubtitleBridge.resetForTimelineChange()
             }
@@ -503,6 +642,15 @@ class MpvVideoPlayer(
         val ids = track.id?.split(":") ?: return
         val nativeType = ids.getOrNull(0)?.toIntOrNull() ?: return
         val trackId = ids.getOrNull(1)?.toIntOrNull() ?: return
+        recordBuglyBreadcrumb(
+            message = "selectTrack",
+            context =
+                mapOf(
+                    "type" to track.type.name,
+                    "native_type" to nativeType.toString(),
+                    "id" to trackId.toString(),
+                ),
+        )
         if (track.type == TrackType.SUBTITLE && canStartGpuSubtitlePipeline()) {
             embeddedSubtitleBridge.resetForTimelineChange()
         }
@@ -540,12 +688,16 @@ class MpvVideoPlayer(
                 }
             }
             is MpvNativeBridge.Event.Buffering -> {
+                BuglyReporter.updateContext("mpv.event", if (event.started) "BufferingStart" else "BufferingEnd")
+                recordBuglyBreadcrumb(message = if (event.started) "buffering start" else "buffering end")
                 mPlayerEventListener.onInfo(
                     if (event.started) PlayerConstant.MEDIA_INFO_BUFFERING_START else PlayerConstant.MEDIA_INFO_BUFFERING_END,
                     0,
                 )
             }
             is MpvNativeBridge.Event.Completed -> {
+                BuglyReporter.updateContext("mpv.event", "Completed")
+                recordBuglyBreadcrumb(message = "completed")
                 isPlaying = false
                 isPrepared = false
                 isPreparing = false
@@ -575,6 +727,27 @@ class MpvVideoPlayer(
                         ),
                     throwable = error,
                 )
+                BuglyReporter.updateContext(
+                    mapOf(
+                        "mpv.event" to "Error",
+                        "mpv.err" to readable,
+                        "mpv.err_raw" to (rawMessage ?: ""),
+                        "mpv.last_error" to (fallbackMessage ?: ""),
+                        "play.session" to playbackSessionId,
+                        "play.src_hash" to (dataSource?.let { Integer.toHexString(it.hashCode()) } ?: ""),
+                        "play.vo" to MpvOptions.resolveVideoOutput(PlayerConfig.getMpvVideoOutput()),
+                        "play.sub_backend" to PlayerInitializer.Subtitle.backend.name,
+                        "play.sub_gpu_pipe" to canStartGpuSubtitlePipeline().toString(),
+                    ),
+                )
+                recordBuglyBreadcrumb(
+                    message = "native error",
+                    context =
+                        mapOf(
+                            "code" to (event.code?.toString() ?: ""),
+                            "reason" to (event.reason?.toString() ?: ""),
+                        ),
+                )
                 initializationError = error
                 isPrepared = false
                 isPreparing = false
@@ -588,12 +761,16 @@ class MpvVideoPlayer(
                 mPlayerEventListener.onError(error)
             }
             is MpvNativeBridge.Event.Prepared -> {
+                BuglyReporter.updateContext("mpv.event", "Prepared")
+                recordBuglyBreadcrumb(message = "prepared")
                 isPrepared = true
                 isPreparing = false
                 flushPendingExternalTracks()
                 mPlayerEventListener.onPrepared()
             }
             is MpvNativeBridge.Event.RenderingStart -> {
+                BuglyReporter.updateContext("mpv.event", "RenderingStart")
+                recordBuglyBreadcrumb(message = "rendering start")
                 isPlaying = true
                 refreshDecodeTypeFromNative()
                 flushPendingExternalTracks()
@@ -613,6 +790,11 @@ class MpvVideoPlayer(
             }
             is MpvNativeBridge.Event.VideoSize -> {
                 videoSize = Point(event.width, event.height)
+                BuglyReporter.updateContext("video.size", "${event.width}x${event.height}")
+                recordBuglyBreadcrumb(
+                    message = "video size",
+                    context = mapOf("size" to "${event.width}x${event.height}"),
+                )
                 mPlayerEventListener.onVideoSizeChange(event.width, event.height)
             }
             is MpvNativeBridge.Event.SubtitleAssExtradata -> {
@@ -626,6 +808,11 @@ class MpvVideoPlayer(
                 }
             }
             is MpvNativeBridge.Event.SubtitleSid -> {
+                BuglyReporter.updateContext("mpv.sid", event.value.orEmpty())
+                recordBuglyBreadcrumb(
+                    message = "subtitle sid",
+                    context = mapOf("sid" to event.value.orEmpty()),
+                )
                 if (canStartGpuSubtitlePipeline()) {
                     embeddedSubtitleBridge.onSid(event.value)
                 }
@@ -667,7 +854,9 @@ class MpvVideoPlayer(
     }
 
     private fun applyVideoOutputPreference() {
-        nativeBridge.setVideoOutput(MpvOptions.resolveVideoOutput(PlayerConfig.getMpvVideoOutput()))
+        val vo = MpvOptions.resolveVideoOutput(PlayerConfig.getMpvVideoOutput())
+        nativeBridge.setVideoOutput(vo)
+        BuglyReporter.updateContext("play.vo", vo)
     }
 
     private fun applyHwdecPriority() {
@@ -680,6 +869,7 @@ class MpvVideoPlayer(
                 "mediacodec,mediacodec-copy"
             }
         nativeBridge.setHwdecPriority(hwdec)
+        BuglyReporter.updateContext("play.hwdec", hwdec)
     }
 
     private fun applyAudioOutputPreference() {
@@ -692,14 +882,17 @@ class MpvVideoPlayer(
                 else -> configured
             }
         ao?.let(nativeBridge::setAudioOutput)
+        BuglyReporter.updateContext("play.ao", ao ?: "default")
     }
 
     private fun applyVideoSyncPreference() {
         val configured = PlayerConfig.getMpvVideoSync().orEmpty().trim()
         if (configured.equals("default", ignoreCase = true) || configured.isEmpty()) {
+            BuglyReporter.updateContext("play.video_sync", "default")
             return
         }
         nativeBridge.setVideoSync(configured)
+        BuglyReporter.updateContext("play.video_sync", configured)
     }
 
     private fun resolveShaderPath(
@@ -813,6 +1006,42 @@ class MpvVideoPlayer(
 
     override fun setEmbeddedSubtitleSink(sink: EmbeddedSubtitleSink?) {
         embeddedSubtitleBridge.setSink(sink)
+    }
+
+    private fun recordBuglyBreadcrumb(
+        message: String,
+        context: Map<String, String> = emptyMap()
+    ) {
+        val line = BuglyReporter.recordBreadcrumb("mpv", message, context)
+        if (buglyLogEnabledForSession) {
+            BuglyReporter.logI("mpv", line)
+        }
+    }
+
+    private fun createPlaybackSessionId(): String {
+        val now = System.currentTimeMillis()
+        val counter = PLAYBACK_SESSION_COUNTER.incrementAndGet()
+        return now.toString(36) + "-" + counter.toString(36)
+    }
+
+    private fun shouldEnableBuglyLogForSession(): Boolean {
+        if (BuildConfig.DEBUG) return true
+        val seq = BUGLY_LOG_SAMPLE_COUNTER.incrementAndGet()
+        return seq % BUGLY_LOG_SAMPLE_RATE == 0
+    }
+
+    private fun formatAnime4kMode(mode: Int): String =
+        when (mode) {
+            Anime4kShaderManager.MODE_PERFORMANCE -> "perf"
+            Anime4kShaderManager.MODE_QUALITY -> "quality"
+            else -> "off"
+        }
+
+    companion object {
+        private val PLAYBACK_SESSION_COUNTER = AtomicInteger(0)
+        private val BUGLY_LOG_SAMPLE_COUNTER = AtomicInteger(0)
+        private const val BUGLY_LOG_SAMPLE_RATE = 20
+        private const val BUGLY_BREADCRUMB_MAX = 6
     }
 }
 
