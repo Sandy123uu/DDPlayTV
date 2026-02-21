@@ -58,6 +58,8 @@ class MpvVideoPlayer(
     private var playbackSessionId: String = "-"
     private var buglyLogEnabledForSession: Boolean = false
     private var userAgentMode: String = "none"
+    private var lastUnsupportedBitmapSubtitleTrackId: Int? = null
+    private var lastUnsupportedBitmapSubtitleCodec: String? = null
 
     private fun failInitialization(
         message: String,
@@ -137,6 +139,8 @@ class MpvVideoPlayer(
         setAnime4kMode(Anime4kShaderManager.MODE_OFF)
         dataSource = path
         pendingExternalTracks.clear()
+        lastUnsupportedBitmapSubtitleTrackId = null
+        lastUnsupportedBitmapSubtitleCodec = null
         playbackSessionId = createPlaybackSessionId()
         buglyLogEnabledForSession = shouldEnableBuglyLogForSession()
         runCatching {
@@ -655,6 +659,9 @@ class MpvVideoPlayer(
             embeddedSubtitleBridge.resetForTimelineChange()
         }
         nativeBridge.selectTrack(nativeType, trackId)
+        if (track.type == TrackType.SUBTITLE) {
+            warnUnsupportedEmbeddedBitmapSubtitle(trigger = "selectTrack")
+        }
     }
 
     override fun deselectTrack(type: TrackType) {
@@ -765,6 +772,7 @@ class MpvVideoPlayer(
                 isPrepared = true
                 isPreparing = false
                 flushPendingExternalTracks()
+                warnUnsupportedEmbeddedBitmapSubtitle(trigger = "prepared")
                 mPlayerEventListener.onPrepared()
             }
             is MpvNativeBridge.Event.RenderingStart -> {
@@ -815,6 +823,7 @@ class MpvVideoPlayer(
                 if (canStartGpuSubtitlePipeline()) {
                     embeddedSubtitleBridge.onSid(event.value)
                 }
+                warnUnsupportedEmbeddedBitmapSubtitle(trigger = "sid_changed")
             }
         }
     }
@@ -1007,6 +1016,39 @@ class MpvVideoPlayer(
         embeddedSubtitleBridge.setSink(sink)
     }
 
+    private fun warnUnsupportedEmbeddedBitmapSubtitle(trigger: String) {
+        if (!nativeBridge.isAvailable || !isPrepared) return
+        if (!canStartGpuSubtitlePipeline()) return
+        if (PlayerInitializer.Subtitle.backend != SubtitleRendererBackend.LIBASS) return
+        val selected =
+            nativeBridge
+                .listTracks()
+                .firstOrNull { it.type == TrackType.SUBTITLE && it.selected }
+                ?: return
+        val codec = selected.codec?.trim()?.lowercase().orEmpty()
+        if (codec.isEmpty() || !isBitmapSubtitleCodec(codec)) {
+            return
+        }
+        if (lastUnsupportedBitmapSubtitleTrackId == selected.id && lastUnsupportedBitmapSubtitleCodec == codec) {
+            return
+        }
+        lastUnsupportedBitmapSubtitleTrackId = selected.id
+        lastUnsupportedBitmapSubtitleCodec = codec
+
+        LogFacade.w(
+            LogModule.PLAYER,
+            LOG_TAG_SUBTITLE,
+            "mpv vo=mediacodec_embed 无法渲染内嵌位图字幕：codec=$codec sid=${selected.id} trigger=$trigger；将保持不显示（避免自动切换 vo）。如需显示请切 VLC/Media3，或在设置中手动将 mpv「视频输出」改为 gpu/gpu-next。",
+        )
+    }
+
+    private fun isBitmapSubtitleCodec(codec: String): Boolean =
+        codec.contains("pgs") ||
+            codec.contains("dvb_subtitle") ||
+            codec.contains("dvd_subtitle") ||
+            codec.contains("xsub") ||
+            codec.contains("vobsub")
+
     private fun recordBuglyBreadcrumb(
         message: String,
         context: Map<String, String> = emptyMap()
@@ -1041,6 +1083,7 @@ class MpvVideoPlayer(
         private val BUGLY_LOG_SAMPLE_COUNTER = AtomicInteger(0)
         private const val BUGLY_LOG_SAMPLE_RATE = 20
         private const val BUGLY_BREADCRUMB_MAX = 6
+        private const val LOG_TAG_SUBTITLE = "PlayerSubtitle"
     }
 }
 

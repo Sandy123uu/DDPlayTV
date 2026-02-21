@@ -883,6 +883,7 @@ std::vector<std::string> fetchTrackList(MpvSession* session) {
         int id = -1;
         std::string type;
         std::string title;
+        std::string codec;
         bool selected = false;
         auto* mapList = track->u.list;
         for (int j = 0; j < mapList->num; j++) {
@@ -895,6 +896,8 @@ std::vector<std::string> fetchTrackList(MpvSession* session) {
                 id = static_cast<int>(value->u.int64);
             } else if (strcmp(key, "type") == 0 && value->format == MPV_FORMAT_STRING) {
                 type = value->u.string == nullptr ? "" : value->u.string;
+            } else if (strcmp(key, "codec") == 0 && value->format == MPV_FORMAT_STRING) {
+                codec = value->u.string == nullptr ? "" : value->u.string;
             } else if (strcmp(key, "selected") == 0 && value->format == MPV_FORMAT_FLAG) {
                 selected = value->u.flag != 0;
             } else if ((strcmp(key, "title") == 0 || strcmp(key, "lang") == 0) &&
@@ -916,17 +919,18 @@ std::vector<std::string> fetchTrackList(MpvSession* session) {
             continue;
         }
 
-        char buffer[256] = {0};
-        snprintf(
-            buffer,
-            sizeof(buffer),
-            "%d|%d|%d|%s",
-            trackType,
-            id,
-            selected ? 1 : 0,
-            title.c_str()
-        );
-        result.emplace_back(buffer);
+        std::string entry;
+        entry.reserve(64 + title.size() + codec.size());
+        entry.append(std::to_string(trackType))
+            .append("|")
+            .append(std::to_string(id))
+            .append("|")
+            .append(selected ? "1" : "0")
+            .append("|")
+            .append(title)
+            .append("|")
+            .append(codec);
+        result.emplace_back(std::move(entry));
     }
 
     mpv_free_node_contents(&root);

@@ -24,7 +24,8 @@ class MpvNativeBridge {
         val type: TrackType,
         val nativeType: Int,
         val title: String,
-        val selected: Boolean
+        val selected: Boolean,
+        val codec: String? = null
     )
 
     sealed interface Event {
@@ -321,13 +322,14 @@ class MpvNativeBridge {
             val id = parts[1].toIntOrNull() ?: return@mapNotNull null
             val selected = parts[2] == "1"
             val title = parts[3].ifEmpty { "Track $id" }
+            val codec = parts.getOrNull(4)?.trim().orEmpty().ifEmpty { null }
             val trackType =
                 when (nativeType) {
                     TRACK_TYPE_AUDIO -> TrackType.AUDIO
                     TRACK_TYPE_SUBTITLE -> TrackType.SUBTITLE
                     else -> return@mapNotNull null
                 }
-            TrackInfo(id, trackType, nativeType, title, selected)
+            TrackInfo(id, trackType, nativeType, title, selected, codec)
         }
     }
 

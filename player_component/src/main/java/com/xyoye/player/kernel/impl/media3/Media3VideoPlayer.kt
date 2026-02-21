@@ -35,6 +35,8 @@ import androidx.media3.exoplayer.util.EventLogger
 import androidx.media3.ui.DefaultTrackNameProvider
 import com.xyoye.common_component.config.SubtitlePreferenceUpdater
 import com.xyoye.common_component.extension.mapByLength
+import com.xyoye.common_component.log.LogFacade
+import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.storage.file.helper.LocalProxy
 import com.xyoye.data_component.bean.VideoTrackBean
 import com.xyoye.data_component.enums.TrackType
@@ -598,6 +600,7 @@ class Media3VideoPlayer(
 
     override fun onTracksChanged(tracks: Tracks) {
         subtitleType = SubtitleType.UN_KNOW
+        logTextTracks(tracks)
         applyHdrSdrPreference(tracks)
     }
 
@@ -705,6 +708,22 @@ class Media3VideoPlayer(
                 } else {
                     SubtitleType.TEXT
                 }
+            if (PlayerInitializer.isPrintLog) {
+                val firstCue = cues.firstOrNull()
+                val cueSummary =
+                    if (subtitleType == SubtitleType.BITMAP) {
+                        val bmp = firstCue?.bitmap
+                        "bitmap=${bmp?.width ?: -1}x${bmp?.height ?: -1}"
+                    } else {
+                        val text = firstCue?.text?.toString().orEmpty()
+                        "textLen=${text.length}"
+                    }
+                LogFacade.d(
+                    LogModule.PLAYER,
+                    "PlayerSubtitle",
+                    "media3 cues type=$subtitleType count=${cues.size} $cueSummary",
+                )
+            }
         }
 
         if (subtitleType == SubtitleType.BITMAP) {
@@ -724,6 +743,43 @@ class Media3VideoPlayer(
 
     private fun initListener() {
         player.addListener(this)
+    }
+
+    private fun logTextTracks(tracks: Tracks) {
+        if (!PlayerInitializer.isPrintLog) {
+            return
+        }
+        val selector = trackSelector as? DefaultTrackSelector
+        val textRendererIndex =
+            (0 until player.rendererCount)
+                .firstOrNull { index -> player.getRendererType(index) == C.TRACK_TYPE_TEXT }
+        val textDisabled =
+            if (selector != null && textRendererIndex != null) {
+                selector.parameters.getRendererDisabled(textRendererIndex)
+            } else {
+                false
+            }
+
+        var hasTextTracks = false
+        tracks.groups.forEachIndexed { groupIndex, group ->
+            if (group.type != C.TRACK_TYPE_TEXT) {
+                return@forEachIndexed
+            }
+            hasTextTracks = true
+            for (trackIndex in 0 until group.length) {
+                val format = group.getTrackFormat(trackIndex)
+                val name = trackNameProvider.getTrackName(format)
+                LogFacade.d(
+                    LogModule.PLAYER,
+                    "PlayerSubtitle",
+                    "media3 textTrack g=$groupIndex t=$trackIndex selected=${group.isTrackSelected(trackIndex)} supported=${group.isTrackSupported(trackIndex)} disabled=$textDisabled mime=${format.sampleMimeType} lang=${format.language} name=$name",
+                )
+            }
+        }
+
+        if (!hasTextTracks) {
+            LogFacade.d(LogModule.PLAYER, "PlayerSubtitle", "media3 textTracks: none disabled=$textDisabled")
+        }
     }
 
     private fun applyHdrSdrPreference(tracks: Tracks) {
