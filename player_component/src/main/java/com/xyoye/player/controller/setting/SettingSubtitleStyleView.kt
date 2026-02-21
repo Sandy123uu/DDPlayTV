@@ -272,6 +272,9 @@ class SettingSubtitleStyleView(
         SubtitleConfig.putSubtitleFontScaleOffsetPercent(clampedOffset)
         PlayerInitializer.Subtitle.fontScaleOffsetPercent = clampedOffset
         SubtitleRendererRegistry.current()?.updateFontScaleOffset(clampedOffset)
+        // Media3 内置字幕（非 ASS/SSA）仍由传统字幕视图渲染，字号偏移需同步刷新文字大小/描边。
+        mControlWrapper.updateTextSize()
+        mControlWrapper.updateStrokeWidth()
         onConfigChanged()
     }
 

@@ -1,14 +1,3 @@
-
-# Agent Operating Rules
-- Do thinking/planning/coding in English; provide final user-facing replies in Chinese.
-- Use the GitHub CLI (`gh`) for GitHub workflows (issues/PRs/checks) whenever possible.
-- `adb logcat` can be noisy: do not dump full logs; filter to only what is needed, and note that logs may contain other apps/system output.
-- Prefer architectural and logical consistency over “minimal intrusion”; align with existing patterns even if it takes extra work to unify/abstract.
-- Write Markdown documents in Chinese unless the task explicitly requests otherwise.
-
-# Environment
-- Windows 11 + WSL2.
-
 # Repository Guidelines
 
 ## Project Structure & Module Organization
