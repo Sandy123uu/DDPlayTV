@@ -9,6 +9,7 @@ import android.view.Display
 import android.view.Surface
 import androidx.media3.common.C
 import androidx.media3.common.Effect
+import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
@@ -33,6 +34,7 @@ import androidx.media3.exoplayer.trackselection.TrackSelector
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
 import androidx.media3.exoplayer.util.EventLogger
 import androidx.media3.ui.DefaultTrackNameProvider
+import com.xyoye.common_component.enums.SubtitleRendererBackend
 import com.xyoye.common_component.config.SubtitlePreferenceUpdater
 import com.xyoye.common_component.extension.mapByLength
 import com.xyoye.common_component.log.LogFacade
@@ -77,6 +79,8 @@ class Media3VideoPlayer(
     private var videoOverrideApplied = false
 
     private var subtitleType = SubtitleType.UN_KNOW
+    private var hasSsaLikeTextTrack = false
+    private var hasMedia3CueTextTrack = false
     private var isPreparing = false
     private var isBuffering = false
     private var lastReportedPlayWhenReady = false
@@ -721,7 +725,7 @@ class Media3VideoPlayer(
                 LogFacade.d(
                     LogModule.PLAYER,
                     "PlayerSubtitle",
-                    "media3 cues type=$subtitleType count=${cues.size} $cueSummary",
+                    "media3 cues type=$subtitleType count=${cues.size} $cueSummary backend=${PlayerInitializer.Subtitle.backend} sinkPresent=${embeddedSubtitleSink.get() != null} expectBypass=${isLibassBypassExpected()} ssaTrack=$hasSsaLikeTextTrack cuesTrack=$hasMedia3CueTextTrack",
                 )
             }
         }
@@ -761,6 +765,8 @@ class Media3VideoPlayer(
             }
 
         var hasTextTracks = false
+        var ssaLikeTrack = false
+        var media3CueTrack = false
         tracks.groups.forEachIndexed { groupIndex, group ->
             if (group.type != C.TRACK_TYPE_TEXT) {
                 return@forEachIndexed
@@ -768,18 +774,81 @@ class Media3VideoPlayer(
             hasTextTracks = true
             for (trackIndex in 0 until group.length) {
                 val format = group.getTrackFormat(trackIndex)
+                val isSsaTrack = isSsaMime(format.sampleMimeType)
+                val isMedia3CueTrack = format.sampleMimeType == MimeTypes.APPLICATION_MEDIA3_CUES
+                if (isSsaTrack) {
+                    ssaLikeTrack = true
+                }
+                if (isMedia3CueTrack) {
+                    media3CueTrack = true
+                }
                 val name = trackNameProvider.getTrackName(format)
+                val initDataSummary = formatInitializationDataSummary(format)
                 LogFacade.d(
                     LogModule.PLAYER,
                     "PlayerSubtitle",
-                    "media3 textTrack g=$groupIndex t=$trackIndex selected=${group.isTrackSelected(trackIndex)} supported=${group.isTrackSupported(trackIndex)} disabled=$textDisabled mime=${format.sampleMimeType} lang=${format.language} name=$name",
+                    "media3 textTrack g=$groupIndex t=$trackIndex selected=${group.isTrackSelected(trackIndex)} supported=${group.isTrackSupported(trackIndex)} disabled=$textDisabled mime=${format.sampleMimeType} codecs=${format.codecs} label=${format.label} lang=${format.language} name=$name ssaLike=$isSsaTrack media3Cue=$isMedia3CueTrack initData=$initDataSummary",
                 )
             }
         }
 
+        hasSsaLikeTextTrack = ssaLikeTrack
+        hasMedia3CueTextTrack = media3CueTrack
+
         if (!hasTextTracks) {
+            hasSsaLikeTextTrack = false
+            hasMedia3CueTextTrack = false
             LogFacade.d(LogModule.PLAYER, "PlayerSubtitle", "media3 textTracks: none disabled=$textDisabled")
         }
+    }
+
+    private fun isLibassBypassExpected(): Boolean =
+        PlayerInitializer.Subtitle.backend == SubtitleRendererBackend.LIBASS &&
+            (hasSsaLikeTextTrack || hasMedia3CueTextTrack)
+
+    private fun formatInitializationDataSummary(format: Format): String {
+        val initData = format.initializationData
+        if (initData.isEmpty()) {
+            return "count=0"
+        }
+        val summary =
+            initData.mapIndexed { index, bytes ->
+                "#$index(size=${bytes.size},hex=${bytes.toHexPreview(INIT_DATA_PREVIEW_BYTES)})"
+            }
+        return "count=${initData.size} ${summary.joinToString(separator = ";")}"
+    }
+
+    private fun ByteArray.toHexPreview(maxBytes: Int): String {
+        if (isEmpty() || maxBytes <= 0) {
+            return "-"
+        }
+        val previewSize = minOf(size, maxBytes)
+        val builder = StringBuilder(previewSize * 2 + 16)
+        for (index in 0 until previewSize) {
+            if (index > 0 && index % 2 == 0) {
+                builder.append(' ')
+            }
+            val value = this[index].toInt() and 0xFF
+            builder.append(HEX_DIGITS[value ushr 4])
+            builder.append(HEX_DIGITS[value and 0x0F])
+        }
+        if (size > previewSize) {
+            builder.append("...")
+        }
+        return builder.toString()
+    }
+
+    private fun isSsaMime(mimeType: String?): Boolean {
+        if (mimeType == null) {
+            return false
+        }
+        val normalized = mimeType.lowercase()
+        return mimeType == MimeTypes.TEXT_SSA ||
+            normalized == "text/ssa" ||
+            normalized == "text/x-ass" ||
+            normalized == "application/x-ass" ||
+            normalized == "application/x-ssa" ||
+            normalized == "application/ass"
     }
 
     private fun applyHdrSdrPreference(tracks: Tracks) {
@@ -973,5 +1042,10 @@ class Media3VideoPlayer(
             player.seekTo(resumePosition)
         }
         player.playWhenReady = playWhenReady
+    }
+
+    private companion object {
+        private const val INIT_DATA_PREVIEW_BYTES = 64
+        private val HEX_DIGITS = "0123456789ABCDEF".toCharArray()
     }
 }

@@ -8,6 +8,7 @@ import com.xyoye.data_component.media3.telemetry.subtitle.SubtitleOutputTarget
 import com.xyoye.data_component.enums.SubtitlePipelineFallbackReason
 import com.xyoye.data_component.enums.SubtitlePipelineMode
 import com.xyoye.data_component.enums.SubtitlePipelineStatus
+import com.xyoye.player.info.PlayerInitializer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -42,6 +43,7 @@ class AssGpuRenderer(
     private val pendingVsyncId = AtomicLong(0L)
     private var trackLoaded = false
     private var blockedByFailure = false
+    private val embeddedSampleLogCounter = AtomicLong(0L)
 
     @Volatile
     private var telemetryEnabled = true
@@ -168,6 +170,13 @@ class AssGpuRenderer(
             if (released) return@post
             trackLoaded = true
             nativeBridge.initEmbeddedTrack(codecPrivate, fontDirs, defaultFont)
+            if (PlayerInitializer.isPrintLog) {
+                LogFacade.d(
+                    LogModule.PLAYER,
+                    TAG,
+                    "gpu initEmbeddedTrack codecPrivateSize=${codecPrivate?.size ?: -1} fontDirs=${fontDirs.size} defaultFontSet=${defaultFont != null}",
+                )
+            }
         }
     }
 
@@ -180,6 +189,14 @@ class AssGpuRenderer(
         renderHandler.post {
             if (released) return@post
             nativeBridge.appendEmbeddedChunk(data, timeMs, durationMs)
+            val count = embeddedSampleLogCounter.incrementAndGet()
+            if (PlayerInitializer.isPrintLog && shouldLogEmbeddedSample(count)) {
+                LogFacade.d(
+                    LogModule.PLAYER,
+                    TAG,
+                    "gpu appendEmbeddedSample size=${data.size} ptsMs=$timeMs durationMs=${durationMs ?: -1}",
+                )
+            }
         }
     }
 
@@ -249,5 +266,10 @@ class AssGpuRenderer(
 
     companion object {
         private const val TAG = "AssGpuRenderer"
+        private const val SAMPLE_LOG_LIMIT = 6L
+        private const val SAMPLE_LOG_INTERVAL = 50L
     }
+
+    private fun shouldLogEmbeddedSample(count: Long): Boolean =
+        count <= SAMPLE_LOG_LIMIT || count % SAMPLE_LOG_INTERVAL == 0L
 }

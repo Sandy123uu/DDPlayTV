@@ -10,8 +10,12 @@ import androidx.media3.extractor.text.SubtitleDecoder
 import androidx.media3.extractor.text.SubtitleDecoderException
 import androidx.media3.extractor.text.SubtitleInputBuffer
 import androidx.media3.extractor.text.SubtitleOutputBuffer
+import com.xyoye.common_component.log.LogFacade
+import com.xyoye.common_component.log.model.LogModule
+import com.xyoye.player.info.PlayerInitializer
 import com.xyoye.player.subtitle.backend.EmbeddedSubtitleSink
 import java.nio.ByteBuffer
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * SubtitleDecoder that forwards SSA/ASS samples directly to the libass GPU backend and
@@ -27,10 +31,22 @@ class LibassSsaStreamDecoder(
     ),
     SubtitleDecoder {
     private val decoderName = "LibassSsaStreamDecoder"
+    private val decodeLogCounter = AtomicInteger(0)
+    private val sinkMissLogCounter = AtomicInteger(0)
 
     init {
         setInitialInputBufferSize(INITIAL_INPUT_BUFFER_SIZE)
-        sinkProvider()?.onFormat(buildCodecPrivateForLibass(format.initializationData))
+        val sink = sinkProvider()
+        val codecPrivate = buildCodecPrivateForLibass(format.initializationData)
+        sink?.onFormat(codecPrivate)
+        if (PlayerInitializer.isPrintLog) {
+            val initSizes = format.initializationData.joinToString(prefix = "[", postfix = "]") { it.size.toString() }
+            LogFacade.d(
+                LogModule.PLAYER,
+                LOG_TAG,
+                "decoder init sinkPresent=${sink != null} mime=${format.sampleMimeType} codecs=${format.codecs} initDataCount=${format.initializationData.size} initSizes=$initSizes codecPrivateSize=${codecPrivate?.size ?: -1}",
+            )
+        }
     }
 
     override fun getName(): String = decoderName
@@ -53,12 +69,29 @@ class LibassSsaStreamDecoder(
     ): SubtitleDecoderException? {
         if (reset) {
             sinkProvider()?.onFlush()
+            if (PlayerInitializer.isPrintLog && shouldLog(decodeLogCounter.incrementAndGet())) {
+                LogFacade.d(LogModule.PLAYER, LOG_TAG, "decode reset=true")
+            }
         }
         val buffer = inputBuffer.data ?: return null
         val payload = copyPayload(buffer)
         if (payload.isNotEmpty()) {
             val normalized = normalizeMedia3MatroskaSample(payload)
-            sinkProvider()?.onSample(normalized.data, inputBuffer.timeUs, normalized.durationUs)
+            val sink = sinkProvider()
+            sink?.onSample(normalized.data, inputBuffer.timeUs, normalized.durationUs)
+            if (PlayerInitializer.isPrintLog && shouldLog(decodeLogCounter.incrementAndGet())) {
+                LogFacade.d(
+                    LogModule.PLAYER,
+                    LOG_TAG,
+                    "decode sample payloadSize=${payload.size} normalizedSize=${normalized.data.size} ptsUs=${inputBuffer.timeUs} durationUs=${normalized.durationUs ?: -1} sinkPresent=${sink != null}",
+                )
+            } else if (sink == null && PlayerInitializer.isPrintLog && shouldLog(sinkMissLogCounter.incrementAndGet())) {
+                LogFacade.w(
+                    LogModule.PLAYER,
+                    LOG_TAG,
+                    "decode sample dropped due to missing sink payloadSize=${payload.size} ptsUs=${inputBuffer.timeUs}",
+                )
+            }
         }
         outputBuffer.setContent(inputBuffer.timeUs, EmptySubtitle, inputBuffer.subsampleOffsetUs)
         return null
@@ -171,6 +204,10 @@ class LibassSsaStreamDecoder(
     }
 
     companion object {
+        private const val LOG_TAG = "PlayerSubtitle"
+        private const val LOG_SAMPLE_LIMIT = 6
+        private const val LOG_SAMPLE_INTERVAL = 50
+
         private const val INITIAL_INPUT_BUFFER_SIZE = 1024
         private const val BUFFER_POOL_SIZE = 2
 
@@ -202,4 +239,6 @@ class LibassSsaStreamDecoder(
                 this@LibassSsaStreamDecoder.releaseOutputBuffer(this)
             }
         }
+
+    private fun shouldLog(count: Int): Boolean = count <= LOG_SAMPLE_LIMIT || count % LOG_SAMPLE_INTERVAL == 0
 }
