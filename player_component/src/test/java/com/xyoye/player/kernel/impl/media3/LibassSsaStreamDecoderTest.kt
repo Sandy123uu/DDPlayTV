@@ -36,7 +36,8 @@ class LibassSsaStreamDecoderTest {
             )
 
         assertEquals(500_000L, decoder.normalizeSampleTimeUs(1_000_000_500_000L, 1_000_000_000_000L))
-        assertEquals(0L, decoder.normalizeSampleTimeUs(1_000_000_000_000L, Format.OFFSET_SAMPLE_RELATIVE))
+        assertEquals(500_000L, decoder.normalizeSampleTimeUs(1_000_000_500_000L, Format.OFFSET_SAMPLE_RELATIVE))
+        assertEquals(500_000L, decoder.normalizeSampleTimeUs(500_000L, Format.OFFSET_SAMPLE_RELATIVE))
         assertEquals(1_000_000_000_000L, decoder.normalizeSampleTimeUs(1_000_000_000_000L, C.TIME_UNSET))
 
         decoder.release()

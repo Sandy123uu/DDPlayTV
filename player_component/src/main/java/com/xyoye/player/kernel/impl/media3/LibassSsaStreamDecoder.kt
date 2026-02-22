@@ -200,11 +200,16 @@ class LibassSsaStreamDecoder(
     ): Long {
         val effectiveOffsetUs =
             when (subsampleOffsetUs) {
-                Format.OFFSET_SAMPLE_RELATIVE -> sampleTimeUs
+                Format.OFFSET_SAMPLE_RELATIVE ->
+                    if (sampleTimeUs >= SAMPLE_RELATIVE_TIMESTAMP_BASE_US) {
+                        SAMPLE_RELATIVE_TIMESTAMP_BASE_US
+                    } else {
+                        0L
+                    }
                 C.TIME_UNSET -> 0L
                 else -> subsampleOffsetUs
             }
-        return sampleTimeUs - effectiveOffsetUs
+        return (sampleTimeUs - effectiveOffsetUs).coerceAtLeast(0L)
     }
 
     private object EmptySubtitle : Subtitle {
@@ -228,6 +233,8 @@ class LibassSsaStreamDecoder(
         private const val SSA_PREFIX_END_TIMECODE_OFFSET = 21
         private const val SSA_TIMECODE_LENGTH = 10
         private const val SSA_TIMECODE_LAST_VALUE_SCALING_FACTOR = 10_000L
+        // Media3 sample-relative text timestamps are anchored to this internal base.
+        private const val SAMPLE_RELATIVE_TIMESTAMP_BASE_US = 1_000_000_000_000L
 
         private val SSA_PREFIX =
             "Dialogue: 0:00:00:00,0:00:00:00,".toByteArray(Charsets.UTF_8)
