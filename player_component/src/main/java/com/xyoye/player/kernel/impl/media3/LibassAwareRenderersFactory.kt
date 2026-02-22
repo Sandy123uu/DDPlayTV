@@ -27,6 +27,10 @@ class LibassAwareRenderersFactory(
         val decoderFactory = LibassSubtitleDecoderFactory(embeddedSinkProvider)
         val insertIndex = out.indexOfFirst { it is TextRenderer }.takeIf { it >= 0 } ?: out.size
         out.removeAll { it is TextRenderer }
-        out.add(insertIndex, TextRenderer(output, outputLooper, decoderFactory))
+        val textRenderer =
+            TextRenderer(output, outputLooper, decoderFactory).apply {
+                experimentalSetLegacyDecodingEnabled(true)
+            }
+        out.add(insertIndex, textRenderer)
     }
 }

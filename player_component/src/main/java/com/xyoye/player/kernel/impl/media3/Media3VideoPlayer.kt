@@ -149,12 +149,26 @@ class Media3VideoPlayer(
         return ExoPlayer
             .Builder(appContext)
             .setRenderersFactory(renderersFactory)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(appContext))
+            .setMediaSourceFactory(createMediaSourceFactory())
             .setTrackSelector(trackSelector)
             .setLoadControl(loadControl)
             .setBandwidthMeter(DefaultBandwidthMeter.Builder(appContext).build())
             .setAnalyticsCollector(DefaultAnalyticsCollector(Clock.DEFAULT))
             .build()
+    }
+
+    private fun createMediaSourceFactory(): DefaultMediaSourceFactory {
+        val parseSubtitlesDuringExtraction =
+            PlayerInitializer.Subtitle.backend != SubtitleRendererBackend.LIBASS
+        if (PlayerInitializer.isPrintLog) {
+            LogFacade.d(
+                LogModule.PLAYER,
+                "PlayerSubtitle",
+                "media3 sourceFactory parseSubtitlesDuringExtraction=$parseSubtitlesDuringExtraction backend=${PlayerInitializer.Subtitle.backend}",
+            )
+        }
+        return DefaultMediaSourceFactory(appContext)
+            .experimentalParseSubtitlesDuringExtraction(parseSubtitlesDuringExtraction)
     }
 
     override fun setOptions() {
@@ -774,8 +788,9 @@ class Media3VideoPlayer(
             hasTextTracks = true
             for (trackIndex in 0 until group.length) {
                 val format = group.getTrackFormat(trackIndex)
-                val isSsaTrack = isSsaMime(format.sampleMimeType)
-                val isMedia3CueTrack = format.sampleMimeType == MimeTypes.APPLICATION_MEDIA3_CUES
+                val isSsaTrack = Media3SubtitleFormatClassifier.isSsaFamilyTrack(format)
+                val isMedia3CueTrack = Media3SubtitleFormatClassifier.isMedia3CueFormat(format)
+                val ssaCodec = Media3SubtitleFormatClassifier.isSsaCodecs(format.codecs)
                 if (isSsaTrack) {
                     ssaLikeTrack = true
                 }
@@ -787,7 +802,7 @@ class Media3VideoPlayer(
                 LogFacade.d(
                     LogModule.PLAYER,
                     "PlayerSubtitle",
-                    "media3 textTrack g=$groupIndex t=$trackIndex selected=${group.isTrackSelected(trackIndex)} supported=${group.isTrackSupported(trackIndex)} disabled=$textDisabled mime=${format.sampleMimeType} codecs=${format.codecs} label=${format.label} lang=${format.language} name=$name ssaLike=$isSsaTrack media3Cue=$isMedia3CueTrack initData=$initDataSummary",
+                    "media3 textTrack g=$groupIndex t=$trackIndex selected=${group.isTrackSelected(trackIndex)} supported=${group.isTrackSupported(trackIndex)} disabled=$textDisabled mime=${format.sampleMimeType} codecs=${format.codecs} label=${format.label} lang=${format.language} name=$name ssaLike=$isSsaTrack ssaCodec=$ssaCodec media3Cue=$isMedia3CueTrack initData=$initDataSummary",
                 )
             }
         }
@@ -804,7 +819,7 @@ class Media3VideoPlayer(
 
     private fun isLibassBypassExpected(): Boolean =
         PlayerInitializer.Subtitle.backend == SubtitleRendererBackend.LIBASS &&
-            (hasSsaLikeTextTrack || hasMedia3CueTextTrack)
+            hasSsaLikeTextTrack
 
     private fun formatInitializationDataSummary(format: Format): String {
         val initData = format.initializationData
@@ -836,19 +851,6 @@ class Media3VideoPlayer(
             builder.append("...")
         }
         return builder.toString()
-    }
-
-    private fun isSsaMime(mimeType: String?): Boolean {
-        if (mimeType == null) {
-            return false
-        }
-        val normalized = mimeType.lowercase()
-        return mimeType == MimeTypes.TEXT_SSA ||
-            normalized == "text/ssa" ||
-            normalized == "text/x-ass" ||
-            normalized == "application/x-ass" ||
-            normalized == "application/x-ssa" ||
-            normalized == "application/ass"
     }
 
     private fun applyHdrSdrPreference(tracks: Tracks) {

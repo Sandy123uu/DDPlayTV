@@ -1,7 +1,6 @@
 package com.xyoye.player.kernel.impl.media3
 
 import androidx.media3.common.Format
-import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.text.SubtitleDecoderFactory
 import androidx.media3.extractor.text.SubtitleDecoder
@@ -21,7 +20,7 @@ class LibassSubtitleDecoderFactory(
 
     override fun supportsFormat(format: Format): Boolean {
         val sink = sinkProvider()
-        val ssaMime = isSsaMime(format.sampleMimeType)
+        val ssaMime = Media3SubtitleFormatClassifier.isSsaMime(format.sampleMimeType)
         val supportsByLibass = sink != null && ssaMime
         if (shouldLog(supportsLogCounter.incrementAndGet())) {
             logDecision(
@@ -39,7 +38,7 @@ class LibassSubtitleDecoderFactory(
     }
 
     override fun createDecoder(format: Format): SubtitleDecoder =
-        if (sinkProvider() != null && isSsaMime(format.sampleMimeType)) {
+        if (sinkProvider() != null && Media3SubtitleFormatClassifier.isSsaMime(format.sampleMimeType)) {
             if (shouldLog(createLogCounter.incrementAndGet())) {
                 logDecision(
                     prefix = "createDecoder",
@@ -53,7 +52,7 @@ class LibassSubtitleDecoderFactory(
         } else {
             if (shouldLog(createLogCounter.incrementAndGet())) {
                 val sinkPresent = sinkProvider() != null
-                val ssaMime = isSsaMime(format.sampleMimeType)
+                val ssaMime = Media3SubtitleFormatClassifier.isSsaMime(format.sampleMimeType)
                 logDecision(
                     prefix = "createDecoder",
                     format = format,
@@ -83,19 +82,6 @@ class LibassSubtitleDecoderFactory(
     }
 
     private fun shouldLog(count: Int): Boolean = count <= LOG_SAMPLE_LIMIT || count % LOG_SAMPLE_INTERVAL == 0
-
-    private fun isSsaMime(mimeType: String?): Boolean {
-        if (mimeType == null) {
-            return false
-        }
-        val normalized = mimeType.lowercase()
-        return mimeType == MimeTypes.TEXT_SSA ||
-            normalized == "text/ssa" ||
-            normalized == "text/x-ass" ||
-            normalized == "application/x-ass" ||
-            normalized == "application/x-ssa" ||
-            normalized == "application/ass"
-    }
 
     private companion object {
         private const val LOG_SAMPLE_LIMIT = 6
