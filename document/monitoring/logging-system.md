@@ -33,9 +33,12 @@ HTTP 服务仅用于局域网调试，具备如下安全约束：
 http://<设备IP>:17010/?token=<token>
 ```
 
-页面只提供日志 ZIP 下载入口。
+页面提供以下操作：
 
-## 4. 脚本/命令行访问（唯一接口）
+- 下载日志 ZIP（`GET /api/v1/logs/download`）
+- 手动清空本地历史日志（`POST /api/v1/logs/clear`）
+
+## 4. 脚本/命令行访问
 
 ### 下载日志 ZIP
 
@@ -50,6 +53,13 @@ curl -L -H "Authorization: Bearer <token>" \
 ```bash
 unzip ddplaytv-logs.zip -d ddplaytv-logs
 rg "关键字" ddplaytv-logs
+```
+
+### 手动清空本地历史日志
+
+```bash
+curl -X POST -H "Authorization: Bearer <token>" \
+  "http://<设备IP>:17010/api/v1/logs/clear"
 ```
 
 ## 5. ADB logcat 抓取（默认通道）

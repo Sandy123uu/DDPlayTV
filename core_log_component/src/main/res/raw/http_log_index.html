@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DDPlayTV 日志下载</title>
+    <title>DDPlayTV 日志管理</title>
     <style>
       :root {
         color-scheme: dark;
@@ -13,6 +13,7 @@
         --muted: #8b949e;
         --border: #2d3748;
         --btn: #1f6feb;
+        --btn-danger: #d1242f;
         --btn-disabled: #30363d;
         --ok: #2ea043;
         --error: #ff6b6b;
@@ -82,6 +83,9 @@
         cursor: not-allowed;
         background: var(--btn-disabled);
       }
+      button.danger {
+        background: var(--btn-danger);
+      }
       .hint {
         margin-top: 12px;
         white-space: pre-wrap;
@@ -112,9 +116,9 @@
   <body>
     <main>
       <section class="panel">
-        <h1>DDPlayTV HTTP 日志下载</h1>
+        <h1>DDPlayTV HTTP 日志管理</h1>
         <p class="subtitle">
-          服务只提供日志 ZIP 下载，下载后请在本地使用文本工具（如 <code>rg</code>）检索排查。
+          服务提供日志 ZIP 下载与手动清理，下载后请在本地使用文本工具（如 <code>rg</code>）检索排查。
         </p>
 
         <div class="group">
@@ -124,12 +128,14 @@
 
         <div class="actions">
           <button id="btnDownload">下载日志 ZIP</button>
+          <button id="btnClear" class="danger">清空本地日志</button>
         </div>
 
         <div id="hint" class="hint"></div>
 
         <p class="note">
-          下载接口：<span class="mono">/api/v1/logs/download</span><br />
+          下载接口：<span class="mono">GET /api/v1/logs/download</span><br />
+          清理接口：<span class="mono">POST /api/v1/logs/clear</span><br />
           如果浏览器环境受限，也可使用 curl：
           <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" -o ddplaytv-logs.zip http://&lt;ip&gt;:17010/api/v1/logs/download</span>
         </p>
@@ -140,6 +146,7 @@
       const tokenInput = document.getElementById("tokenInput");
       const hint = document.getElementById("hint");
       const btnDownload = document.getElementById("btnDownload");
+      const btnClear = document.getElementById("btnClear");
 
       tokenInput.value = new URLSearchParams(location.search).get("token") || "";
 
@@ -178,6 +185,7 @@
 
       async function downloadLogs() {
         btnDownload.disabled = true;
+        btnClear.disabled = true;
         setHint("下载中...", "");
         try {
           const response = await fetch("/api/v1/logs/download", {
@@ -207,10 +215,48 @@
           setHint("下载失败：" + message, "error");
         } finally {
           btnDownload.disabled = false;
+          btnClear.disabled = false;
+        }
+      }
+
+      async function clearLogs() {
+        if (!confirm("确定清空本地历史日志？该操作不可恢复。")) {
+          return;
+        }
+        btnDownload.disabled = true;
+        btnClear.disabled = true;
+        setHint("清理中...", "");
+        try {
+          const response = await fetch("/api/v1/logs/clear", {
+            method: "POST",
+            headers: buildHeaders(),
+          });
+          const bodyText = await response.text();
+          if (!response.ok) {
+            throw new Error(response.status + " " + bodyText.slice(0, 200));
+          }
+
+          let message = "历史日志已清空";
+          try {
+            const payload = JSON.parse(bodyText);
+            if (payload && payload.message) {
+              message = String(payload.message);
+            }
+          } catch (_) {
+            // Keep default success text when response body is not JSON.
+          }
+          setHint(message, "ok");
+        } catch (error) {
+          const message = error && error.message ? error.message : String(error);
+          setHint("清理失败：" + message, "error");
+        } finally {
+          btnDownload.disabled = false;
+          btnClear.disabled = false;
         }
       }
 
       btnDownload.addEventListener("click", downloadLogs);
+      btnClear.addEventListener("click", clearLogs);
     </script>
   </body>
 </html>

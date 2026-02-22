@@ -405,6 +405,7 @@ internal object HttpLogServerManager {
                 rateLimiter = limiter,
                 pageHandler = { pageHandler.handle() },
                 downloadHandler = { openDownloadPayload() },
+                clearLogsHandler = { clearLogs() },
             )
 
         runCatching { newServer.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false) }

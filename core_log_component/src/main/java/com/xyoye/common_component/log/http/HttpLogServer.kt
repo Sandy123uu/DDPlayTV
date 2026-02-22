@@ -4,6 +4,7 @@ import com.xyoye.common_component.log.http.auth.HttpAuthResult
 import com.xyoye.common_component.log.http.auth.HttpRequestAuth
 import com.xyoye.common_component.log.http.json.HttpLogJson
 import com.xyoye.common_component.log.http.model.ErrorResponse
+import com.xyoye.common_component.log.http.model.SuccessResponse
 import com.xyoye.common_component.log.http.rate.HttpRateLimiter
 import fi.iki.elonen.NanoHTTPD
 import java.io.InputStream
@@ -19,6 +20,7 @@ internal class HttpLogServer(
     private val rateLimiter: HttpRateLimiter,
     private val pageHandler: (() -> Response)? = null,
     private val downloadHandler: (() -> HttpLogDownloadPayload)? = null,
+    private val clearLogsHandler: (() -> HttpLogServerState)? = null,
 ) : NanoHTTPD(port) {
     override fun serve(session: IHTTPSession): Response {
         if (!rateLimiter.tryAcquireRequest()) {
@@ -30,13 +32,10 @@ internal class HttpLogServer(
                 return jsonResponse(Response.Status.UNAUTHORIZED, auth.response)
             }
 
-            if (session.method != Method.GET) {
-                return errorResponse(Response.Status.METHOD_NOT_ALLOWED, 405, "method not allowed")
-            }
-
             return when (session.uri) {
-                "/" -> pageHandler?.invoke() ?: errorResponse(Response.Status.NOT_FOUND, 404, "not found")
+                "/" -> handlePage(session)
                 "/api/v1/logs/download" -> handleDownload(session)
+                "/api/v1/logs/clear" -> handleClearLogs(session)
                 else -> errorResponse(Response.Status.NOT_FOUND, 404, "not found")
             }
         } finally {
@@ -44,7 +43,19 @@ internal class HttpLogServer(
         }
     }
 
+    private fun handlePage(session: IHTTPSession): Response {
+        val methodError = requireMethod(session, Method.GET)
+        if (methodError != null) {
+            return methodError
+        }
+        return pageHandler?.invoke() ?: errorResponse(Response.Status.NOT_FOUND, 404, "not found")
+    }
+
     private fun handleDownload(session: IHTTPSession): Response {
+        val methodError = requireMethod(session, Method.GET)
+        if (methodError != null) {
+            return methodError
+        }
         if (!rateLimiter.allowLogsRequest(session.remoteIpAddress.orEmpty())) {
             return errorResponse(Response.Status.TOO_MANY_REQUESTS, 429, "rate limited")
         }
@@ -61,6 +72,36 @@ internal class HttpLogServer(
             )
         response.addHeader("Cache-Control", "no-store")
         response.addHeader("Content-Disposition", "attachment; filename=\"${payload.fileName}\"")
+        return response
+    }
+
+    private fun handleClearLogs(session: IHTTPSession): Response {
+        val methodError = requireMethod(session, Method.POST)
+        if (methodError != null) {
+            return methodError
+        }
+        if (!rateLimiter.allowLogsRequest(session.remoteIpAddress.orEmpty())) {
+            return errorResponse(Response.Status.TOO_MANY_REQUESTS, 429, "rate limited")
+        }
+        val state =
+            runCatching {
+                clearLogsHandler?.invoke()
+            }.getOrNull() ?: return errorResponse(Response.Status.SERVICE_UNAVAILABLE, 503, "clear unavailable")
+        return jsonResponse(
+            Response.Status.OK,
+            SuccessResponse(message = state.message ?: "logs cleared"),
+        )
+    }
+
+    private fun requireMethod(
+        session: IHTTPSession,
+        expected: Method,
+    ): Response? {
+        if (session.method == expected) {
+            return null
+        }
+        val response = errorResponse(Response.Status.METHOD_NOT_ALLOWED, 405, "method not allowed")
+        response.addHeader("Allow", expected.name)
         return response
     }
 
