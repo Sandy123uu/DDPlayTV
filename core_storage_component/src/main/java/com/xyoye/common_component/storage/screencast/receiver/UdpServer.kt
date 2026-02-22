@@ -56,6 +56,11 @@ object UdpServer {
 
         isRunning.set(true)
         multicastCount = 0
+        LogFacade.i(
+            LogModule.STORAGE,
+            TAG,
+            "start multicast emit, host=${ScreencastConstants.Multicast.host}, port=${ScreencastConstants.Multicast.port}, intervalMs=${ScreencastConstants.Multicast.intervalMs}, httpPort=$httpPort",
+        )
         while (isRunning.get()) {
             sendMulticast(httpPort, needPassword)
             delay(timeMillis = ScreencastConstants.Multicast.intervalMs)
@@ -66,9 +71,12 @@ object UdpServer {
      * 停止组播发送
      */
     fun stopMulticastEmit() {
-        isRunning.set(false)
+        val wasRunning = isRunning.getAndSet(false)
         IOUtils.closeIO(multicastSocket)
         multicastSocket = null
+        if (wasRunning) {
+            LogFacade.i(LogModule.STORAGE, TAG, "stop multicast emit")
+        }
     }
 
     /**
@@ -119,7 +127,6 @@ object UdpServer {
                     Base64.NO_WRAP,
                     version = EntropyUtils.AES_VERSION_GCM_V2,
                 ) ?: return
-            LogFacade.d(LogModule.STORAGE, UdpServer::class.java.simpleName, v2Msg)
 
             val v2Data = v2Msg.toByteArray()
             val v2Packet =
@@ -152,6 +159,12 @@ object UdpServer {
 
             multicastCount++
         } catch (e: Exception) {
+            LogFacade.e(
+                LogModule.STORAGE,
+                TAG,
+                "send multicast failed, httpPort=$httpPort, multicastCount=$multicastCount",
+                throwable = e,
+            )
             // 上报组播发送异常
             ErrorReportHelper.postCatchedExceptionWithContext(
                 e,

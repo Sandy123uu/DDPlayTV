@@ -55,6 +55,7 @@ class VlcVideoPlayer(
     private var mCurrentDuration = 0L
     private var seekable = true
     private var isBufferEnd = false
+    private var lastBufferingStarted: Boolean? = null
     private var dataSource: String? = null
     private var proxySeekEnabled: Boolean = false
     private val mVideoSize = Point(0, 0)
@@ -76,6 +77,7 @@ class VlcVideoPlayer(
         headers: Map<String, String>?
     ) {
         isBufferEnd = false
+        lastBufferingStarted = null
         dataSource = path
         runCatching {
             if (LocalProxy.setSeekEnabledIfServing(path, enabled = false)) {
@@ -143,6 +145,7 @@ class VlcVideoPlayer(
         attachedLayout = null
         isUsingTextureView = false
         didTextureFallback = false
+        lastBufferingStarted = null
     }
 
     override fun release() {
@@ -160,6 +163,7 @@ class VlcVideoPlayer(
         attachedLayout = null
         isUsingTextureView = false
         didTextureFallback = false
+        lastBufferingStarted = null
         SupervisorScope.IO.launch {
             mMediaPlayer.release()
         }
@@ -322,8 +326,14 @@ class VlcVideoPlayer(
             when (it.type) {
                 // 缓冲
                 MediaPlayer.Event.Buffering -> {
-                    isBufferEnd = it.buffering == 100f
-                    if (it.buffering == 100f) {
+                    val bufferingEnded = it.buffering == 100f
+                    val bufferingStarted = !bufferingEnded
+                    isBufferEnd = bufferingEnded
+                    if (lastBufferingStarted == bufferingStarted) {
+                        return@setEventListener
+                    }
+                    lastBufferingStarted = bufferingStarted
+                    if (bufferingEnded) {
                         mPlayerEventListener.onInfo(PlayerConstant.MEDIA_INFO_BUFFERING_END, 0)
                         VideoLog.d("$TAG--listener--onInfo--> MEDIA_INFO_BUFFERING_END")
                     } else {

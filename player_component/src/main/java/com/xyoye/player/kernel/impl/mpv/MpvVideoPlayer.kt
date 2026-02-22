@@ -689,8 +689,7 @@ class MpvVideoPlayer(
                 when (event.level) {
                     5, 4 -> LogFacade.e(LogModule.PLAYER, "mpv_bridge", message)
                     3 -> LogFacade.w(LogModule.PLAYER, "mpv_bridge", message)
-                    2 -> LogFacade.i(LogModule.PLAYER, "mpv_bridge", message)
-                    else -> LogFacade.d(LogModule.PLAYER, "mpv_bridge", message)
+                    else -> Unit
                 }
             }
             is MpvNativeBridge.Event.Buffering -> {

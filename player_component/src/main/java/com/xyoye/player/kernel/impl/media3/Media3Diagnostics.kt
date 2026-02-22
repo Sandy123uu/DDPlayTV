@@ -196,7 +196,9 @@ object Media3Diagnostics {
     fun logHttpOpen(
         url: String?,
         code: Int?,
-        contentType: String?
+        contentType: String?,
+        logSuccess: Boolean = true,
+        failed: Boolean = false
     ) {
         val safeUrl = SensitiveDataSanitizer.sanitizeUrl(url, SensitiveDataSanitizer.UrlMode.SAFE)
         val urlFp = url?.takeIf { includeUrlFingerprint }?.let { SensitiveDataSanitizer.fingerprint(it) }
@@ -210,9 +212,9 @@ object Media3Diagnostics {
             )
         log {
             val message = "HTTP open: url=$urlForLog code=${code ?: -1} contentType=${contentType ?: ""}"
-            if (code != null && code >= 400) {
+            if (failed || (code != null && code >= 400)) {
                 LogFacade.w(MODULE, TAG, message)
-            } else {
+            } else if (logSuccess) {
                 LogFacade.d(MODULE, TAG, message)
             }
         }

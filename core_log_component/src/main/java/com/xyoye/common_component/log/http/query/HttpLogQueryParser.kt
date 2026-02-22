@@ -136,7 +136,7 @@ object HttpLogQueryParser {
 
     private fun parseSource(raw: String?): LogSourceFilter? {
         val value = raw?.trim().orEmpty()
-        if (value.isEmpty()) return LogSourceFilter.BOTH
+        if (value.isEmpty()) return LogSourceFilter.APP
         return runCatching { LogSourceFilter.valueOf(value) }.getOrNull()
     }
 
