@@ -221,9 +221,12 @@ class LibassSsaStreamDecoder(
         private val EVENTS_HEADER = "\n[Events]\n".toByteArray(Charsets.UTF_8)
         private val NEWLINE = "\n".toByteArray(Charsets.UTF_8)
 
-        private val INPUT_BUFFER_POOL = Array(BUFFER_POOL_SIZE) { SubtitleInputBuffer() }
-        private val OUTPUT_BUFFER_POOL =
+        private val INPUT_BUFFER_POOL: Array<SubtitleInputBuffer> =
+            Array(BUFFER_POOL_SIZE) { SubtitleInputBuffer() }
+        private val OUTPUT_BUFFER_POOL: Array<SubtitleOutputBuffer> =
             Array(BUFFER_POOL_SIZE) {
+                // Keep pool component type as SubtitleOutputBuffer to avoid ArrayStoreException when
+                // SimpleDecoder replaces placeholders via createOutputBuffer().
                 // Placeholder entries; they are replaced in SimpleDecoder's constructor via createOutputBuffer().
                 object : SubtitleOutputBuffer() {
                     override fun release() {
