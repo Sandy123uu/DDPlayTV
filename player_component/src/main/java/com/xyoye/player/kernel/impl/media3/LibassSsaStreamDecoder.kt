@@ -77,13 +77,14 @@ class LibassSsaStreamDecoder(
         val payload = copyPayload(buffer)
         if (payload.isNotEmpty()) {
             val normalized = normalizeMedia3MatroskaSample(payload)
+            val sinkTimeUs = normalizeSampleTimeUs(inputBuffer.timeUs, inputBuffer.subsampleOffsetUs)
             val sink = sinkProvider()
-            sink?.onSample(normalized.data, inputBuffer.timeUs, normalized.durationUs)
+            sink?.onSample(normalized.data, sinkTimeUs, normalized.durationUs)
             if (PlayerInitializer.isPrintLog && shouldLog(decodeLogCounter.incrementAndGet())) {
                 LogFacade.d(
                     LogModule.PLAYER,
                     LOG_TAG,
-                    "decode sample payloadSize=${payload.size} normalizedSize=${normalized.data.size} ptsUs=${inputBuffer.timeUs} durationUs=${normalized.durationUs ?: -1} sinkPresent=${sink != null}",
+                    "decode sample payloadSize=${payload.size} normalizedSize=${normalized.data.size} sampleTimeUs=${inputBuffer.timeUs} subsampleOffsetUs=${inputBuffer.subsampleOffsetUs} sinkTimeUs=$sinkTimeUs durationUs=${normalized.durationUs ?: -1} sinkPresent=${sink != null}",
                 )
             } else if (sink == null && PlayerInitializer.isPrintLog && shouldLog(sinkMissLogCounter.incrementAndGet())) {
                 LogFacade.w(
@@ -191,6 +192,19 @@ class LibassSsaStreamDecoder(
             if (this[index] != prefix[index]) return false
         }
         return true
+    }
+
+    internal fun normalizeSampleTimeUs(
+        sampleTimeUs: Long,
+        subsampleOffsetUs: Long
+    ): Long {
+        val effectiveOffsetUs =
+            when (subsampleOffsetUs) {
+                Format.OFFSET_SAMPLE_RELATIVE -> sampleTimeUs
+                C.TIME_UNSET -> 0L
+                else -> subsampleOffsetUs
+            }
+        return sampleTimeUs - effectiveOffsetUs
     }
 
     private object EmptySubtitle : Subtitle {
