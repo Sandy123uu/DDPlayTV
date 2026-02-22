@@ -187,6 +187,9 @@ class LibassSsaStreamDecoder(
         if (!first.startsWith(FORMAT_PREFIX)) {
             return first
         }
+        if (second.containsToken(EVENTS_SECTION_HEADER) && second.containsToken(FORMAT_PREFIX)) {
+            return second
+        }
         val dialogueFormat = first
         val codecPrivate = second
         val eventsHeader = EVENTS_HEADER
@@ -220,6 +223,26 @@ class LibassSsaStreamDecoder(
             if (this[index] == value) return index
         }
         return -1
+    }
+
+    private fun ByteArray.containsToken(token: ByteArray): Boolean {
+        if (token.isEmpty() || size < token.size) return false
+        val maxStart = size - token.size
+        var start = 0
+        while (start <= maxStart) {
+            var matched = true
+            for (index in token.indices) {
+                if (this[start + index] != token[index]) {
+                    matched = false
+                    break
+                }
+            }
+            if (matched) {
+                return true
+            }
+            start++
+        }
+        return false
     }
 
     internal fun normalizeSampleTimeUs(
@@ -266,6 +289,7 @@ class LibassSsaStreamDecoder(
         private val SSA_PREFIX =
             "Dialogue: 0:00:00:00,".toByteArray(Charsets.UTF_8)
         private const val SSA_FIELD_SEPARATOR: Byte = ','.code.toByte()
+        private val EVENTS_SECTION_HEADER = "[Events]".toByteArray(Charsets.UTF_8)
         private val FORMAT_PREFIX = "Format:".toByteArray(Charsets.UTF_8)
         private val EVENTS_HEADER = "\n[Events]\n".toByteArray(Charsets.UTF_8)
         private val NEWLINE = "\n".toByteArray(Charsets.UTF_8)

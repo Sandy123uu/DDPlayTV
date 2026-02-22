@@ -3,6 +3,7 @@ package com.xyoye.player.kernel.impl.media3
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import com.xyoye.common_component.media3.testing.Media3Dependent
+import com.xyoye.player.subtitle.backend.EmbeddedSubtitleSink
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -63,6 +64,53 @@ class LibassSsaStreamDecoderTest {
         decoder.release()
     }
 
+    @Test
+    fun constructor_usesExistingEventsCodecPrivateWhenAvailable() {
+        val sink = TestEmbeddedSink()
+        val format =
+            Format
+                .Builder()
+                .setSampleMimeType("text/x-ssa")
+                .setInitializationData(
+                    listOf(
+                        "Format: Start, End, ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
+                            .toByteArray(Charsets.UTF_8),
+                        "[Script Info]\nTitle: Test\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+                            .toByteArray(Charsets.UTF_8),
+                    ),
+                ).build()
+
+        val decoder = LibassSsaStreamDecoder(format, sinkProvider = { sink })
+
+        assertEquals(
+            String(format.initializationData[1], Charsets.UTF_8),
+            String(sink.lastCodecPrivate ?: ByteArray(0), Charsets.UTF_8),
+        )
+        decoder.release()
+    }
+
+    @Test
+    fun constructor_mergesCodecPrivateWhenEventsSectionMissing() {
+        val sink = TestEmbeddedSink()
+        val dialogueFormat =
+            "Format: Start, End, ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
+                .toByteArray(Charsets.UTF_8)
+        val header = "[Script Info]\nTitle: Test\n".toByteArray(Charsets.UTF_8)
+        val format =
+            Format
+                .Builder()
+                .setSampleMimeType("text/x-ssa")
+                .setInitializationData(listOf(dialogueFormat, header))
+                .build()
+
+        val decoder = LibassSsaStreamDecoder(format, sinkProvider = { sink })
+        val merged = String(sink.lastCodecPrivate ?: ByteArray(0), Charsets.UTF_8)
+
+        assertTrue(merged.contains("[Events]"))
+        assertTrue(merged.contains(String(dialogueFormat, Charsets.UTF_8)))
+        decoder.release()
+    }
+
     private fun createDecoder(): LibassSsaStreamDecoder =
         LibassSsaStreamDecoder(
             format =
@@ -72,4 +120,22 @@ class LibassSsaStreamDecoderTest {
                     .build(),
             sinkProvider = { null },
         )
+
+    private class TestEmbeddedSink : EmbeddedSubtitleSink {
+        var lastCodecPrivate: ByteArray? = null
+
+        override fun onFormat(codecPrivate: ByteArray?) {
+            lastCodecPrivate = codecPrivate
+        }
+
+        override fun onSample(
+            data: ByteArray,
+            timeUs: Long,
+            durationUs: Long?
+        ) = Unit
+
+        override fun onFlush() = Unit
+
+        override fun onRelease() = Unit
+    }
 }
