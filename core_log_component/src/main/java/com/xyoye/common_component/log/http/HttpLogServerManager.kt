@@ -7,6 +7,7 @@ import com.xyoye.common_component.log.LogFacade
 import com.xyoye.common_component.log.http.logcat.LogcatCollector
 import com.xyoye.common_component.log.http.model.HttpDegradeMode
 import com.xyoye.common_component.log.http.model.LogRecord
+import com.xyoye.common_component.log.http.model.LogSegmentsResponse
 import com.xyoye.common_component.log.http.model.LogSource
 import com.xyoye.common_component.log.http.model.RetentionTier
 import com.xyoye.common_component.log.http.page.HttpLogPageHandler
@@ -282,6 +283,20 @@ internal object HttpLogServerManager {
         }
     }
 
+    fun getSegmentsResponse(): LogSegmentsResponse {
+        synchronized(lock) {
+            val context = appContext ?: error("context not ready")
+            val segments = HttpLogArchiveExporter.listSegments(logsDir = File(context.filesDir, "http_logs"))
+            return LogSegmentsResponse(
+                segments = segments,
+                totalCount = segments.size,
+                totalBytes = segments.sumOf { it.sizeBytes.coerceAtLeast(0L) },
+                latestStartMs = segments.firstOrNull()?.startMs,
+                oldestStartMs = segments.lastOrNull()?.startMs,
+            )
+        }
+    }
+
     private fun buildAppRecord(event: LogEvent): LogRecord {
         val sanitizedMessage = SensitiveDataSanitizer.sanitizeFreeText(event.message)
         val sanitizedContext = SensitiveDataSanitizer.sanitizeContext(event.context)
@@ -424,6 +439,7 @@ internal object HttpLogServerManager {
                 downloadHandler = { openDownloadPayload() },
                 latestSegmentHandler = { openLatestSegmentPayload() },
                 segmentAtHandler = { timestampMs -> openSegmentAtPayload(timestampMs) },
+                segmentsHandler = { getSegmentsResponse() },
                 clearLogsHandler = { clearLogs() },
             )
 

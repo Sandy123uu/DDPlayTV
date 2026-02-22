@@ -4,6 +4,7 @@ import com.xyoye.common_component.log.http.auth.HttpAuthResult
 import com.xyoye.common_component.log.http.auth.HttpRequestAuth
 import com.xyoye.common_component.log.http.json.HttpLogJson
 import com.xyoye.common_component.log.http.model.ErrorResponse
+import com.xyoye.common_component.log.http.model.LogSegmentsResponse
 import com.xyoye.common_component.log.http.model.SuccessResponse
 import com.xyoye.common_component.log.http.rate.HttpRateLimiter
 import fi.iki.elonen.NanoHTTPD
@@ -22,6 +23,7 @@ internal class HttpLogServer(
     private val downloadHandler: (() -> HttpLogDownloadPayload)? = null,
     private val latestSegmentHandler: (() -> HttpLogDownloadPayload?)? = null,
     private val segmentAtHandler: ((Long) -> HttpLogDownloadPayload?)? = null,
+    private val segmentsHandler: (() -> LogSegmentsResponse)? = null,
     private val clearLogsHandler: (() -> HttpLogServerState)? = null,
 ) : NanoHTTPD(port) {
     override fun serve(session: IHTTPSession): Response {
@@ -39,6 +41,7 @@ internal class HttpLogServer(
                 "/api/v1/logs/download" -> handleDownload(session)
                 "/api/v1/logs/latest-segment" -> handleLatestSegment(session)
                 "/api/v1/logs/segment-at" -> handleSegmentAt(session)
+                "/api/v1/logs/segments" -> handleSegments(session)
                 "/api/v1/logs/clear" -> handleClearLogs(session)
                 else -> errorResponse(Response.Status.NOT_FOUND, 404, "not found")
             }
@@ -111,6 +114,24 @@ internal class HttpLogServer(
         response.addHeader("Cache-Control", "no-store")
         response.addHeader("Content-Disposition", "attachment; filename=\"${payload.fileName}\"")
         return response
+    }
+
+    private fun handleSegments(session: IHTTPSession): Response {
+        val methodError = requireMethod(session, Method.GET)
+        if (methodError != null) {
+            return methodError
+        }
+        if (!rateLimiter.allowLogsRequest(session.remoteIpAddress.orEmpty())) {
+            return errorResponse(Response.Status.TOO_MANY_REQUESTS, 429, "rate limited")
+        }
+        val handler = segmentsHandler ?: return errorResponse(Response.Status.SERVICE_UNAVAILABLE, 503, "segments unavailable")
+        val responseBody =
+            runCatching {
+                handler.invoke()
+            }.getOrElse {
+                return errorResponse(Response.Status.SERVICE_UNAVAILABLE, 503, "segments unavailable")
+            }
+        return jsonResponse(Response.Status.OK, responseBody)
     }
 
     private fun handleLatestSegment(session: IHTTPSession): Response {

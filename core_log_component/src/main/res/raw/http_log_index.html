@@ -106,6 +106,71 @@
         font-size: 12px;
         line-height: 1.6;
       }
+      .segment-toolbar {
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .segment-toolbar strong {
+        font-size: 14px;
+      }
+      .segment-summary {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      .segment-list {
+        margin-top: 10px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .segment-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(11, 18, 32, 0.68);
+      }
+      .segment-row:last-child {
+        border-bottom: 0;
+      }
+      .segment-meta {
+        min-width: 0;
+        flex: 1;
+      }
+      .segment-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        word-break: break-all;
+      }
+      .segment-detail {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .segment-badge {
+        display: inline-block;
+        border-radius: 999px;
+        border: 1px solid rgba(46, 160, 67, 0.4);
+        color: #8ae09b;
+        padding: 1px 6px;
+        font-size: 11px;
+        white-space: nowrap;
+      }
+      .segment-empty {
+        padding: 12px;
+        color: var(--muted);
+        font-size: 12px;
+      }
       code {
         padding: 1px 6px;
         border-radius: 6px;
@@ -118,7 +183,7 @@
       <section class="panel">
         <h1>DDPlayTV HTTP 日志管理</h1>
         <p class="subtitle">
-          服务提供全量 ZIP、最新分段、按时间点分段下载与手动清理，下载后请在本地使用文本工具（如 <code>rg</code>）检索排查。
+          服务提供全量 ZIP、分段目录、最新分段、按时间点分段下载与手动清理，下载后请在本地使用文本工具（如 <code>rg</code>）检索排查。
         </p>
 
         <div class="group">
@@ -138,17 +203,30 @@
           <button id="btnClear" class="danger">清空本地日志</button>
         </div>
 
+        <div class="group">
+          <div class="segment-toolbar">
+            <strong>日志分段目录</strong>
+            <button id="btnSegments">刷新分段目录</button>
+          </div>
+          <div id="segmentSummary" class="segment-summary">尚未加载分段目录</div>
+          <div id="segmentList" class="segment-list">
+            <div class="segment-empty">点击“刷新分段目录”查看当前可下载日志时段</div>
+          </div>
+        </div>
+
         <div id="hint" class="hint"></div>
 
         <p class="note">
           下载接口：<span class="mono">GET /api/v1/logs/download</span><br />
           最新分段：<span class="mono">GET /api/v1/logs/latest-segment</span><br />
           时间点分段：<span class="mono">GET /api/v1/logs/segment-at?timestampMs=&lt;ms&gt;</span><br />
+          分段目录：<span class="mono">GET /api/v1/logs/segments</span><br />
           清理接口：<span class="mono">POST /api/v1/logs/clear</span><br />
           如果浏览器环境受限，也可使用 curl：
           <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" -o ddplaytv-logs.zip http://&lt;ip&gt;:17010/api/v1/logs/download</span><br />
           <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" -o ddplaytv-latest-segment.jsonl http://&lt;ip&gt;:17010/api/v1/logs/latest-segment</span><br />
-          <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" -o ddplaytv-segment-at.jsonl "http://&lt;ip&gt;:17010/api/v1/logs/segment-at?timestampMs=&lt;ms&gt;"</span>
+          <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" -o ddplaytv-segment-at.jsonl "http://&lt;ip&gt;:17010/api/v1/logs/segment-at?timestampMs=&lt;ms&gt;"</span><br />
+          <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" "http://&lt;ip&gt;:17010/api/v1/logs/segments"</span>
         </p>
       </section>
     </main>
@@ -156,10 +234,13 @@
     <script>
       const tokenInput = document.getElementById("tokenInput");
       const segmentTimeInput = document.getElementById("segmentTimeInput");
+      const segmentSummary = document.getElementById("segmentSummary");
+      const segmentList = document.getElementById("segmentList");
       const hint = document.getElementById("hint");
       const btnDownload = document.getElementById("btnDownload");
       const btnLatest = document.getElementById("btnLatest");
       const btnSegmentAt = document.getElementById("btnSegmentAt");
+      const btnSegments = document.getElementById("btnSegments");
       const btnClear = document.getElementById("btnClear");
 
       tokenInput.value = new URLSearchParams(location.search).get("token") || "";
@@ -201,7 +282,11 @@
         btnDownload.disabled = disabled;
         btnLatest.disabled = disabled;
         btnSegmentAt.disabled = disabled;
+        btnSegments.disabled = disabled;
         btnClear.disabled = disabled;
+        segmentList.querySelectorAll(".btn-segment-download").forEach((button) => {
+          button.disabled = disabled;
+        });
       }
 
       function parseLocalDateTime(value) {
@@ -229,6 +314,208 @@
         return date.getTime();
       }
 
+      function formatBytes(bytes) {
+        const value = Number(bytes);
+        if (!Number.isFinite(value) || value < 0) {
+          return "0 B";
+        }
+        const units = ["B", "KB", "MB", "GB"];
+        let size = value;
+        let idx = 0;
+        while (size >= 1024 && idx < units.length - 1) {
+          size /= 1024;
+          idx += 1;
+        }
+        if (idx === 0) {
+          return Math.floor(size) + " " + units[idx];
+        }
+        return size.toFixed(2) + " " + units[idx];
+      }
+
+      function formatTimeMs(timestampMs) {
+        const value = Number(timestampMs);
+        if (!Number.isFinite(value) || value < 0) {
+          return "-";
+        }
+        const date = new Date(value);
+        const pad = (n) => String(n).padStart(2, "0");
+        return (
+          date.getFullYear() +
+          "-" +
+          pad(date.getMonth() + 1) +
+          "-" +
+          pad(date.getDate()) +
+          " " +
+          pad(date.getHours()) +
+          ":" +
+          pad(date.getMinutes()) +
+          ":" +
+          pad(date.getSeconds())
+        );
+      }
+
+      function triggerBlobDownload(fileName, blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      async function downloadSegmentAtTimestamp(timestampMs, displayTime) {
+        setButtonsDisabled(true);
+        setHint("下载时间点分段中...", "");
+        try {
+          const response = await fetch("/api/v1/logs/segment-at?timestampMs=" + encodeURIComponent(String(Math.floor(timestampMs))), {
+            method: "GET",
+            headers: buildHeaders(),
+          });
+          if (!response.ok) {
+            const body = await response.text();
+            if (response.status === 404) {
+              throw new Error("该时间点无可下载分段（可能已被清理）");
+            }
+            throw new Error(response.status + " " + body.slice(0, 200));
+          }
+
+          const blob = await response.blob();
+          const fileName = resolveFileName(response, "ddplaytv-segment-at", "jsonl");
+          triggerBlobDownload(fileName, blob);
+
+          const sizeKb = (blob.size / 1024).toFixed(2);
+          setHint("下载完成：" + fileName + "\n时间点：" + displayTime + "\n大小：" + sizeKb + " KB", "ok");
+        } catch (error) {
+          const message = error && error.message ? error.message : String(error);
+          setHint("下载失败：" + message, "error");
+        } finally {
+          setButtonsDisabled(false);
+        }
+      }
+
+      function renderSegments(payload) {
+        const segments = Array.isArray(payload && payload.segments) ? payload.segments : [];
+        const totalCount = Number(payload && payload.totalCount);
+        const totalBytes = Number(payload && payload.totalBytes);
+        const latestStartMs = payload ? payload.latestStartMs : null;
+        const oldestStartMs = payload ? payload.oldestStartMs : null;
+
+        const summaryCount = Number.isFinite(totalCount) ? totalCount : segments.length;
+        const summaryBytes = Number.isFinite(totalBytes) ? totalBytes : 0;
+        segmentSummary.textContent =
+          "分段数：" +
+          summaryCount +
+          " | 总大小：" +
+          formatBytes(summaryBytes) +
+          " | 最新起点：" +
+          formatTimeMs(latestStartMs) +
+          " | 最早起点：" +
+          formatTimeMs(oldestStartMs);
+
+        segmentList.innerHTML = "";
+        if (segments.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "segment-empty";
+          empty.textContent = "当前没有可下载分段日志";
+          segmentList.appendChild(empty);
+          return;
+        }
+
+        segments.forEach((segment) => {
+          const fileName = segment && segment.fileName ? String(segment.fileName) : "unknown.jsonl";
+          const startMs = Number(segment ? segment.startMs : NaN);
+          const endMs = segment && segment.endMs != null ? Number(segment.endMs) : null;
+          const sizeBytes = Number(segment ? segment.sizeBytes : NaN);
+          const lastModifiedMs = Number(segment ? segment.lastModifiedMs : NaN);
+          const isLatest = Boolean(segment && segment.isLatest);
+
+          const row = document.createElement("div");
+          row.className = "segment-row";
+
+          const meta = document.createElement("div");
+          meta.className = "segment-meta";
+
+          const title = document.createElement("div");
+          title.className = "segment-title";
+
+          const name = document.createElement("span");
+          name.className = "mono";
+          name.textContent = fileName;
+          title.appendChild(name);
+
+          if (isLatest) {
+            const badge = document.createElement("span");
+            badge.className = "segment-badge";
+            badge.textContent = "最新";
+            title.appendChild(badge);
+          }
+
+          const detail = document.createElement("div");
+          detail.className = "segment-detail";
+          detail.textContent =
+            "时段：" +
+            formatTimeMs(startMs) +
+            " ~ " +
+            (endMs == null ? "进行中" : formatTimeMs(endMs)) +
+            " | 大小：" +
+            formatBytes(sizeBytes) +
+            " | 修改：" +
+            formatTimeMs(lastModifiedMs);
+
+          meta.appendChild(title);
+          meta.appendChild(detail);
+
+          const action = document.createElement("button");
+          action.className = "btn-segment-download";
+          action.textContent = "下载该分段";
+          action.disabled = !Number.isFinite(startMs) || startMs < 0;
+          action.addEventListener("click", () => {
+            if (!Number.isFinite(startMs) || startMs < 0) {
+              setHint("分段时间戳无效，无法下载", "error");
+              return;
+            }
+            downloadSegmentAtTimestamp(startMs, formatTimeMs(startMs));
+          });
+
+          row.appendChild(meta);
+          row.appendChild(action);
+          segmentList.appendChild(row);
+        });
+      }
+
+      async function loadSegments(silent) {
+        setButtonsDisabled(true);
+        if (!silent) {
+          setHint("加载分段目录中...", "");
+        }
+        try {
+          const response = await fetch("/api/v1/logs/segments", {
+            method: "GET",
+            headers: buildHeaders(),
+          });
+          const bodyText = await response.text();
+          if (!response.ok) {
+            throw new Error(response.status + " " + bodyText.slice(0, 200));
+          }
+          const payload = bodyText ? JSON.parse(bodyText) : {};
+          renderSegments(payload);
+          if (!silent) {
+            setHint("分段目录已刷新", "ok");
+          }
+        } catch (error) {
+          const message = error && error.message ? error.message : String(error);
+          segmentSummary.textContent = "分段目录加载失败：" + message;
+          segmentList.innerHTML = '<div class="segment-empty">无法读取分段目录，请检查 token 或稍后重试</div>';
+          if (!silent) {
+            setHint("加载失败：" + message, "error");
+          }
+        } finally {
+          setButtonsDisabled(false);
+        }
+      }
+
       async function downloadLogs() {
         setButtonsDisabled(true);
         setHint("下载中...", "");
@@ -244,14 +531,7 @@
 
           const blob = await response.blob();
           const fileName = resolveFileName(response, "ddplaytv-logs", "zip");
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = fileName;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
+          triggerBlobDownload(fileName, blob);
 
           const sizeMb = (blob.size / 1024 / 1024).toFixed(2);
           setHint("下载完成：" + fileName + "\n大小：" + sizeMb + " MB", "ok");
@@ -281,14 +561,7 @@
 
           const blob = await response.blob();
           const fileName = resolveFileName(response, "ddplaytv-latest-segment", "jsonl");
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = fileName;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
+          triggerBlobDownload(fileName, blob);
 
           const sizeKb = (blob.size / 1024).toFixed(2);
           setHint("下载完成：" + fileName + "\n大小：" + sizeKb + " KB", "ok");
@@ -311,41 +584,7 @@
           setHint("时间点格式无效，请重新选择", "error");
           return;
         }
-
-        setButtonsDisabled(true);
-        setHint("下载时间点分段中...", "");
-        try {
-          const response = await fetch("/api/v1/logs/segment-at?timestampMs=" + encodeURIComponent(String(Math.floor(timestampMs))), {
-            method: "GET",
-            headers: buildHeaders(),
-          });
-          if (!response.ok) {
-            const body = await response.text();
-            if (response.status === 404) {
-              throw new Error("该时间点无可下载分段（可能已被清理）");
-            }
-            throw new Error(response.status + " " + body.slice(0, 200));
-          }
-
-          const blob = await response.blob();
-          const fileName = resolveFileName(response, "ddplaytv-segment-at", "jsonl");
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = fileName;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-
-          const sizeKb = (blob.size / 1024).toFixed(2);
-          setHint("下载完成：" + fileName + "\n时间点：" + rawValue + "\n大小：" + sizeKb + " KB", "ok");
-        } catch (error) {
-          const message = error && error.message ? error.message : String(error);
-          setHint("下载失败：" + message, "error");
-        } finally {
-          setButtonsDisabled(false);
-        }
+        await downloadSegmentAtTimestamp(timestampMs, rawValue);
       }
 
       async function clearLogs() {
@@ -374,6 +613,7 @@
             // Keep default success text when response body is not JSON.
           }
           setHint(message, "ok");
+          await loadSegments(true);
         } catch (error) {
           const message = error && error.message ? error.message : String(error);
           setHint("清理失败：" + message, "error");
@@ -385,6 +625,7 @@
       btnDownload.addEventListener("click", downloadLogs);
       btnLatest.addEventListener("click", downloadLatestSegment);
       btnSegmentAt.addEventListener("click", downloadSegmentAt);
+      btnSegments.addEventListener("click", () => loadSegments(false));
       btnClear.addEventListener("click", clearLogs);
     </script>
   </body>

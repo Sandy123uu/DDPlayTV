@@ -7,7 +7,7 @@
 ## 1. 输出通道
 
 - **logcat（默认）**：始终输出，受“日志级别”设置影响
-- **HTTP 日志下载服务（可选，仅局域网调试）**：提供全量 ZIP、最新分段与按时间点分段下载（用于离线检索）
+- **HTTP 日志下载服务（可选，仅局域网调试）**：提供全量 ZIP、分段目录、最新分段与按时间点分段下载（用于离线检索）
 
 HTTP 服务仅用于局域网调试，具备如下安全约束：
 
@@ -36,6 +36,7 @@ http://<设备IP>:17010/?token=<token>
 页面提供以下操作：
 
 - 下载日志 ZIP（`GET /api/v1/logs/download`）
+- 查看分段目录（`GET /api/v1/logs/segments`）
 - 下载最新分段（`GET /api/v1/logs/latest-segment`）
 - 下载指定时间点所属分段（`GET /api/v1/logs/segment-at?timestampMs=<ms>`）
 - 手动清空本地历史日志（`POST /api/v1/logs/clear`）
@@ -56,6 +57,19 @@ curl -L -H "Authorization: Bearer <token>" \
 unzip ddplaytv-logs.zip -d ddplaytv-logs
 rg "关键字" ddplaytv-logs
 ```
+
+### 查看分段目录（先看有哪些时段）
+
+```bash
+curl -L -H "Authorization: Bearer <token>" \
+  "http://<设备IP>:17010/api/v1/logs/segments"
+```
+
+返回字段包含：
+
+- `segments[]`：每个分段的 `fileName/startMs/endMs/sizeBytes/lastModifiedMs/isLatest`
+- `totalCount/totalBytes`：当前分段总数与总大小
+- `latestStartMs/oldestStartMs`：最新与最早分段起点
 
 ### 下载最新分段（快速排查）
 

@@ -1,5 +1,6 @@
 package com.xyoye.common_component.log.http
 
+import com.xyoye.common_component.log.http.model.LogSegmentSummary
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.PipedInputStream
@@ -58,6 +59,25 @@ internal object HttpLogArchiveExporter {
         )
     }
 
+    fun listSegments(logsDir: File): List<LogSegmentSummary> {
+        val orderedSegments = listSegmentsByStart(logsDir)
+        if (orderedSegments.isEmpty()) {
+            return emptyList()
+        }
+        return orderedSegments
+            .mapIndexed { index, segment ->
+                val nextStartMs = orderedSegments.getOrNull(index + 1)?.startMs
+                LogSegmentSummary(
+                    fileName = segment.file.name,
+                    startMs = segment.startMs,
+                    endMs = resolveEndMs(segment.startMs, nextStartMs),
+                    sizeBytes = segment.file.length().coerceAtLeast(0L),
+                    lastModifiedMs = segment.file.lastModified().coerceAtLeast(0L),
+                    isLatest = index == orderedSegments.lastIndex,
+                )
+            }.asReversed()
+    }
+
     private fun writeArchive(
         logsDir: File,
         exportedAtMs: Long,
@@ -103,18 +123,20 @@ internal object HttpLogArchiveExporter {
         logsDir: File,
         timestampMs: Long,
     ): File? {
-        val orderedSegments =
-            listSegmentFiles(logsDir)
-                .map { file ->
-                    SegmentWithStart(
-                        file = file,
-                        startMs = resolveSegmentStartMs(file),
-                    )
-                }.sortedWith(compareBy<SegmentWithStart> { it.startMs }.thenBy { it.file.name })
+        val orderedSegments = listSegmentsByStart(logsDir)
         val index = orderedSegments.indexOfLast { it.startMs <= timestampMs }
         if (index < 0) return null
         return orderedSegments[index].file
     }
+
+    private fun listSegmentsByStart(logsDir: File): List<SegmentWithStart> =
+        listSegmentFiles(logsDir)
+            .map { file ->
+                SegmentWithStart(
+                    file = file,
+                    startMs = resolveSegmentStartMs(file),
+                )
+            }.sortedWith(compareBy<SegmentWithStart> { it.startMs }.thenBy { it.file.name })
 
     private fun resolveSegmentStartMs(file: File): Long {
         val name = file.name.lowercase(Locale.US)
@@ -126,6 +148,15 @@ internal object HttpLogArchiveExporter {
             }
         }
         return file.lastModified().takeIf { it > 0L } ?: 0L
+    }
+
+    private fun resolveEndMs(
+        startMs: Long,
+        nextStartMs: Long?,
+    ): Long? {
+        if (nextStartMs == null) return null
+        if (nextStartMs <= startMs) return startMs
+        return nextStartMs - 1L
     }
 
     private fun buildArchiveName(exportedAtMs: Long): String {
