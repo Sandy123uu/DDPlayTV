@@ -2,8 +2,6 @@ package com.xyoye.common_component.log.store
 
 import com.xyoye.common_component.log.http.model.LogRecord
 import com.xyoye.common_component.log.http.model.RetentionTier
-import com.xyoye.common_component.log.http.query.HttpLogQuery
-import com.xyoye.common_component.log.http.model.LogSourceFilter
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -13,7 +11,6 @@ class SegmentedJsonlLogStore(
     private val retentionTierProvider: () -> RetentionTier,
 ) : LogStore {
     private val writer = SegmentedJsonlLogWriter(logsDir)
-    private val reader = SegmentedJsonlLogReader(logsDir)
 
     private val persistencePaused = AtomicBoolean(false)
     private val lastError = AtomicReference<String?>(null)
@@ -30,8 +27,6 @@ class SegmentedJsonlLogStore(
         }
         writer.enforceRetention(retentionTierProvider(), force = false)
     }
-
-    override fun query(query: HttpLogQuery): LogQueryResult = reader.query(query)
 
     override fun clear() {
         persistencePaused.set(false)
@@ -66,21 +61,5 @@ class SegmentedJsonlLogStore(
 
     fun close() {
         writer.close()
-    }
-
-    fun recentRecords(limit: Int): List<LogRecord> {
-        val normalized = limit.coerceIn(1, 500)
-        return query(
-            HttpLogQuery(
-                startMs = null,
-                endMs = null,
-                levels = null,
-                tag = null,
-                keyword = null,
-                source = LogSourceFilter.BOTH,
-                limit = normalized,
-                cursor = null,
-            ),
-        ).items
     }
 }

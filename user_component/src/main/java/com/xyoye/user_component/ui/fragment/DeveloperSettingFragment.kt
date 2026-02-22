@@ -684,9 +684,9 @@ class DeveloperSettingFragment : BasePreferenceFragmentCompat() {
                 } else {
                     val urls =
                         state.ipAddresses
-                            .map { ip -> "http://${wrapHttpHost(ip)}:$port/" }
-                            .ifEmpty { listOf("http://<ip>:$port/") }
-                    urls.joinToString(separator = "\n") + "\n\n/?token=<token>"
+                            .map { ip -> "http://${wrapHttpHost(ip)}:$port/api/v1/logs/download?token=<token>" }
+                            .ifEmpty { listOf("http://<ip>:$port/api/v1/logs/download?token=<token>") }
+                    urls.joinToString(separator = "\n")
                 }
         }
 

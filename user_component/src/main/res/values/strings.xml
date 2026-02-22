@@ -116,7 +116,7 @@
     <string name="developer_http_log_server_toast_on">HTTP 日志服务已开启</string>
     <string name="developer_http_log_server_toast_off">HTTP 日志服务已关闭</string>
     <string name="developer_http_log_server_toast_on_failed">HTTP 日志服务开启失败：%1$s</string>
-    <string name="developer_http_log_server_address_title">访问地址</string>
+    <string name="developer_http_log_server_address_title">下载地址</string>
     <string name="developer_http_log_server_address_summary_off">请先开启 HTTP 日志服务</string>
     <string name="developer_http_log_server_token_title">访问 Token</string>
     <string name="developer_http_log_server_token_summary_empty">-</string>
@@ -136,7 +136,7 @@
     <string name="developer_http_log_retention_30d">30 天（4GB）</string>
     <string name="developer_http_log_server_retention_toast">已切换档位：%1$s</string>
     <string name="developer_http_log_server_retention_fallback_toast">空间不足，已回落到：%1$s</string>
-    <string name="developer_http_log_server_persistence_paused_toast">空间不足，已暂停日志落盘（仍可实时查看）</string>
+    <string name="developer_http_log_server_persistence_paused_toast">空间不足，已暂停日志落盘（仅可下载当前已落盘日志）</string>
     <string name="developer_http_log_server_usage_title">存储占用</string>
     <string name="developer_http_log_server_usage_summary">占用：-</string>
     <string name="developer_http_log_server_usage_summary_format">占用：%1$s / 上限：%2$s</string>

@@ -9,15 +9,11 @@ import com.xyoye.common_component.log.http.model.HttpDegradeMode
 import com.xyoye.common_component.log.http.model.LogRecord
 import com.xyoye.common_component.log.http.model.LogSource
 import com.xyoye.common_component.log.http.model.RetentionTier
-import com.xyoye.common_component.log.http.model.StatusResponse
 import com.xyoye.common_component.log.http.page.HttpLogPageHandler
-import com.xyoye.common_component.log.http.query.HttpLogStreamQuery
-import com.xyoye.common_component.log.http.sse.SseHub
 import com.xyoye.common_component.log.model.LogEvent
 import com.xyoye.common_component.log.model.LogLevel
 import com.xyoye.common_component.log.model.LogModule
 import com.xyoye.common_component.log.privacy.SensitiveDataSanitizer
-import com.xyoye.common_component.log.store.LogQueryResult
 import com.xyoye.common_component.log.store.LogStoreState
 import com.xyoye.common_component.log.store.SegmentedJsonlLogStore
 import fi.iki.elonen.NanoHTTPD
@@ -124,9 +120,6 @@ internal object HttpLogServerManager {
     @Volatile
     private var rateLimiter: com.xyoye.common_component.log.http.rate.HttpRateLimiter? = null
 
-    @Volatile
-    private var sseHub: SseHub? = null
-
     private val pipeQueue = ArrayBlockingQueue<LogRecord>(PIPE_CAPACITY)
 
     @Volatile
@@ -138,7 +131,6 @@ internal object HttpLogServerManager {
             appContext = context.applicationContext
             ensureStoreLocked()
             ensurePipeLocked()
-            ensureSseHubLocked()
         }
     }
 
@@ -147,7 +139,6 @@ internal object HttpLogServerManager {
             ensureTokenLocked()
             ensureStoreLocked()
             ensurePipeLocked()
-            ensureSseHubLocked()
 
             val port = normalizePort(config.getHttpLogServerPort())
             config.putHttpLogServerPort(port)
@@ -249,34 +240,11 @@ internal object HttpLogServerManager {
         synchronized(lock) {
             ensureTokenLocked()
             ensureStoreLocked()
-            ensureSseHubLocked()
             return snapshotLocked()
         }
     }
 
-    fun statusForApi(): StatusResponse {
-        val state = snapshot()
-        return StatusResponse(
-            enabled = state.enabled,
-            running = state.running,
-            requestedPort = state.requestedPort,
-            boundPort = state.boundPort,
-            clientCount = state.clientCount,
-            ipAddresses = state.ipAddresses,
-            retention = state.retention,
-            storeUsedBytes = state.storeUsedBytes,
-            logcatAvailable = state.logcatAvailable,
-            degradeMode = state.degradeMode,
-            message = state.message,
-        )
-    }
-
     fun expectedToken(): String = tokenRef.get().orEmpty()
-
-    fun queryLogs(query: com.xyoye.common_component.log.http.query.HttpLogQuery): LogQueryResult {
-        val current = store ?: return LogQueryResult(items = emptyList(), nextCursor = null, hasMore = false)
-        return current.query(query)
-    }
 
     fun ingestAppEvent(event: LogEvent) {
         if (!config.isHttpLogServerEnabled()) return
@@ -290,17 +258,11 @@ internal object HttpLogServerManager {
         offerRecord(record)
     }
 
-    fun openStream(query: HttpLogStreamQuery): SseHub.OpenResult {
-        val hub = sseHub ?: return SseHub.OpenResult.Rejected(statusCode = 503, message = "stream unavailable")
-        val filter =
-            SseHub.SseFilter(
-                levels = query.levels,
-                tag = query.tag,
-                keyword = query.keyword,
-                source = query.source,
-            )
-        val cursorId = query.cursor?.toLongOrNull()
-        return hub.open(filter = filter, cursorId = cursorId)
+    fun openDownloadPayload(): HttpLogDownloadPayload {
+        synchronized(lock) {
+            val context = appContext ?: error("context not ready")
+            return HttpLogArchiveExporter.open(logsDir = File(context.filesDir, "http_logs"))
+        }
     }
 
     private fun buildAppRecord(event: LogEvent): LogRecord {
@@ -377,7 +339,6 @@ internal object HttpLogServerManager {
                 val record = pipeQueue.take()
                 val currentStore = store
                 if (config.isHttpLogServerEnabled()) {
-                    sseHub?.publish(record)
                     if (currentStore != null) {
                         currentStore.append(record)
                     }
@@ -398,18 +359,6 @@ internal object HttpLogServerManager {
             SegmentedJsonlLogStore(
                 logsDir = logsDir,
                 retentionTierProvider = { RetentionTier.forDays(config.getHttpLogRetentionDays()) },
-            )
-    }
-
-    private fun ensureSseHubLocked() {
-        if (sseHub != null) return
-        sseHub =
-            SseHub(
-                recentRecordsProvider = { limit -> store?.recentRecords(limit).orEmpty() },
-                onDropLowPriority = {
-                    dropLowPriorityRef.set(true)
-                    messageRef.set("dropped logs due to backpressure")
-                },
             )
     }
 
@@ -454,10 +403,8 @@ internal object HttpLogServerManager {
                 port = port,
                 expectedTokenProvider = { expectedToken() },
                 rateLimiter = limiter,
-                statusProvider = { statusForApi() },
-                logsQueryHandler = { query -> queryLogs(query) },
                 pageHandler = { pageHandler.handle() },
-                streamOpenHandler = { query -> openStream(query) },
+                downloadHandler = { openDownloadPayload() },
             )
 
         runCatching { newServer.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false) }
@@ -487,7 +434,6 @@ internal object HttpLogServerManager {
             server = null
         }
         rateLimiter = null
-        sseHub?.closeAll()
         ensureLogcatCollectorLocked(start = false)
         if (clearError) {
             lastErrorRef.set(null)
@@ -540,7 +486,7 @@ internal object HttpLogServerManager {
             running = running,
             requestedPort = requestedPort,
             boundPort = boundPort,
-            clientCount = (rateLimiter?.activeRequestsCount() ?: 0) + (sseHub?.clientCount() ?: 0),
+            clientCount = rateLimiter?.activeRequestsCount() ?: 0,
             ipAddresses = ipAddresses,
             token = tokenRef.get().orEmpty(),
             retention = retention,
@@ -618,14 +564,12 @@ internal object HttpLogServerManager {
                 server = null
             }
             rateLimiter = null
-            sseHub?.closeAll()
             ensureLogcatCollectorLocked(start = false)
             store?.close()
             store = null
             pipeExecutor?.shutdownNow()
             pipeExecutor = null
             pipeQueue.clear()
-            sseHub = null
             appContext = null
             config = MmkvHttpLogServerConfig
             tokenRef.set("")
