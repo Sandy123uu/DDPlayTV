@@ -11,6 +11,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 internal object HttpLogArchiveExporter {
+    private const val SEGMENT_PREFIX = "seg_"
     private const val SEGMENT_SUFFIX = ".jsonl"
     private const val PIPE_BUFFER_SIZE = 64 * 1024
 
@@ -42,6 +43,18 @@ internal object HttpLogArchiveExporter {
         return HttpLogDownloadPayload(
             inputStream = latestFile.inputStream().buffered(),
             fileName = latestFile.name,
+        )
+    }
+
+    fun openSegmentAt(
+        logsDir: File,
+        timestampMs: Long,
+    ): HttpLogDownloadPayload? {
+        if (timestampMs < 0L) return null
+        val targetFile = findSegmentAt(logsDir, timestampMs) ?: return null
+        return HttpLogDownloadPayload(
+            inputStream = targetFile.inputStream().buffered(),
+            fileName = targetFile.name,
         )
     }
 
@@ -84,6 +97,35 @@ internal object HttpLogArchiveExporter {
             .orEmpty()
             .filter { it.isFile && it.name.lowercase(Locale.US).endsWith(SEGMENT_SUFFIX) }
             .sortedWith(compareBy<File> { it.lastModified() }.thenBy { it.name })
+    }
+
+    private fun findSegmentAt(
+        logsDir: File,
+        timestampMs: Long,
+    ): File? {
+        val orderedSegments =
+            listSegmentFiles(logsDir)
+                .map { file ->
+                    SegmentWithStart(
+                        file = file,
+                        startMs = resolveSegmentStartMs(file),
+                    )
+                }.sortedWith(compareBy<SegmentWithStart> { it.startMs }.thenBy { it.file.name })
+        val index = orderedSegments.indexOfLast { it.startMs <= timestampMs }
+        if (index < 0) return null
+        return orderedSegments[index].file
+    }
+
+    private fun resolveSegmentStartMs(file: File): Long {
+        val name = file.name.lowercase(Locale.US)
+        if (name.startsWith(SEGMENT_PREFIX) && name.endsWith(SEGMENT_SUFFIX)) {
+            val rawStartMs = name.substring(SEGMENT_PREFIX.length, name.length - SEGMENT_SUFFIX.length)
+            val parsed = rawStartMs.toLongOrNull()
+            if (parsed != null && parsed >= 0L) {
+                return parsed
+            }
+        }
+        return file.lastModified().takeIf { it > 0L } ?: 0L
     }
 
     private fun buildArchiveName(exportedAtMs: Long): String {
@@ -140,4 +182,9 @@ internal object HttpLogArchiveExporter {
                 }
             }
         }
+
+    private data class SegmentWithStart(
+        val file: File,
+        val startMs: Long,
+    )
 }

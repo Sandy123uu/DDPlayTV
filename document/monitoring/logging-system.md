@@ -7,7 +7,7 @@
 ## 1. 输出通道
 
 - **logcat（默认）**：始终输出，受“日志级别”设置影响
-- **HTTP 日志下载服务（可选，仅局域网调试）**：提供全量 ZIP 与最新分段下载（用于离线检索）
+- **HTTP 日志下载服务（可选，仅局域网调试）**：提供全量 ZIP、最新分段与按时间点分段下载（用于离线检索）
 
 HTTP 服务仅用于局域网调试，具备如下安全约束：
 
@@ -37,6 +37,7 @@ http://<设备IP>:17010/?token=<token>
 
 - 下载日志 ZIP（`GET /api/v1/logs/download`）
 - 下载最新分段（`GET /api/v1/logs/latest-segment`）
+- 下载指定时间点所属分段（`GET /api/v1/logs/segment-at?timestampMs=<ms>`）
 - 手动清空本地历史日志（`POST /api/v1/logs/clear`）
 
 ## 4. 脚本/命令行访问
@@ -65,6 +66,17 @@ curl -L -H "Authorization: Bearer <token>" \
 ```
 
 若返回 `404`，表示当前还没有可下载的分段日志文件。
+
+### 下载指定时间点所属分段（围绕错误上报排查）
+
+```bash
+curl -L -H "Authorization: Bearer <token>" \
+  -o ddplaytv-segment-at.jsonl \
+  "http://<设备IP>:17010/api/v1/logs/segment-at?timestampMs=<ms>"
+```
+
+- `timestampMs` 为毫秒时间戳（例如错误上报时间）。
+- 若返回 `404`，表示该时间点对应分段已被清理或当前不存在。
 
 ### 手动清空本地历史日志
 

@@ -42,7 +42,10 @@ object HttpRequestAuth {
                 return authorization.substring(BEARER_PREFIX.length).trim().takeIf { it.isNotEmpty() }
             }
         }
-        return session.parms[QUERY_TOKEN]?.trim()?.takeIf { it.isNotEmpty() }
+        return session.parameters[QUERY_TOKEN]
+            ?.firstOrNull()
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
     }
 
     private fun isLanAllowed(remoteIp: String): Boolean {
@@ -70,4 +73,3 @@ object HttpRequestAuth {
             ),
         )
 }
-

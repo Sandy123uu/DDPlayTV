@@ -272,6 +272,16 @@ internal object HttpLogServerManager {
         }
     }
 
+    fun openSegmentAtPayload(timestampMs: Long): HttpLogDownloadPayload? {
+        synchronized(lock) {
+            val context = appContext ?: error("context not ready")
+            return HttpLogArchiveExporter.openSegmentAt(
+                logsDir = File(context.filesDir, "http_logs"),
+                timestampMs = timestampMs,
+            )
+        }
+    }
+
     private fun buildAppRecord(event: LogEvent): LogRecord {
         val sanitizedMessage = SensitiveDataSanitizer.sanitizeFreeText(event.message)
         val sanitizedContext = SensitiveDataSanitizer.sanitizeContext(event.context)
@@ -413,6 +423,7 @@ internal object HttpLogServerManager {
                 pageHandler = { pageHandler.handle() },
                 downloadHandler = { openDownloadPayload() },
                 latestSegmentHandler = { openLatestSegmentPayload() },
+                segmentAtHandler = { timestampMs -> openSegmentAtPayload(timestampMs) },
                 clearLogsHandler = { clearLogs() },
             )
 

@@ -118,7 +118,7 @@
       <section class="panel">
         <h1>DDPlayTV HTTP 日志管理</h1>
         <p class="subtitle">
-          服务提供全量 ZIP 下载、最新分段下载与手动清理，下载后请在本地使用文本工具（如 <code>rg</code>）检索排查。
+          服务提供全量 ZIP、最新分段、按时间点分段下载与手动清理，下载后请在本地使用文本工具（如 <code>rg</code>）检索排查。
         </p>
 
         <div class="group">
@@ -126,9 +126,15 @@
           <input id="tokenInput" class="mono" placeholder="请输入访问 Token" />
         </div>
 
+        <div class="group">
+          <label for="segmentTimeInput">时间点（用于下载该时间点所属分段）</label>
+          <input id="segmentTimeInput" class="mono" type="datetime-local" step="1" />
+        </div>
+
         <div class="actions">
           <button id="btnDownload">下载日志 ZIP</button>
           <button id="btnLatest">下载最新分段</button>
+          <button id="btnSegmentAt">下载该时间点分段</button>
           <button id="btnClear" class="danger">清空本地日志</button>
         </div>
 
@@ -137,19 +143,23 @@
         <p class="note">
           下载接口：<span class="mono">GET /api/v1/logs/download</span><br />
           最新分段：<span class="mono">GET /api/v1/logs/latest-segment</span><br />
+          时间点分段：<span class="mono">GET /api/v1/logs/segment-at?timestampMs=&lt;ms&gt;</span><br />
           清理接口：<span class="mono">POST /api/v1/logs/clear</span><br />
           如果浏览器环境受限，也可使用 curl：
           <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" -o ddplaytv-logs.zip http://&lt;ip&gt;:17010/api/v1/logs/download</span><br />
-          <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" -o ddplaytv-latest-segment.jsonl http://&lt;ip&gt;:17010/api/v1/logs/latest-segment</span>
+          <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" -o ddplaytv-latest-segment.jsonl http://&lt;ip&gt;:17010/api/v1/logs/latest-segment</span><br />
+          <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" -o ddplaytv-segment-at.jsonl "http://&lt;ip&gt;:17010/api/v1/logs/segment-at?timestampMs=&lt;ms&gt;"</span>
         </p>
       </section>
     </main>
 
     <script>
       const tokenInput = document.getElementById("tokenInput");
+      const segmentTimeInput = document.getElementById("segmentTimeInput");
       const hint = document.getElementById("hint");
       const btnDownload = document.getElementById("btnDownload");
       const btnLatest = document.getElementById("btnLatest");
+      const btnSegmentAt = document.getElementById("btnSegmentAt");
       const btnClear = document.getElementById("btnClear");
 
       tokenInput.value = new URLSearchParams(location.search).get("token") || "";
@@ -190,7 +200,33 @@
       function setButtonsDisabled(disabled) {
         btnDownload.disabled = disabled;
         btnLatest.disabled = disabled;
+        btnSegmentAt.disabled = disabled;
         btnClear.disabled = disabled;
+      }
+
+      function parseLocalDateTime(value) {
+        const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+        if (!match) {
+          return NaN;
+        }
+        const year = Number(match[1]);
+        const month = Number(match[2]) - 1;
+        const day = Number(match[3]);
+        const hour = Number(match[4]);
+        const minute = Number(match[5]);
+        const second = Number(match[6] || 0);
+        const date = new Date(year, month, day, hour, minute, second, 0);
+        if (
+          date.getFullYear() !== year ||
+          date.getMonth() !== month ||
+          date.getDate() !== day ||
+          date.getHours() !== hour ||
+          date.getMinutes() !== minute ||
+          date.getSeconds() !== second
+        ) {
+          return NaN;
+        }
+        return date.getTime();
       }
 
       async function downloadLogs() {
@@ -264,6 +300,54 @@
         }
       }
 
+      async function downloadSegmentAt() {
+        const rawValue = segmentTimeInput.value.trim();
+        if (!rawValue) {
+          setHint("请先选择时间点", "error");
+          return;
+        }
+        const timestampMs = parseLocalDateTime(rawValue);
+        if (!Number.isFinite(timestampMs) || timestampMs < 0) {
+          setHint("时间点格式无效，请重新选择", "error");
+          return;
+        }
+
+        setButtonsDisabled(true);
+        setHint("下载时间点分段中...", "");
+        try {
+          const response = await fetch("/api/v1/logs/segment-at?timestampMs=" + encodeURIComponent(String(Math.floor(timestampMs))), {
+            method: "GET",
+            headers: buildHeaders(),
+          });
+          if (!response.ok) {
+            const body = await response.text();
+            if (response.status === 404) {
+              throw new Error("该时间点无可下载分段（可能已被清理）");
+            }
+            throw new Error(response.status + " " + body.slice(0, 200));
+          }
+
+          const blob = await response.blob();
+          const fileName = resolveFileName(response, "ddplaytv-segment-at", "jsonl");
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+
+          const sizeKb = (blob.size / 1024).toFixed(2);
+          setHint("下载完成：" + fileName + "\n时间点：" + rawValue + "\n大小：" + sizeKb + " KB", "ok");
+        } catch (error) {
+          const message = error && error.message ? error.message : String(error);
+          setHint("下载失败：" + message, "error");
+        } finally {
+          setButtonsDisabled(false);
+        }
+      }
+
       async function clearLogs() {
         if (!confirm("确定清空本地历史日志？该操作不可恢复。")) {
           return;
@@ -300,6 +384,7 @@
 
       btnDownload.addEventListener("click", downloadLogs);
       btnLatest.addEventListener("click", downloadLatestSegment);
+      btnSegmentAt.addEventListener("click", downloadSegmentAt);
       btnClear.addEventListener("click", clearLogs);
     </script>
   </body>

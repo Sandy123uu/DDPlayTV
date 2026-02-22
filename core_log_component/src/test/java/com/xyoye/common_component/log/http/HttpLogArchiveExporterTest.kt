@@ -43,4 +43,65 @@ class HttpLogArchiveExporterTest {
             logsDir.deleteRecursively()
         }
     }
+
+    @Test
+    fun openSegmentAtReturnsMatchingSegmentByTimestamp() {
+        val logsDir = Files.createTempDirectory("http-log-exporter-segment-at").toFile()
+        try {
+            logsDir.resolve("seg_1000.jsonl").writeText("""{"id":1}""")
+            logsDir.resolve("seg_2000.jsonl").writeText("""{"id":2}""")
+            logsDir.resolve("seg_3000.jsonl").writeText("""{"id":3}""")
+
+            val midPayload = HttpLogArchiveExporter.openSegmentAt(logsDir, 2_500L)
+            requireNotNull(midPayload)
+            assertEquals("seg_2000.jsonl", midPayload.fileName)
+
+            val tailPayload = HttpLogArchiveExporter.openSegmentAt(logsDir, 3_900L)
+            requireNotNull(tailPayload)
+            assertEquals("seg_3000.jsonl", tailPayload.fileName)
+        } finally {
+            logsDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun openSegmentAtReturnsNullWhenTimestampIsBeforeFirstSegment() {
+        val logsDir = Files.createTempDirectory("http-log-exporter-segment-at-empty").toFile()
+        try {
+            logsDir.resolve("seg_1000.jsonl").writeText("""{"id":1}""")
+            assertNull(HttpLogArchiveExporter.openSegmentAt(logsDir, 999L))
+        } finally {
+            logsDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun openSegmentAtFallsBackToLastModifiedWhenNameCannotBeParsed() {
+        val logsDir = Files.createTempDirectory("http-log-exporter-segment-at-fallback").toFile()
+        try {
+            val fallback = logsDir.resolve("legacy.jsonl")
+            fallback.writeText("""{"id":99}""")
+            fallback.setLastModified(5_000L)
+
+            val newer = logsDir.resolve("seg_10000.jsonl")
+            newer.writeText("""{"id":100}""")
+            newer.setLastModified(10_000L)
+
+            val payload = HttpLogArchiveExporter.openSegmentAt(logsDir, 5_500L)
+            requireNotNull(payload)
+            assertEquals("legacy.jsonl", payload.fileName)
+        } finally {
+            logsDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun openSegmentAtReturnsNullWhenNoSegmentExists() {
+        val logsDir = Files.createTempDirectory("http-log-exporter-segment-at-none").toFile()
+        try {
+            assertNull(HttpLogArchiveExporter.openSegmentAt(logsDir, 1_000L))
+        } finally {
+            logsDir.deleteRecursively()
+        }
+    }
 }
