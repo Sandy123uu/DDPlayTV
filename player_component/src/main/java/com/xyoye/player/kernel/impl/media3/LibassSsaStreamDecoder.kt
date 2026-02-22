@@ -124,16 +124,33 @@ class LibassSsaStreamDecoder(
         if (!payload.startsWith(SSA_PREFIX)) {
             return NormalizedSample(payload, null)
         }
-        val durationUs = parseSsaDurationUs(payload, SSA_PREFIX_END_TIMECODE_OFFSET)
-        val data = payload.copyOfRange(SSA_PREFIX.size, payload.size)
+        val durationSeparatorIndex = payload.indexOfByte(SSA_FIELD_SEPARATOR, SSA_PREFIX.size)
+        if (durationSeparatorIndex <= SSA_PREFIX.size) {
+            return NormalizedSample(payload, null)
+        }
+        val durationUs = parseSsaDurationUs(payload, SSA_PREFIX.size, durationSeparatorIndex)
+        val dataStart = durationSeparatorIndex + 1
+        val data =
+            if (dataStart >= payload.size) {
+                ByteArray(0)
+            } else {
+                payload.copyOfRange(dataStart, payload.size)
+            }
         return NormalizedSample(data, durationUs)
+    }
+
+    internal fun normalizeSampleForTest(payload: ByteArray): Pair<ByteArray, Long?> {
+        val normalized = normalizeMedia3MatroskaSample(payload)
+        return normalized.data to normalized.durationUs
     }
 
     private fun parseSsaDurationUs(
         payload: ByteArray,
-        offset: Int
+        offset: Int,
+        endExclusive: Int
     ): Long? {
-        if (payload.size < offset + SSA_TIMECODE_LENGTH) return null
+        if (endExclusive - offset != SSA_TIMECODE_LENGTH) return null
+        if (payload.size < endExclusive) return null
         if (payload[offset + 1] != ':'.code.toByte() ||
             payload[offset + 4] != ':'.code.toByte() ||
             payload[offset + 7] != ':'.code.toByte()
@@ -194,6 +211,17 @@ class LibassSsaStreamDecoder(
         return true
     }
 
+    private fun ByteArray.indexOfByte(
+        value: Byte,
+        startIndex: Int
+    ): Int {
+        if (startIndex >= size) return -1
+        for (index in startIndex until size) {
+            if (this[index] == value) return index
+        }
+        return -1
+    }
+
     internal fun normalizeSampleTimeUs(
         sampleTimeUs: Long,
         subsampleOffsetUs: Long
@@ -230,14 +258,14 @@ class LibassSsaStreamDecoder(
         private const val INITIAL_INPUT_BUFFER_SIZE = 1024
         private const val BUFFER_POOL_SIZE = 2
 
-        private const val SSA_PREFIX_END_TIMECODE_OFFSET = 21
         private const val SSA_TIMECODE_LENGTH = 10
         private const val SSA_TIMECODE_LAST_VALUE_SCALING_FACTOR = 10_000L
         // Media3 sample-relative text timestamps are anchored to this internal base.
         private const val SAMPLE_RELATIVE_TIMESTAMP_BASE_US = 1_000_000_000_000L
 
         private val SSA_PREFIX =
-            "Dialogue: 0:00:00:00,0:00:00:00,".toByteArray(Charsets.UTF_8)
+            "Dialogue: 0:00:00:00,".toByteArray(Charsets.UTF_8)
+        private const val SSA_FIELD_SEPARATOR: Byte = ','.code.toByte()
         private val FORMAT_PREFIX = "Format:".toByteArray(Charsets.UTF_8)
         private val EVENTS_HEADER = "\n[Events]\n".toByteArray(Charsets.UTF_8)
         private val NEWLINE = "\n".toByteArray(Charsets.UTF_8)
