@@ -118,7 +118,7 @@
       <section class="panel">
         <h1>DDPlayTV HTTP 日志管理</h1>
         <p class="subtitle">
-          服务提供日志 ZIP 下载与手动清理，下载后请在本地使用文本工具（如 <code>rg</code>）检索排查。
+          服务提供全量 ZIP 下载、最新分段下载与手动清理，下载后请在本地使用文本工具（如 <code>rg</code>）检索排查。
         </p>
 
         <div class="group">
@@ -128,6 +128,7 @@
 
         <div class="actions">
           <button id="btnDownload">下载日志 ZIP</button>
+          <button id="btnLatest">下载最新分段</button>
           <button id="btnClear" class="danger">清空本地日志</button>
         </div>
 
@@ -135,9 +136,11 @@
 
         <p class="note">
           下载接口：<span class="mono">GET /api/v1/logs/download</span><br />
+          最新分段：<span class="mono">GET /api/v1/logs/latest-segment</span><br />
           清理接口：<span class="mono">POST /api/v1/logs/clear</span><br />
           如果浏览器环境受限，也可使用 curl：
-          <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" -o ddplaytv-logs.zip http://&lt;ip&gt;:17010/api/v1/logs/download</span>
+          <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" -o ddplaytv-logs.zip http://&lt;ip&gt;:17010/api/v1/logs/download</span><br />
+          <span class="mono">curl -L -H "Authorization: Bearer &lt;token&gt;" -o ddplaytv-latest-segment.jsonl http://&lt;ip&gt;:17010/api/v1/logs/latest-segment</span>
         </p>
       </section>
     </main>
@@ -146,6 +149,7 @@
       const tokenInput = document.getElementById("tokenInput");
       const hint = document.getElementById("hint");
       const btnDownload = document.getElementById("btnDownload");
+      const btnLatest = document.getElementById("btnLatest");
       const btnClear = document.getElementById("btnClear");
 
       tokenInput.value = new URLSearchParams(location.search).get("token") || "";
@@ -164,7 +168,7 @@
         return headers;
       }
 
-      function resolveFileName(response) {
+      function resolveFileName(response, fallbackPrefix, fallbackExt) {
         const disposition = response.headers.get("Content-Disposition") || "";
         const match = disposition.match(/filename\s*=\s*"?([^";]+)"?/i);
         if (match && match[1]) {
@@ -180,12 +184,17 @@
           pad(now.getHours()) +
           pad(now.getMinutes()) +
           pad(now.getSeconds());
-        return "ddplaytv-logs-" + fallback + ".zip";
+        return fallbackPrefix + "-" + fallback + "." + fallbackExt;
+      }
+
+      function setButtonsDisabled(disabled) {
+        btnDownload.disabled = disabled;
+        btnLatest.disabled = disabled;
+        btnClear.disabled = disabled;
       }
 
       async function downloadLogs() {
-        btnDownload.disabled = true;
-        btnClear.disabled = true;
+        setButtonsDisabled(true);
         setHint("下载中...", "");
         try {
           const response = await fetch("/api/v1/logs/download", {
@@ -198,7 +207,7 @@
           }
 
           const blob = await response.blob();
-          const fileName = resolveFileName(response);
+          const fileName = resolveFileName(response, "ddplaytv-logs", "zip");
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
@@ -214,8 +223,44 @@
           const message = error && error.message ? error.message : String(error);
           setHint("下载失败：" + message, "error");
         } finally {
-          btnDownload.disabled = false;
-          btnClear.disabled = false;
+          setButtonsDisabled(false);
+        }
+      }
+
+      async function downloadLatestSegment() {
+        setButtonsDisabled(true);
+        setHint("下载最新分段中...", "");
+        try {
+          const response = await fetch("/api/v1/logs/latest-segment", {
+            method: "GET",
+            headers: buildHeaders(),
+          });
+          if (!response.ok) {
+            const body = await response.text();
+            if (response.status === 404) {
+              throw new Error("暂无可下载的日志分段");
+            }
+            throw new Error(response.status + " " + body.slice(0, 200));
+          }
+
+          const blob = await response.blob();
+          const fileName = resolveFileName(response, "ddplaytv-latest-segment", "jsonl");
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+
+          const sizeKb = (blob.size / 1024).toFixed(2);
+          setHint("下载完成：" + fileName + "\n大小：" + sizeKb + " KB", "ok");
+        } catch (error) {
+          const message = error && error.message ? error.message : String(error);
+          setHint("下载失败：" + message, "error");
+        } finally {
+          setButtonsDisabled(false);
         }
       }
 
@@ -223,8 +268,7 @@
         if (!confirm("确定清空本地历史日志？该操作不可恢复。")) {
           return;
         }
-        btnDownload.disabled = true;
-        btnClear.disabled = true;
+        setButtonsDisabled(true);
         setHint("清理中...", "");
         try {
           const response = await fetch("/api/v1/logs/clear", {
@@ -250,12 +294,12 @@
           const message = error && error.message ? error.message : String(error);
           setHint("清理失败：" + message, "error");
         } finally {
-          btnDownload.disabled = false;
-          btnClear.disabled = false;
+          setButtonsDisabled(false);
         }
       }
 
       btnDownload.addEventListener("click", downloadLogs);
+      btnLatest.addEventListener("click", downloadLatestSegment);
       btnClear.addEventListener("click", clearLogs);
     </script>
   </body>

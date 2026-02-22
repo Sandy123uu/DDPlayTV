@@ -37,6 +37,14 @@ internal object HttpLogArchiveExporter {
         )
     }
 
+    fun openLatestSegment(logsDir: File): HttpLogDownloadPayload? {
+        val latestFile = listSegmentFiles(logsDir).lastOrNull() ?: return null
+        return HttpLogDownloadPayload(
+            inputStream = latestFile.inputStream().buffered(),
+            fileName = latestFile.name,
+        )
+    }
+
     private fun writeArchive(
         logsDir: File,
         exportedAtMs: Long,

@@ -20,6 +20,7 @@ internal class HttpLogServer(
     private val rateLimiter: HttpRateLimiter,
     private val pageHandler: (() -> Response)? = null,
     private val downloadHandler: (() -> HttpLogDownloadPayload)? = null,
+    private val latestSegmentHandler: (() -> HttpLogDownloadPayload?)? = null,
     private val clearLogsHandler: (() -> HttpLogServerState)? = null,
 ) : NanoHTTPD(port) {
     override fun serve(session: IHTTPSession): Response {
@@ -35,6 +36,7 @@ internal class HttpLogServer(
             return when (session.uri) {
                 "/" -> handlePage(session)
                 "/api/v1/logs/download" -> handleDownload(session)
+                "/api/v1/logs/latest-segment" -> handleLatestSegment(session)
                 "/api/v1/logs/clear" -> handleClearLogs(session)
                 else -> errorResponse(Response.Status.NOT_FOUND, 404, "not found")
             }
@@ -68,6 +70,33 @@ internal class HttpLogServer(
             newChunkedResponse(
                 Response.Status.OK,
                 MIME_ZIP,
+                payload.inputStream,
+            )
+        response.addHeader("Cache-Control", "no-store")
+        response.addHeader("Content-Disposition", "attachment; filename=\"${payload.fileName}\"")
+        return response
+    }
+
+    private fun handleLatestSegment(session: IHTTPSession): Response {
+        val methodError = requireMethod(session, Method.GET)
+        if (methodError != null) {
+            return methodError
+        }
+        if (!rateLimiter.allowLogsRequest(session.remoteIpAddress.orEmpty())) {
+            return errorResponse(Response.Status.TOO_MANY_REQUESTS, 429, "rate limited")
+        }
+        val handler = latestSegmentHandler ?: return errorResponse(Response.Status.SERVICE_UNAVAILABLE, 503, "latest segment unavailable")
+        val payload =
+            runCatching {
+                handler.invoke()
+            }.getOrElse {
+                return errorResponse(Response.Status.SERVICE_UNAVAILABLE, 503, "latest segment unavailable")
+            } ?: return errorResponse(Response.Status.NOT_FOUND, 404, "latest segment not found")
+
+        val response =
+            newChunkedResponse(
+                Response.Status.OK,
+                MIME_NDJSON,
                 payload.inputStream,
             )
         response.addHeader("Cache-Control", "no-store")
@@ -131,5 +160,6 @@ internal class HttpLogServer(
     private companion object {
         private const val MIME_JSON = "application/json; charset=utf-8"
         private const val MIME_ZIP = "application/zip"
+        private const val MIME_NDJSON = "application/x-ndjson; charset=utf-8"
     }
 }
