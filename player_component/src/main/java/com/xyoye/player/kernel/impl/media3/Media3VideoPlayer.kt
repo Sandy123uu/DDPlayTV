@@ -158,8 +158,7 @@ class Media3VideoPlayer(
     }
 
     private fun createMediaSourceFactory(): DefaultMediaSourceFactory {
-        val parseSubtitlesDuringExtraction =
-            PlayerInitializer.Subtitle.backend != SubtitleRendererBackend.LIBASS
+        val parseSubtitlesDuringExtraction = shouldParseSubtitlesDuringExtraction()
         if (PlayerInitializer.isPrintLog) {
             LogFacade.d(
                 LogModule.PLAYER,
@@ -189,7 +188,7 @@ class Media3VideoPlayer(
         runCatching {
             LocalProxy.setSeekEnabledIfServing(path, enabled = false)
         }
-        mediaSource = getMediaSource(path, headers)
+        mediaSource = getMediaSource(path, headers, parseSubtitlesDuringExtraction = shouldParseSubtitlesDuringExtraction())
         videoOverrideApplied = false
         videoDecoderRecoveryCount = 0
         audioDecoderRecoveryCount = 0
@@ -695,7 +694,7 @@ class Media3VideoPlayer(
         surface?.let { player.setVideoSurface(it) }
 
         if (!dataSource.isNullOrBlank()) {
-            mediaSource = getMediaSource(dataSource, headers)
+            mediaSource = getMediaSource(dataSource, headers, parseSubtitlesDuringExtraction = shouldParseSubtitlesDuringExtraction())
             if (anime4kMode != Anime4kMode.MODE_OFF) {
                 applyVideoEffects()
             }
@@ -820,6 +819,9 @@ class Media3VideoPlayer(
     private fun isLibassBypassExpected(): Boolean =
         PlayerInitializer.Subtitle.backend == SubtitleRendererBackend.LIBASS &&
             hasSsaLikeTextTrack
+
+    private fun shouldParseSubtitlesDuringExtraction(): Boolean =
+        PlayerInitializer.Subtitle.backend != SubtitleRendererBackend.LIBASS
 
     private fun formatInitializationDataSummary(format: Format): String {
         val initData = format.initializationData

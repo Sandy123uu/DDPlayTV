@@ -19,8 +19,13 @@ import androidx.media3.extractor.TrackOutput
  */
 @UnstableApi
 class RewritingExtractorsFactory(
+    parseSubtitlesDuringExtraction: Boolean = true,
     private val delegate: DefaultExtractorsFactory = DefaultExtractorsFactory()
 ) : ExtractorsFactory {
+    init {
+        delegate.experimentalSetTextTrackTranscodingEnabled(parseSubtitlesDuringExtraction)
+    }
+
     override fun createExtractors(): Array<Extractor> = delegate.createExtractors().map { RewritingExtractor(it) }.toTypedArray()
 }
 

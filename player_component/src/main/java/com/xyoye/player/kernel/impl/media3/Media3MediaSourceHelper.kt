@@ -40,7 +40,8 @@ object Media3MediaSourceHelper {
     fun getMediaSource(
         uri: String,
         headers: Map<String, String>? = null,
-        isCacheEnabled: Boolean = false
+        isCacheEnabled: Boolean = false,
+        parseSubtitlesDuringExtraction: Boolean = true
     ): MediaSource {
         val contentUri = Uri.parse(uri)
         val normalizedMime = Media3FormatUtil.normalizeMime(appContext, contentUri)
@@ -68,14 +69,26 @@ object Media3MediaSourceHelper {
         val mediaItem = mediaItemBuilder.build()
 
         return when (resolvedContentType) {
-            C.CONTENT_TYPE_DASH -> DashMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
-            C.CONTENT_TYPE_SS -> SsMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
-            C.CONTENT_TYPE_HLS -> HlsMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
+            C.CONTENT_TYPE_DASH ->
+                DashMediaSource
+                    .Factory(dataSourceFactory)
+                    .experimentalParseSubtitlesDuringExtraction(parseSubtitlesDuringExtraction)
+                    .createMediaSource(mediaItem)
+            C.CONTENT_TYPE_SS ->
+                SsMediaSource
+                    .Factory(dataSourceFactory)
+                    .experimentalParseSubtitlesDuringExtraction(parseSubtitlesDuringExtraction)
+                    .createMediaSource(mediaItem)
+            C.CONTENT_TYPE_HLS ->
+                HlsMediaSource
+                    .Factory(dataSourceFactory)
+                    .experimentalParseSubtitlesDuringExtraction(parseSubtitlesDuringExtraction)
+                    .createMediaSource(mediaItem)
             else ->
                 ProgressiveMediaSource
                     .Factory(
                         dataSourceFactory,
-                        RewritingExtractorsFactory(),
+                        RewritingExtractorsFactory(parseSubtitlesDuringExtraction),
                     ).createMediaSource(mediaItem)
         }
     }
