@@ -23,18 +23,40 @@ class SwitchableEmbeddedSubtitleSink(
     private val delegate: EmbeddedSubtitleSink
 ) : EmbeddedSubtitleSink,
     EmbeddedSubtitleSinkController {
+    private val lock = Any()
+
     @Volatile
     private var enabled: Boolean = true
+    private var hasCachedFormat: Boolean = false
+    private var cachedCodecPrivate: ByteArray? = null
 
     override fun setEnabled(enabled: Boolean) {
-        this.enabled = enabled
+        val replayCodecPrivate: ByteArray?
+        val shouldReplayFormat: Boolean
+        synchronized(lock) {
+            val wasEnabled = this.enabled
+            this.enabled = enabled
+            shouldReplayFormat = !wasEnabled && enabled && hasCachedFormat
+            replayCodecPrivate = cachedCodecPrivate?.copyOf()
+        }
+        if (shouldReplayFormat) {
+            delegate.onFormat(replayCodecPrivate)
+        }
     }
 
     override fun isEnabled(): Boolean = enabled
 
     override fun onFormat(codecPrivate: ByteArray?) {
-        if (!enabled) return
-        delegate.onFormat(codecPrivate)
+        val shouldDispatch: Boolean
+        val codecPrivateCopy = codecPrivate?.copyOf()
+        synchronized(lock) {
+            cachedCodecPrivate = codecPrivateCopy
+            hasCachedFormat = true
+            shouldDispatch = enabled
+        }
+        if (shouldDispatch) {
+            delegate.onFormat(codecPrivateCopy)
+        }
     }
 
     override fun onSample(

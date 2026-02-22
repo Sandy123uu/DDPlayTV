@@ -33,6 +33,7 @@ class LibassSsaStreamDecoder(
     private val decoderName = "LibassSsaStreamDecoder"
     private val decodeLogCounter = AtomicInteger(0)
     private val sinkMissLogCounter = AtomicInteger(0)
+    private var sampleRelativeAnchorUs: Long? = null
 
     init {
         setInitialInputBufferSize(INITIAL_INPUT_BUFFER_SIZE)
@@ -52,7 +53,7 @@ class LibassSsaStreamDecoder(
     override fun getName(): String = decoderName
 
     override fun setPositionUs(positionUs: Long) {
-        // No-op
+        sampleRelativeAnchorUs = null
     }
 
     override fun createInputBuffer(): SubtitleInputBuffer = SubtitleInputBuffer()
@@ -68,6 +69,7 @@ class LibassSsaStreamDecoder(
         reset: Boolean
     ): SubtitleDecoderException? {
         if (reset) {
+            sampleRelativeAnchorUs = null
             sinkProvider()?.onFlush()
             if (PlayerInitializer.isPrintLog && shouldLog(decodeLogCounter.incrementAndGet())) {
                 LogFacade.d(LogModule.PLAYER, LOG_TAG, "decode reset=true")
@@ -187,7 +189,7 @@ class LibassSsaStreamDecoder(
         if (!first.startsWith(FORMAT_PREFIX)) {
             return first
         }
-        if (second.containsToken(EVENTS_SECTION_HEADER) && second.containsToken(FORMAT_PREFIX)) {
+        if (second.hasEventsSectionFormat()) {
             return second
         }
         val dialogueFormat = first
@@ -225,22 +227,24 @@ class LibassSsaStreamDecoder(
         return -1
     }
 
-    private fun ByteArray.containsToken(token: ByteArray): Boolean {
-        if (token.isEmpty() || size < token.size) return false
-        val maxStart = size - token.size
-        var start = 0
-        while (start <= maxStart) {
-            var matched = true
-            for (index in token.indices) {
-                if (this[start + index] != token[index]) {
-                    matched = false
-                    break
-                }
+    /**
+     * Ensures the initialization block is structurally complete for ASS events:
+     * [Events] section exists and contains its own `Format:` line.
+     */
+    private fun ByteArray.hasEventsSectionFormat(): Boolean {
+        if (isEmpty()) return false
+        var inEventsSection = false
+        val content = String(this, Charsets.UTF_8)
+        for (rawLine in content.lineSequence()) {
+            val line = rawLine.trim().trimStart('\uFEFF')
+            if (line.isEmpty()) continue
+            if (line.startsWith("[") && line.endsWith("]")) {
+                inEventsSection = line.equals(EVENTS_SECTION_NAME, ignoreCase = true)
+                continue
             }
-            if (matched) {
+            if (inEventsSection && line.startsWith(FORMAT_PREFIX_TEXT, ignoreCase = true)) {
                 return true
             }
-            start++
         }
         return false
     }
@@ -251,16 +255,40 @@ class LibassSsaStreamDecoder(
     ): Long {
         val effectiveOffsetUs =
             when (subsampleOffsetUs) {
-                Format.OFFSET_SAMPLE_RELATIVE ->
-                    if (sampleTimeUs >= SAMPLE_RELATIVE_TIMESTAMP_BASE_US) {
-                        SAMPLE_RELATIVE_TIMESTAMP_BASE_US
-                    } else {
-                        0L
-                    }
+                Format.OFFSET_SAMPLE_RELATIVE -> resolveSampleRelativeOffsetUs(sampleTimeUs)
                 C.TIME_UNSET -> 0L
                 else -> subsampleOffsetUs
             }
         return (sampleTimeUs - effectiveOffsetUs).coerceAtLeast(0L)
+    }
+
+    private fun resolveSampleRelativeOffsetUs(sampleTimeUs: Long): Long {
+        if (sampleTimeUs <= 0L) {
+            sampleRelativeAnchorUs = 0L
+            return 0L
+        }
+
+        val inferredAnchorUs = inferSampleRelativeAnchorUs(sampleTimeUs)
+        val currentAnchorUs = sampleRelativeAnchorUs
+        val anchorUs =
+            if (currentAnchorUs == null ||
+                sampleTimeUs < currentAnchorUs ||
+                sampleTimeUs - currentAnchorUs >= SAMPLE_RELATIVE_TIMESTAMP_ANCHOR_STEP_US
+            ) {
+                inferredAnchorUs
+            } else {
+                currentAnchorUs
+            }
+
+        sampleRelativeAnchorUs = anchorUs
+        return anchorUs
+    }
+
+    private fun inferSampleRelativeAnchorUs(sampleTimeUs: Long): Long {
+        if (sampleTimeUs < SAMPLE_RELATIVE_TIMESTAMP_ANCHOR_STEP_US) {
+            return 0L
+        }
+        return (sampleTimeUs / SAMPLE_RELATIVE_TIMESTAMP_ANCHOR_STEP_US) * SAMPLE_RELATIVE_TIMESTAMP_ANCHOR_STEP_US
     }
 
     private object EmptySubtitle : Subtitle {
@@ -283,14 +311,15 @@ class LibassSsaStreamDecoder(
 
         private const val SSA_TIMECODE_LENGTH = 10
         private const val SSA_TIMECODE_LAST_VALUE_SCALING_FACTOR = 10_000L
-        // Media3 sample-relative text timestamps are anchored to this internal base.
-        private const val SAMPLE_RELATIVE_TIMESTAMP_BASE_US = 1_000_000_000_000L
+        // Media3 sample-relative text timestamps are usually anchored in large fixed-size windows.
+        private const val SAMPLE_RELATIVE_TIMESTAMP_ANCHOR_STEP_US = 1_000_000_000_000L
 
         private val SSA_PREFIX =
             "Dialogue: 0:00:00:00,".toByteArray(Charsets.UTF_8)
         private const val SSA_FIELD_SEPARATOR: Byte = ','.code.toByte()
-        private val EVENTS_SECTION_HEADER = "[Events]".toByteArray(Charsets.UTF_8)
-        private val FORMAT_PREFIX = "Format:".toByteArray(Charsets.UTF_8)
+        private const val EVENTS_SECTION_NAME = "[Events]"
+        private const val FORMAT_PREFIX_TEXT = "Format:"
+        private val FORMAT_PREFIX = FORMAT_PREFIX_TEXT.toByteArray(Charsets.UTF_8)
         private val EVENTS_HEADER = "\n[Events]\n".toByteArray(Charsets.UTF_8)
         private val NEWLINE = "\n".toByteArray(Charsets.UTF_8)
 

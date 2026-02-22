@@ -85,6 +85,7 @@ class Media3VideoPlayer(
     private var isBuffering = false
     private var lastReportedPlayWhenReady = false
     private var lastReportedPlaybackState = Player.STATE_IDLE
+    private var currentParseSubtitlesDuringExtraction = shouldParseSubtitlesDuringExtraction()
 
     private val subtitleFrameDrivers = mutableSetOf<SubtitleFrameDriver>()
 
@@ -159,6 +160,7 @@ class Media3VideoPlayer(
 
     private fun createMediaSourceFactory(): DefaultMediaSourceFactory {
         val parseSubtitlesDuringExtraction = shouldParseSubtitlesDuringExtraction()
+        currentParseSubtitlesDuringExtraction = parseSubtitlesDuringExtraction
         if (PlayerInitializer.isPrintLog) {
             LogFacade.d(
                 LogModule.PLAYER,
@@ -188,7 +190,9 @@ class Media3VideoPlayer(
         runCatching {
             LocalProxy.setSeekEnabledIfServing(path, enabled = false)
         }
-        mediaSource = getMediaSource(path, headers, parseSubtitlesDuringExtraction = shouldParseSubtitlesDuringExtraction())
+        val parseSubtitlesDuringExtraction = shouldParseSubtitlesDuringExtraction()
+        currentParseSubtitlesDuringExtraction = parseSubtitlesDuringExtraction
+        mediaSource = getMediaSource(path, headers, parseSubtitlesDuringExtraction = parseSubtitlesDuringExtraction)
         videoOverrideApplied = false
         videoDecoderRecoveryCount = 0
         audioDecoderRecoveryCount = 0
@@ -478,6 +482,25 @@ class Media3VideoPlayer(
         embeddedSubtitleSink.set(sink)
     }
 
+    override fun onSubtitleBackendChanged(target: SubtitleRendererBackend) {
+        val targetParseSubtitlesDuringExtraction = target != SubtitleRendererBackend.LIBASS
+        if (targetParseSubtitlesDuringExtraction == currentParseSubtitlesDuringExtraction) {
+            return
+        }
+        currentParseSubtitlesDuringExtraction = targetParseSubtitlesDuringExtraction
+        if (PlayerInitializer.isPrintLog) {
+            LogFacade.d(
+                LogModule.PLAYER,
+                "PlayerSubtitle",
+                "media3 backend changed target=$target parseSubtitlesDuringExtraction=$targetParseSubtitlesDuringExtraction hasSource=${!currentDataSource.isNullOrBlank()}",
+            )
+        }
+        if (!this::player.isInitialized || currentDataSource.isNullOrBlank()) {
+            return
+        }
+        rebuildPlayer()
+    }
+
     override fun createFrameDriver(callback: SubtitleFrameDriver.Callback): SubtitleFrameDriver? {
         val exoPlayer = exoPlayerOrNull() ?: return null
         return Media3SubtitleFrameDriver(exoPlayer, callback).also { driver ->
@@ -522,6 +545,7 @@ class Media3VideoPlayer(
 
     override fun selectTrack(track: VideoTrackBean) {
         val media3Type = getTrackType(track.type) ?: return
+        val selector = trackSelector as? DefaultTrackSelector ?: return
         val trackIds = track.id?.split("-") ?: return
         val groupIndex = trackIds.getOrNull(0)?.toInt() ?: return
         val trackIndex = trackIds.getOrNull(1)?.toInt() ?: return
@@ -531,9 +555,9 @@ class Media3VideoPlayer(
                 androidx.media3.common.TrackSelectionOverride(it.mediaTrackGroup, trackIndex)
             } ?: return
 
-        trackSelector.parameters =
-            DefaultTrackSelector.Parameters
-                .Builder(appContext)
+        selector.parameters =
+            selector.parameters
+                .buildUpon()
                 .setTrackTypeDisabled(media3Type, false)
                 .clearOverridesOfType(media3Type)
                 .addOverride(override)
@@ -542,10 +566,12 @@ class Media3VideoPlayer(
 
     override fun deselectTrack(type: TrackType) {
         val media3Type = getTrackType(type) ?: return
-        trackSelector.parameters =
-            DefaultTrackSelector.Parameters
-                .Builder(appContext)
+        val selector = trackSelector as? DefaultTrackSelector ?: return
+        selector.parameters =
+            selector.parameters
+                .buildUpon()
                 .setTrackTypeDisabled(media3Type, true)
+                .clearOverridesOfType(media3Type)
                 .build()
     }
 
@@ -694,7 +720,9 @@ class Media3VideoPlayer(
         surface?.let { player.setVideoSurface(it) }
 
         if (!dataSource.isNullOrBlank()) {
-            mediaSource = getMediaSource(dataSource, headers, parseSubtitlesDuringExtraction = shouldParseSubtitlesDuringExtraction())
+            val parseSubtitlesDuringExtraction = shouldParseSubtitlesDuringExtraction()
+            currentParseSubtitlesDuringExtraction = parseSubtitlesDuringExtraction
+            mediaSource = getMediaSource(dataSource, headers, parseSubtitlesDuringExtraction = parseSubtitlesDuringExtraction)
             if (anime4kMode != Anime4kMode.MODE_OFF) {
                 applyVideoEffects()
             }

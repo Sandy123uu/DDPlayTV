@@ -5,6 +5,7 @@ import androidx.media3.common.Format
 import com.xyoye.common_component.media3.testing.Media3Dependent
 import com.xyoye.player.subtitle.backend.EmbeddedSubtitleSink
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -34,6 +35,17 @@ class LibassSsaStreamDecoderTest {
         assertEquals(500_000L, decoder.normalizeSampleTimeUs(1_000_000_500_000L, Format.OFFSET_SAMPLE_RELATIVE))
         assertEquals(500_000L, decoder.normalizeSampleTimeUs(500_000L, Format.OFFSET_SAMPLE_RELATIVE))
         assertEquals(1_000_000_000_000L, decoder.normalizeSampleTimeUs(1_000_000_000_000L, C.TIME_UNSET))
+
+        decoder.release()
+    }
+
+    @Test
+    fun normalizeSampleTimeUs_adaptsSampleRelativeAnchorAcrossTimelines() {
+        val decoder = createDecoder()
+
+        assertEquals(200_000L, decoder.normalizeSampleTimeUs(2_000_000_200_000L, Format.OFFSET_SAMPLE_RELATIVE))
+        assertEquals(400_000L, decoder.normalizeSampleTimeUs(2_000_000_400_000L, Format.OFFSET_SAMPLE_RELATIVE))
+        assertEquals(300_000L, decoder.normalizeSampleTimeUs(300_000L, Format.OFFSET_SAMPLE_RELATIVE))
 
         decoder.release()
     }
@@ -108,6 +120,31 @@ class LibassSsaStreamDecoderTest {
 
         assertTrue(merged.contains("[Events]"))
         assertTrue(merged.contains(String(dialogueFormat, Charsets.UTF_8)))
+        decoder.release()
+    }
+
+    @Test
+    fun constructor_mergesCodecPrivateWhenFormatBelongsToStyleSection() {
+        val sink = TestEmbeddedSink()
+        val dialogueFormat =
+            "Format: Start, End, ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
+                .toByteArray(Charsets.UTF_8)
+        val styleOnlyHeader =
+            "[Script Info]\nTitle: Test\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour\n"
+                .toByteArray(Charsets.UTF_8)
+        val format =
+            Format
+                .Builder()
+                .setSampleMimeType("text/x-ssa")
+                .setInitializationData(listOf(dialogueFormat, styleOnlyHeader))
+                .build()
+
+        val decoder = LibassSsaStreamDecoder(format, sinkProvider = { sink })
+        val merged = String(sink.lastCodecPrivate ?: ByteArray(0), Charsets.UTF_8)
+
+        assertTrue(merged.contains("[Events]"))
+        assertTrue(merged.contains(String(dialogueFormat, Charsets.UTF_8)))
+        assertFalse(merged == String(styleOnlyHeader, Charsets.UTF_8))
         decoder.release()
     }
 

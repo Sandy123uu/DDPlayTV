@@ -1,6 +1,7 @@
 package com.xyoye.player.kernel.subtitle
 
 import androidx.media3.common.util.UnstableApi
+import com.xyoye.common_component.enums.SubtitleRendererBackend
 import com.xyoye.player.subtitle.backend.EmbeddedSubtitleSink
 
 /**
@@ -25,6 +26,15 @@ interface SubtitleKernelBridge {
      * Kernels that do not expose embedded subtitle samples can ignore this call.
      */
     fun setEmbeddedSubtitleSink(sink: EmbeddedSubtitleSink?) {
+        // default no-op
+    }
+
+    /**
+     * Notifies the kernel that subtitle backend mode changed.
+     *
+     * Kernels may use this signal to rebuild subtitle extraction mode if needed.
+     */
+    fun onSubtitleBackendChanged(target: SubtitleRendererBackend) {
         // default no-op
     }
 

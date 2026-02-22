@@ -613,6 +613,9 @@ class DanDanVideoPlayer(
         PlayerInitializer.Subtitle.backend = target
         destroySubtitleRenderer()
         configureSubtitleRenderer()
+        if (this::mVideoPlayer.isInitialized) {
+            (mVideoPlayer as? SubtitleKernelBridge)?.onSubtitleBackendChanged(PlayerInitializer.Subtitle.backend)
+        }
     }
 
     private fun destroySubtitleRenderer() {
