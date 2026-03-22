@@ -1,37 +1,48 @@
 name: package debug
-
 on:
   workflow_dispatch:
     inputs:
       commit_hash:
-        description: '填写要编译的commit（留空则用当前最新）'
+        description: '填写要编译的commit（留空则编译当前仓库最新代码）'
         required: false
         default: ''
+      java_version:
+        description: 'Java版本（旧commit报错可切换为11）'
+        required: true
+        default: '17'
+        type: choice
+        options:
+          - '17'
+          - '11'
 
 jobs:
-  build:
+  build-apk:
     runs-on: ubuntu-latest
     steps:
-      - name: 拉取代码
+      - name: 拉取代码（指定Commit/最新）
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.commit_hash || github.ref }}
 
-      - name: Set up JDK 17
+      - name: 配置Java环境（兼容新旧版本）
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: ${{ github.event.inputs.java_version }}
           distribution: 'temurin'
           cache: gradle
 
-      - name: Grant execute permission
+      - name: 授予Gradle执行权限
         run: chmod +x gradlew
 
-      - name: 仅编译 arm64-v8a
-        run: ./gradlew assembleDebug -Pandroid.buildTypes.debug.ndk.abiFilters=arm64-v8a
+      # 核心修复1：强制禁用Release构建类型，彻底绕过签名校验
+      # 核心修复2：仅编译arm64-v8a，缩小包体积，适配电视/盒子主流架构
+      - name: 编译Debug版APK（无签名校验）
+        run: ./gradlew assembleDebug \
+          -Pandroid.buildTypes.release.enabled=false \
+          -Pandroid.buildTypes.debug.ndk.abiFilters=arm64-v8a
 
-      - name: 上传APK
+      - name: 上传编译完成的APK
         uses: actions/upload-artifact@v4
         with:
-          name: DDPlayTV-arm64-apk
+          name: DDPlayTV-arm64-${{ github.event.inputs.commit_hash || 'latest' }}
           path: app/build/outputs/apk/debug/*.apk
